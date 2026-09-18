@@ -95,7 +95,6 @@ public class MainWindow {
         menuBar.addMenu("File", fileMenu());
         menuBar.addMenu("Edit", new MenuItem[] {});
         menuBar.addMenu("View", new MenuItem[] {});
-        menuBar.addMenu("Plugins", new MenuItem[] {});
         menuBar.addMenu("Help", new MenuItem[] {});
 
         // Glue between menu bar and buttons
