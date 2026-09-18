@@ -1,0 +1,3 @@
+package kebabeditor;
+
+class AppTest {}
