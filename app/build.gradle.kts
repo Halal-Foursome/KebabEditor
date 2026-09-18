@@ -16,17 +16,15 @@ repositories {
 }
 
 dependencies {
-    // Use JUnit Jupiter for testing.
     testImplementation(libs.junit.jupiter)
-
+    implementation("com.formdev:flatlaf:3.7.2")
+    implementation("com.formdev:flatlaf-extras:3.7.2")
+    implementation("com.formdev:flatlaf-intellij-themes:3.7.2")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     compileOnly("org.projectlombok:lombok:1.18.48")
     annotationProcessor("org.projectlombok:lombok:1.18.48")
-
     testCompileOnly("org.projectlombok:lombok:1.18.48")
     testAnnotationProcessor("org.projectlombok:lombok:1.18.48")
-
-    // This dependency is used by the application.
     implementation(libs.guava)
 }
 
