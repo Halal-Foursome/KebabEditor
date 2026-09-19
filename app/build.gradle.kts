@@ -37,7 +37,7 @@ java {
 
 application {
     // Define the main class for the application.
-    mainClass = "org.halalfoursome.kebabeditor.App"
+    mainClass = "org.halalfoursome.kebabeditor.KebabApplication"
 }
 
 tasks.named<Test>("test") {
