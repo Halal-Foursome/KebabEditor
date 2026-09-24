@@ -15,9 +15,15 @@ import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 
 import org.halalfoursome.kebabeditor.editor.Editor;
-import org.halalfoursome.kebabeditor.ui.menu.*;
-import org.halalfoursome.kebabeditor.utils.*;
+import org.halalfoursome.kebabeditor.ui.menu.MenuBar;
+import org.halalfoursome.kebabeditor.ui.menu.MenuButton;
+import org.halalfoursome.kebabeditor.ui.menu.MenuItem;
+import org.halalfoursome.kebabeditor.ui.menu.SeparatorItem;
+import org.halalfoursome.kebabeditor.ui.menu.SingleItem;
+import org.halalfoursome.kebabeditor.utils.FileChooser;
 import org.halalfoursome.kebabeditor.utils.FileChooser.FileChooserMode;
+import org.halalfoursome.kebabeditor.utils.KebabStyle;
+import org.halalfoursome.kebabeditor.utils.LucideIcon;
 
 import com.formdev.flatlaf.intellijthemes.materialthemeuilite.FlatMTGitHubDarkIJTheme;
 
@@ -25,6 +31,7 @@ public class MainWindow {
     
     private final JFrame frame;
     private final MenuBar menuBar;
+    private EditorView editorView;
 
     static {
         JFrame.setDefaultLookAndFeelDecorated(true);
@@ -40,6 +47,12 @@ public class MainWindow {
 
         setupLayout();
         setupActions();
+
+        // create editor view and navigation
+        editorView = new EditorView();
+        frame.add(editorView, BorderLayout.CENTER);
+        org.halalfoursome.kebabeditor.ui.navigation.FreeFlightNavigation nav = new org.halalfoursome.kebabeditor.ui.navigation.FreeFlightNavigation();
+        editorView.setNavigationMode(nav);
     }
 
     public void show() {
