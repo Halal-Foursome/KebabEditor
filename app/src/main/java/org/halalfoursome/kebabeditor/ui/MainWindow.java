@@ -19,6 +19,7 @@ import org.halalfoursome.kebabeditor.ui.menu.CreateProjectDialog;
 import org.halalfoursome.kebabeditor.ui.menu.MenuBar;
 import org.halalfoursome.kebabeditor.ui.menu.MenuButton;
 import org.halalfoursome.kebabeditor.ui.menu.MenuItem;
+import org.halalfoursome.kebabeditor.ui.menu.OptionsDialog;
 import org.halalfoursome.kebabeditor.ui.menu.SeparatorItem;
 import org.halalfoursome.kebabeditor.ui.menu.SingleItem;
 import org.halalfoursome.kebabeditor.utils.FileChooser;
@@ -108,7 +109,8 @@ public class MainWindow {
         // Menu bar
         menuBar.addMenu("File", fileMenu());
         menuBar.addMenu("Edit", new MenuItem[] {});
-        menuBar.addMenu("View", new MenuItem[] {});
+        menuBar.addMenu("View", viewMenu());
+        menuBar.addMenu("Options", optionsMenu());
         menuBar.addMenu("Help", new MenuItem[] {});
 
         // Glue between menu bar and buttons
@@ -161,6 +163,27 @@ public class MainWindow {
             new SingleItem("Exit", Optional.of("control Q"), () -> {
                 frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
             }),
+        };
+    }
+
+    private MenuItem[] viewMenu() {
+        return new MenuItem[] {
+            new SingleItem("Blockout view", Optional.of("control V B"), () -> {
+
+            }),
+
+            new SeparatorItem(),
+        };
+    }
+
+    private MenuItem[] optionsMenu() {
+        return new MenuItem[] {
+            new SingleItem("Blockout view options", Optional.of("control O B"), () -> {
+                OptionsDialog optionsDialog = new OptionsDialog(frame);
+                optionsDialog.setVisible(true);
+            }),
+
+            new SeparatorItem(),
         };
     }
 

@@ -1,9 +1,14 @@
 package org.halalfoursome.kebabeditor.utils;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
+import javax.swing.JButton;
+import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 
 import lombok.Setter;
@@ -97,6 +102,55 @@ public record KebabStyle(
         b -= (int)(b * fraction);
 
         return new Color(Math.max(r, 0), Math.max(g, 0), Math.max(b, 0));
+    }
+
+    public void styleScrollbarButton(JButton button) {
+        button.setFont(uiFont);
+
+        button.setHorizontalAlignment(SwingConstants.LEFT);
+        button.setAlignmentX(Component.LEFT_ALIGNMENT);
+        button.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+
+        button.setBorderPainted(false);
+        button.setFocusPainted(false);
+        button.setContentAreaFilled(true);
+        button.setOpaque(true);
+
+        button.putClientProperty("selected", false);
+
+        Color normal = getBackgroundColor();
+        Color hover = shiftAccent(0.08f);
+        Color selected = shiftAccent(0.40f);
+
+        button.setBackground(normal);
+
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                if (!(Boolean) button.getClientProperty("selected")) {
+                    button.setBackground(hover);
+                }
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                if ((Boolean) button.getClientProperty("selected")) {
+                    button.setBackground(selected);
+                } else {
+                    button.setBackground(normal);
+                }
+            }
+        });
+    }
+
+    public void setScrollbarButtonSelected(JButton button, boolean selected) {
+        button.putClientProperty("selected", selected);
+
+        button.setBackground(
+            selected
+                ? shiftAccent(0.40f)
+                : getBackgroundColor()
+        );
     }
 }
 
