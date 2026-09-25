@@ -77,16 +77,14 @@ public class EditorView extends JPanel {
         // Simple 3D projection parameters
         double f = 500; // focal length
 
-        // draw horizon / background subtle gradient is omitted for simplicity
-
         // draw grid on XZ plane
         g2.setColor(new Color(80, 86, 92));
 
         int spacing = 1; // spacing between grid lines (world units)
         int viewDistance = 200; // how far from camera (in world units) to render grid lines
 
-        // Grid lines are anchored to world coordinates (origin-based),
-        // but we only draw those within `viewDistance` of the camera.
+        // Grid lines are anchored to world coordinates
+        // only draw those within `viewDistance` of the camera.
         int camXi = (int) Math.floor(camera.x / (double) spacing);
         int camZi = (int) Math.floor(camera.z / (double) spacing);
         int range = (int) Math.ceil(viewDistance / (double) spacing);

@@ -15,6 +15,7 @@ import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 
 import org.halalfoursome.kebabeditor.editor.Editor;
+import org.halalfoursome.kebabeditor.ui.menu.CreateProjectDialog;
 import org.halalfoursome.kebabeditor.ui.menu.MenuBar;
 import org.halalfoursome.kebabeditor.ui.menu.MenuButton;
 import org.halalfoursome.kebabeditor.ui.menu.MenuItem;
@@ -136,10 +137,8 @@ public class MainWindow {
     private MenuItem[] fileMenu() {
         return new MenuItem[] {
             new SingleItem("New file...", Optional.of("control N"), () -> {
-                FileChooser fileChooser = new FileChooser(FileChooserMode.FILES);
-                fileChooser.save(frame, file -> {
-                    // TODO: New file
-                });
+                CreateProjectDialog createProjectDialog = new CreateProjectDialog(frame);
+                createProjectDialog.setVisible(true);
             }),
 
             new SeparatorItem(),

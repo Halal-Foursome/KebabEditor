@@ -111,11 +111,6 @@ public class FreeFlightNavigation implements NavigationMode {
         if (keyDown(KeyEvent.VK_SPACE, KeyEvent.VK_NUMPAD9)) upInput += 1;
         if (keyDown(KeyEvent.VK_CONTROL, KeyEvent.VK_NUMPAD2, KeyEvent.VK_KP_DOWN)) upInput -= 1;
  
-        // Forward/right vectors MUST match the rotation actually applied in
-        // EditorView.worldToCamera(), which does R_pitch(-pitch) * R_yaw(-yaw).
-        // Solving that transform for "straight ahead" / "purely sideways"
-        // gives the formulas below (verified: for these vectors, camera-space
-        // Rx/Ry come out as 0, independent of yaw/pitch).
         double cosP = Math.cos(cam.pitch);
         double sinP = Math.sin(cam.pitch);
         double cosY = Math.cos(cam.yaw);
