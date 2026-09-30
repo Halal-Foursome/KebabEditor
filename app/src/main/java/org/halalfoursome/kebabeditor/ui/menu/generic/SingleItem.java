@@ -1,4 +1,4 @@
-package org.halalfoursome.kebabeditor.ui.menu;
+package org.halalfoursome.kebabeditor.ui.menu.generic;
 
 import java.util.Optional;
 
@@ -21,6 +21,10 @@ public class SingleItem implements MenuItem {
         if (keyStroke.isPresent()) {
             component.setAccelerator(KeyStroke.getKeyStroke(keyStroke.get()));
         }
+    }
+
+    public void setEnabled(boolean enabled) {
+        component.setEnabled(enabled);
     }
 
     @Override

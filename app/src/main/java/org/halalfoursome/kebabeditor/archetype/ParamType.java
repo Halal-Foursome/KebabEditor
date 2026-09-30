@@ -12,6 +12,17 @@ public enum ParamType {
     VEC3,
     NODE_REF;
 
+    public Class<?> javaClass() {
+        return switch (this) {
+            case INT        -> Integer.class;
+            case FLOAT      -> Float.class;
+            case BOOL       -> Boolean.class;
+            case STRING     -> String.class;
+            case VEC3       -> Vec3.class;
+            case NODE_REF   -> Optional.class;
+        };
+    }
+
     public Object defaultValue() {
         return switch (this) {
             case INT        -> 0;

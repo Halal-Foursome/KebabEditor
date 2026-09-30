@@ -4,8 +4,6 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Insets;
-import java.awt.event.WindowEvent;
-import java.util.Optional;
 
 import javax.swing.Box;
 import javax.swing.JDialog;
@@ -15,24 +13,23 @@ import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 
 import org.halalfoursome.kebabeditor.editor.Editor;
-import org.halalfoursome.kebabeditor.ui.menu.Menu;
-import org.halalfoursome.kebabeditor.ui.menu.MenuBar;
-import org.halalfoursome.kebabeditor.ui.menu.MenuButton;
-import org.halalfoursome.kebabeditor.ui.menu.MenuItem;
-import org.halalfoursome.kebabeditor.ui.menu.SeparatorItem;
-import org.halalfoursome.kebabeditor.ui.menu.SingleItem;
-import org.halalfoursome.kebabeditor.ui.options.OptionsDialog;
-import org.halalfoursome.kebabeditor.ui.project.CreateProjectDialog;
-import org.halalfoursome.kebabeditor.utils.FileChooser;
-import org.halalfoursome.kebabeditor.utils.FileChooser.FileChooserMode;
+import org.halalfoursome.kebabeditor.ui.menu.FileMenu;
+import org.halalfoursome.kebabeditor.ui.menu.OptionsMenu;
+import org.halalfoursome.kebabeditor.ui.menu.ProjectMenu;
+import org.halalfoursome.kebabeditor.ui.menu.ViewMenu;
+import org.halalfoursome.kebabeditor.ui.menu.generic.Menu;
+import org.halalfoursome.kebabeditor.ui.menu.generic.MenuBar;
+import org.halalfoursome.kebabeditor.ui.menu.generic.MenuButton;
 import org.halalfoursome.kebabeditor.utils.KebabStyle;
 import org.halalfoursome.kebabeditor.utils.LucideIcon;
 
 import com.formdev.flatlaf.intellijthemes.materialthemeuilite.FlatMTGitHubDarkIJTheme;
 
 public class MainWindow {
-    
+
     private final JFrame frame;
+    private final Editor editor;
+
     private final MenuBar menuBar;
     private EditorView editorView;
 
@@ -42,14 +39,15 @@ public class MainWindow {
         FlatMTGitHubDarkIJTheme.setup();
     }
 
-    public MainWindow(Editor editor) {
+    public MainWindow(Editor editorInstance) {
         setupStyle();
+
+        editor = editorInstance;
 
         frame = new JFrame("Kebab Editor");
         menuBar = new MenuBar(frame);
 
         setupLayout();
-        setupActions();
 
         // create editor view and navigation
         // editorView = new EditorView();
@@ -108,12 +106,12 @@ public class MainWindow {
         frame.setLayout(new BorderLayout());
 
         // Menu bar
-        menuBar.addMenu("File", fileMenu());
-        menuBar.addMenu("Project", projectMenu());
-        menuBar.addMenu("Edit", new MenuItem[] {});
-        menuBar.addMenu("View", viewMenu());
-        menuBar.addMenu("Options", optionsMenu());
-        menuBar.addMenu("Help", new MenuItem[] {});
+        menuBar.addMenu(new FileMenu(frame, editor));
+        menuBar.addMenu(new ProjectMenu(frame, editor));
+        menuBar.addMenu(new Menu("Edit"));
+        menuBar.addMenu(new ViewMenu(frame, editor));
+        menuBar.addMenu(new OptionsMenu(frame, editor));
+        menuBar.addMenu(new Menu("Help"));
 
         // Glue between menu bar and buttons
         menuBar.add(Box.createGlue());
@@ -137,67 +135,4 @@ public class MainWindow {
             }
         ));
     }
-
-    private MenuItem[] fileMenu() {
-        return new MenuItem[] {
-            new SingleItem("Create new project...", Optional.of("control N"), () -> {
-                CreateProjectDialog createProjectDialog = new CreateProjectDialog(frame);
-                createProjectDialog.setVisible(true);
-            }),
-
-            new SeparatorItem(),
-
-            new SingleItem("Open project", Optional.of("control O"), () -> {
-                FileChooser fileChooser = new FileChooser(FileChooserMode.FILES)
-                    .addFilter("glTF scene", "gltf", "glb");
-                    
-                fileChooser.open(frame, file -> {
-                    // TODO: Open file
-                });
-            }),
-
-            new SeparatorItem(),
-
-            new SingleItem("Save", Optional.of("control S"), () -> {
-                // TODO: Save file
-            }),
-
-            new SeparatorItem(),
-
-            new SingleItem("Exit", Optional.of("control Q"), () -> {
-                frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
-            }),
-        };
-    }
-
-    private MenuItem[] projectMenu() {
-        return new MenuItem[] {
-            new SingleItem("Manage archetypes", Optional.of("control shift A"), () -> {
-
-            }),
-        };
-    }
-
-    private MenuItem[] viewMenu() {
-        return new MenuItem[] {
-            new SingleItem("Blockout view", Optional.of("control V B"), () -> {
-
-            }),
-
-            new SeparatorItem(),
-        };
-    }
-
-    private MenuItem[] optionsMenu() {
-        return new MenuItem[] {
-            new SingleItem("Blockout view options", Optional.of("control O B"), () -> {
-                OptionsDialog optionsDialog = new OptionsDialog(frame);
-                optionsDialog.setVisible(true);
-            }),
-
-            new SeparatorItem(),
-        };
-    }
-
-    private void setupActions() {}
 }
