@@ -5,6 +5,7 @@ import java.util.function.Consumer;
 
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class FileChooser {
     public enum FileChooserMode {
@@ -32,6 +33,23 @@ public class FileChooser {
         this.fileChooser = new JFileChooser() {{
             setFileSelectionMode(mode.toSwing());
         }};
+    }
+
+    public FileChooser(FileChooserMode mode, String... extensions) {
+        this(mode);
+        if (extensions.length > 0) {
+            addFilter(String.join(", ", extensions), extensions);
+        }
+    }
+
+    public FileChooser addFilter(String description, String... extensions) {
+        FileNameExtensionFilter filter = new FileNameExtensionFilter(description, extensions);
+        fileChooser.setAcceptAllFileFilterUsed(false);
+        fileChooser.addChoosableFileFilter(filter);
+        if (fileChooser.getChoosableFileFilters().length == 1) {
+            fileChooser.setFileFilter(filter);
+        }
+        return this;
     }
 
     public void open(JFrame frame, Consumer<File> onOpen) {

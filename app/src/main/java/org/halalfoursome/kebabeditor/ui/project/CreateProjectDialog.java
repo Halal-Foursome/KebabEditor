@@ -1,4 +1,4 @@
-package org.halalfoursome.kebabeditor.ui.menu;
+package org.halalfoursome.kebabeditor.ui.project;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;

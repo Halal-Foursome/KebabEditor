@@ -15,13 +15,14 @@ import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 
 import org.halalfoursome.kebabeditor.editor.Editor;
-import org.halalfoursome.kebabeditor.ui.menu.CreateProjectDialog;
+import org.halalfoursome.kebabeditor.ui.menu.Menu;
 import org.halalfoursome.kebabeditor.ui.menu.MenuBar;
 import org.halalfoursome.kebabeditor.ui.menu.MenuButton;
 import org.halalfoursome.kebabeditor.ui.menu.MenuItem;
-import org.halalfoursome.kebabeditor.ui.menu.OptionsDialog;
 import org.halalfoursome.kebabeditor.ui.menu.SeparatorItem;
 import org.halalfoursome.kebabeditor.ui.menu.SingleItem;
+import org.halalfoursome.kebabeditor.ui.options.OptionsDialog;
+import org.halalfoursome.kebabeditor.ui.project.CreateProjectDialog;
 import org.halalfoursome.kebabeditor.utils.FileChooser;
 import org.halalfoursome.kebabeditor.utils.FileChooser.FileChooserMode;
 import org.halalfoursome.kebabeditor.utils.KebabStyle;
@@ -51,10 +52,10 @@ public class MainWindow {
         setupActions();
 
         // create editor view and navigation
-        editorView = new EditorView();
-        frame.add(editorView, BorderLayout.CENTER);
-        org.halalfoursome.kebabeditor.ui.navigation.FreeFlightNavigation nav = new org.halalfoursome.kebabeditor.ui.navigation.FreeFlightNavigation();
-        editorView.setNavigationMode(nav);
+        // editorView = new EditorView();
+        // frame.add(editorView, BorderLayout.CENTER);
+        // org.halalfoursome.kebabeditor.ui.navigation.FreeFlightNavigation nav = new org.halalfoursome.kebabeditor.ui.navigation.FreeFlightNavigation();
+        // editorView.setNavigationMode(nav);
     }
 
     public void show() {
@@ -108,6 +109,7 @@ public class MainWindow {
 
         // Menu bar
         menuBar.addMenu("File", fileMenu());
+        menuBar.addMenu("Project", projectMenu());
         menuBar.addMenu("Edit", new MenuItem[] {});
         menuBar.addMenu("View", viewMenu());
         menuBar.addMenu("Options", optionsMenu());
@@ -138,15 +140,17 @@ public class MainWindow {
 
     private MenuItem[] fileMenu() {
         return new MenuItem[] {
-            new SingleItem("New file...", Optional.of("control N"), () -> {
+            new SingleItem("Create new project...", Optional.of("control N"), () -> {
                 CreateProjectDialog createProjectDialog = new CreateProjectDialog(frame);
                 createProjectDialog.setVisible(true);
             }),
 
             new SeparatorItem(),
 
-            new SingleItem("Open file", Optional.of("control O"), () -> {
-                FileChooser fileChooser = new FileChooser(FileChooserMode.FILES);
+            new SingleItem("Open project", Optional.of("control O"), () -> {
+                FileChooser fileChooser = new FileChooser(FileChooserMode.FILES)
+                    .addFilter("glTF scene", "gltf", "glb");
+                    
                 fileChooser.open(frame, file -> {
                     // TODO: Open file
                 });
@@ -162,6 +166,14 @@ public class MainWindow {
 
             new SingleItem("Exit", Optional.of("control Q"), () -> {
                 frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
+            }),
+        };
+    }
+
+    private MenuItem[] projectMenu() {
+        return new MenuItem[] {
+            new SingleItem("Manage archetypes", Optional.of("control shift A"), () -> {
+
             }),
         };
     }

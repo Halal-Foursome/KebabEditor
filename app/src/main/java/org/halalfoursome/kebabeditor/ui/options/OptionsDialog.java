@@ -1,4 +1,4 @@
-package org.halalfoursome.kebabeditor.ui.menu;
+package org.halalfoursome.kebabeditor.ui.options;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -16,7 +16,6 @@ import javax.swing.JScrollPane;
 import org.halalfoursome.kebabeditor.utils.KebabStyle;
 
 public class OptionsDialog extends JDialog {
-
 
     JButton saveButton = new JButton("Save");
     JButton cancelButton = new JButton("Cancel");
