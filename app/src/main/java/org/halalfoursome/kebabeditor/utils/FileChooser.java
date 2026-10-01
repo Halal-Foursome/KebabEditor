@@ -1,13 +1,20 @@
 package org.halalfoursome.kebabeditor.utils;
 
 import java.io.File;
-import java.util.function.Consumer;
+import java.io.IOException;
 
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class FileChooser {
+    
+    @FunctionalInterface
+    public interface FileHandler {
+        void accept(File file) throws IOException;
+    }
+
     public enum FileChooserMode {
         FILES,
         DIRS,
@@ -52,17 +59,32 @@ public class FileChooser {
         return this;
     }
 
-    public void open(JFrame frame, Consumer<File> onOpen) {
+    public void open(JFrame frame, FileHandler onOpen) {
         int result = fileChooser.showOpenDialog(frame);
         if (result == JFileChooser.APPROVE_OPTION) {
-            onOpen.accept(fileChooser.getSelectedFile());
+            handle(frame, onOpen, "Failed to open file");
         }
     }
 
-    public void save(JFrame frame, Consumer<File> onSave) {
+    public void save(JFrame frame, FileHandler onSave) {
         int result = fileChooser.showSaveDialog(frame);
         if (result == JFileChooser.APPROVE_OPTION) {
-            onSave.accept(fileChooser.getSelectedFile());
+            handle(frame, onSave, "Failed to save file");
+        }
+    }
+
+    private void handle(JFrame frame, FileHandler handler, String title) {
+        File file = fileChooser.getSelectedFile();
+        
+        try {
+            handler.accept(file);
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(
+                frame,
+                file.getName() + ": " + e.getMessage(),
+                title,
+                JOptionPane.ERROR_MESSAGE
+            );
         }
     }
 }

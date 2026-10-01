@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 import org.halalfoursome.kebabeditor.project.ProjectManager;
+import org.halalfoursome.kebabeditor.utils.Maybe;
 
 import lombok.RequiredArgsConstructor;
 
@@ -16,8 +17,12 @@ public class Editor {
         projectManager.create(dir, name);
     }
 
-    public void openProject(Path file) {
+    public void openProject(Path file) throws IOException {
         projectManager.open(file);
+    }
+
+    public Maybe<Path> currentProjectFile() {
+        return projectManager.currentFile();
     }
 
     public boolean isProjectOpen() {

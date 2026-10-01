@@ -6,28 +6,15 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+
+import org.halalfoursome.kebabeditor.utils.Maybe;
 
 public class ProjectManager {
 
-    private static final String MINIMAL_GLTF = """
-        {
-          "asset": {
-            "version": "2.0"
-          }
-        }
-        """;
-
-    private static final String EMPTY_ARCHETYPES = """
-        {
-          "archetypes": []
-        }
-        """;
-
     public static final String ARCHETYPES_FILE = "archetypes.json";
 
-    private Path current;
     private final List<Runnable> listeners = new ArrayList<>();
+    private Maybe<ProjectRepository> repository = Maybe.none();
 
     public void create(Path dir, String name) throws IOException {
         Files.createDirectories(dir);
@@ -44,26 +31,26 @@ public class ProjectManager {
         open(scene);
     }
 
-    public void open(Path file) {
+    public void open(Path file) throws IOException {
         if (!Files.isRegularFile(file)) {
-            throw new IllegalArgumentException("Not a file: " + file);
+            throw new IOException("Not a file: " + file);
         }
 
-        current = file;
+        repository = Maybe.some(ProjectRepository.load(file));
         notifyListeners();
     }
 
     public void close() {
-        current = null;
+        repository = Maybe.none();
         notifyListeners();
     }
 
     public boolean isOpen() {
-        return current != null;
+        return repository.isSome();
     }
 
-    public Optional<Path> currentFile() {
-        return Optional.ofNullable(current);
+    public Maybe<Path> currentFile() {
+        return repository.map(ProjectRepository::filePath);
     }
 
     public void addListener(Runnable listener) {
@@ -73,4 +60,18 @@ public class ProjectManager {
     private void notifyListeners() {
         listeners.forEach(Runnable::run);
     }
+
+    public static final String MINIMAL_GLTF = """
+        {
+          "asset": {
+            "version": "2.0"
+          }
+        }
+        """;
+
+    public static final String EMPTY_ARCHETYPES = """
+        {
+          "archetypes": []
+        }
+        """;
 }

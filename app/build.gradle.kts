@@ -25,6 +25,7 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok:1.18.48")
     testCompileOnly("org.projectlombok:lombok:1.18.48")
     testAnnotationProcessor("org.projectlombok:lombok:1.18.48")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.20.0")
     implementation(libs.guava)
 }
 

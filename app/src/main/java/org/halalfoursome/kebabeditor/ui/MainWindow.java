@@ -27,6 +27,8 @@ import com.formdev.flatlaf.intellijthemes.materialthemeuilite.FlatMTGitHubDarkIJ
 
 public class MainWindow {
 
+    private static final String APP_TITLE = "Kebab Editor";
+
     private final JFrame frame;
     private final Editor editor;
 
@@ -44,16 +46,26 @@ public class MainWindow {
 
         editor = editorInstance;
 
-        frame = new JFrame("Kebab Editor");
+        frame = new JFrame(APP_TITLE);
         menuBar = new MenuBar(frame);
 
         setupLayout();
+
+        editor.addProjectListener(this::updateTitle);
 
         // create editor view and navigation
         // editorView = new EditorView();
         // frame.add(editorView, BorderLayout.CENTER);
         // org.halalfoursome.kebabeditor.ui.navigation.FreeFlightNavigation nav = new org.halalfoursome.kebabeditor.ui.navigation.FreeFlightNavigation();
         // editorView.setNavigationMode(nav);
+    }
+
+    private void updateTitle() {
+        String title = editor.currentProjectFile()
+            .map(file -> file.getFileName() + " - " + APP_TITLE)
+            .unwrapOr(APP_TITLE);
+
+        frame.setTitle(title);
     }
 
     public void show() {
