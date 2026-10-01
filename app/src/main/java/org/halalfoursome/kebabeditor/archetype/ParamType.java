@@ -16,6 +16,17 @@ public enum ParamType {
     VEC3,
     NODE_REF;
 
+    public String displayName() {
+        return switch (this) {
+            case INT        -> "Int";
+            case FLOAT      -> "Float";
+            case BOOL       -> "Boolean";
+            case STRING     -> "String";
+            case VEC3       -> "Vec3";
+            case NODE_REF   -> "NodeRef";
+        };
+    }
+
     @JsonValue
     public String jsonName() {
         return this.name().toLowerCase(Locale.ROOT);
@@ -44,7 +55,7 @@ public enum ParamType {
             case BOOL       -> false;
             case STRING     -> "";
             case VEC3       -> new Vec3();
-            case NODE_REF   -> Maybe.none();
+            case NODE_REF   -> Maybe.none(); // Maybe<String>
         };
     }
 }

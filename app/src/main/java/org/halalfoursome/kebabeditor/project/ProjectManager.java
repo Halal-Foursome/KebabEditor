@@ -5,8 +5,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
+import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeDefinition;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
 public class ProjectManager {
@@ -14,6 +16,7 @@ public class ProjectManager {
     public static final String ARCHETYPES_FILE = "archetypes.json";
 
     private final List<Runnable> listeners = new ArrayList<>();
+    private final RecentProjects recentProjects = new RecentProjects();
     private Maybe<ProjectRepository> repository = Maybe.none();
 
     public void create(Path dir, String name) throws IOException {
@@ -37,6 +40,7 @@ public class ProjectManager {
         }
 
         repository = Maybe.some(ProjectRepository.load(file));
+        recentProjects.add(file);
         notifyListeners();
     }
 
@@ -51,6 +55,18 @@ public class ProjectManager {
 
     public Maybe<Path> currentFile() {
         return repository.map(ProjectRepository::filePath);
+    }
+
+    public List<ArchetypeDefinition> archetypes() {
+        return repository
+            .map(r -> r.archetypeRegistry().getArchetypes().stream()
+                .sorted(Comparator.comparing(ArchetypeDefinition::getId))
+                .toList())
+            .unwrapOr(List.of());
+    }
+
+    public RecentProjects recentProjects() {
+        return recentProjects;
     }
 
     public void addListener(Runnable listener) {

@@ -2,8 +2,12 @@ package org.halalfoursome.kebabeditor.editor;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 
+
+import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeDefinition;
 import org.halalfoursome.kebabeditor.project.ProjectManager;
+import org.halalfoursome.kebabeditor.project.RecentProjects;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
 import lombok.RequiredArgsConstructor;
@@ -27,6 +31,14 @@ public class Editor {
 
     public boolean isProjectOpen() {
         return projectManager.isOpen();
+    }
+
+    public List<ArchetypeDefinition> archetypes() {
+        return projectManager.archetypes();
+    }
+
+    public RecentProjects recentProjects() {
+        return projectManager.recentProjects();
     }
 
     public void addProjectListener(Runnable listener) {
