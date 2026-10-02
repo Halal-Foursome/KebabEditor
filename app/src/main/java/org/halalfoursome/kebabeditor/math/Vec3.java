@@ -1,5 +1,7 @@
 package org.halalfoursome.kebabeditor.math;
 
+import org.halalfoursome.kebabeditor.utils.Maybe;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,6 +14,36 @@ public class Vec3 {
     private float x;
     private float y;
     private float z;
+
+    @Override 
+    public String toString() {
+        return "("+x+", "+y+", "+z+")";
+    }
+
+    public static Maybe<Vec3> fromString(String s) {
+        try {
+            s = s.trim();
+
+            if (!s.startsWith("(") || !s.endsWith(")")) {
+                return Maybe.none();
+            }
+
+            String[] parts = s.substring(1, s.length() - 1)
+                    .split("\\s*,\\s*");
+
+            if (parts.length != 3) {
+                return Maybe.none();
+            }
+
+            return Maybe.some(new Vec3(
+                Float.parseFloat(parts[0]),
+                Float.parseFloat(parts[1]),
+                Float.parseFloat(parts[2])
+            ));
+        } catch (Exception e) {
+            return Maybe.none();
+        }
+    }
 
     public static Vec3 zero() {
         return new Vec3(0, 0, 0);
