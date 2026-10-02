@@ -44,6 +44,10 @@ public class Editor {
         projectManager.addArchetype(definition);
     }
 
+    public void removeArchetype(ArchetypeDefinition definition) throws IOException {
+        projectManager.removeArchetype(definition);
+    }
+
     public void saveArchetypes() throws IOException {
         projectManager.saveArchetypes();
     }

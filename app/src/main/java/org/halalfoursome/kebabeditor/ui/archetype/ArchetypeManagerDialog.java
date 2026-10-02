@@ -82,15 +82,16 @@ public class ArchetypeManagerDialog extends JDialog {
     private JPanel buildFooter(KebabStyle style) {
         JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 8));
 
+        Set<String> existingIds = editor.archetypes().stream()
+            .map(ArchetypeDefinition::getId)
+            .collect(Collectors.toSet());
+
         createButton = new JButton("Create");
         createButton.setFont(style.uiFont());
-        createButton.addActionListener(e -> {
-            Set<String> existingIds = editor.archetypes().stream()
-                .map(ArchetypeDefinition::getId)
-                .collect(Collectors.toSet());
-
-            new CreateArchetypeDialog(this, existingIds, this::addArchetype).setVisible(true);
-        });
+        createButton.addActionListener(e -> 
+            new CreateArchetypeDialog(this, existingIds, this::addArchetype)
+                .setVisible(true)
+        );
         footer.add(createButton);
 
         editButton = new JButton("Edit");
@@ -103,10 +104,17 @@ public class ArchetypeManagerDialog extends JDialog {
 
         duplicateAsButton = new JButton("Duplicate as...");
         duplicateAsButton.setFont(style.uiFont());
+        duplicateAsButton.addActionListener(e ->
+            new DuplicateAsDialog(this, archetypeList.getSelectedValue(), existingIds, this::addArchetype)
+                .setVisible(true)
+        );
         footer.add(duplicateAsButton);
 
         deleteButton = new JButton("Delete");
         deleteButton.setFont(style.uiFont());
+        deleteButton.addActionListener(e -> 
+            removeArchetype(archetypeList.getSelectedValue())
+        );
         footer.add(deleteButton);
 
         updateButtons();
@@ -120,6 +128,16 @@ public class ArchetypeManagerDialog extends JDialog {
             archetypeList.setSelectedValue(definition, true);
         } catch (IOException e) {
             ErrorDialogs.show(this, "Cannot save archetype", e);
+        }
+    }
+
+    private void removeArchetype(ArchetypeDefinition definition) {
+        try {
+            editor.removeArchetype(definition);
+            reload();
+            archetypeList.setSelectedValue(null, true);
+        } catch (IOException e) {
+            ErrorDialogs.show(this, "Cannot save archetypes", e);
         }
     }
 

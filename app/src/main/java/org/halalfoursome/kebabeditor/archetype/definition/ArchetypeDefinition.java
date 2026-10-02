@@ -1,5 +1,6 @@
 package org.halalfoursome.kebabeditor.archetype.definition;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.halalfoursome.kebabeditor.archetype.ArchetypeIcon;
@@ -29,7 +30,7 @@ public class ArchetypeDefinition {
             newId,
             this.displayName,
             this.icon,
-            this.params
+            new LinkedHashMap<>(this.params)
         );
     }
 }
