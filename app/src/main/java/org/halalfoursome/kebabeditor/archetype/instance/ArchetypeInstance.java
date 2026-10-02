@@ -8,6 +8,8 @@ import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeDefinition;
 import org.halalfoursome.kebabeditor.archetype.error.InvalidParamType;
 import org.halalfoursome.kebabeditor.archetype.error.UnknownParamException;
 
+import lombok.NonNull;
+
 public class ArchetypeInstance {
     
     private ArchetypeDefinition definition;
@@ -22,7 +24,7 @@ public class ArchetypeInstance {
         }        
     }
 
-    public Object get(String name) throws UnknownParamException {
+    public Object get(@NonNull String name) throws UnknownParamException {
         try {
             return values.getOrDefault(
                 name, 
@@ -54,7 +56,7 @@ public class ArchetypeInstance {
 
         var found = value.getClass();
 
-        if (found != expected) {
+        if (!expected.isInstance(value)) {
             throw new InvalidParamType(found, expected);
         }
 
