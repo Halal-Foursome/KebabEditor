@@ -4,8 +4,6 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Insets;
-import java.awt.event.WindowEvent;
-import java.util.Optional;
 
 import javax.swing.Box;
 import javax.swing.JDialog;
@@ -15,24 +13,27 @@ import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 
 import org.halalfoursome.kebabeditor.editor.Editor;
-import org.halalfoursome.kebabeditor.ui.menu.CreateProjectDialog;
-import org.halalfoursome.kebabeditor.ui.menu.MenuBar;
-import org.halalfoursome.kebabeditor.ui.menu.MenuButton;
-import org.halalfoursome.kebabeditor.ui.menu.MenuItem;
-import org.halalfoursome.kebabeditor.ui.menu.OptionsDialog;
-import org.halalfoursome.kebabeditor.ui.menu.SeparatorItem;
-import org.halalfoursome.kebabeditor.ui.menu.SingleItem;
-import org.halalfoursome.kebabeditor.utils.FileChooser;
-import org.halalfoursome.kebabeditor.utils.FileChooser.FileChooserMode;
+import org.halalfoursome.kebabeditor.ui.menu.FileMenu;
+import org.halalfoursome.kebabeditor.ui.menu.OptionsMenu;
+import org.halalfoursome.kebabeditor.ui.menu.ProjectMenu;
+import org.halalfoursome.kebabeditor.ui.menu.ViewMenu;
+import org.halalfoursome.kebabeditor.ui.menu.generic.Menu;
+import org.halalfoursome.kebabeditor.ui.menu.generic.MenuBar;
+import org.halalfoursome.kebabeditor.ui.menu.generic.MenuButton;
 import org.halalfoursome.kebabeditor.utils.KebabStyle;
 import org.halalfoursome.kebabeditor.utils.LucideIcon;
 
 import com.formdev.flatlaf.intellijthemes.materialthemeuilite.FlatMTGitHubDarkIJTheme;
 
 public class MainWindow {
-    
+
+    private static final String APP_TITLE = "Kebab Editor";
+
     private final JFrame frame;
+    private final Editor editor;
+
     private final MenuBar menuBar;
+    @SuppressWarnings("unused")
     private EditorView editorView;
 
     static {
@@ -41,20 +42,31 @@ public class MainWindow {
         FlatMTGitHubDarkIJTheme.setup();
     }
 
-    public MainWindow(Editor editor) {
+    public MainWindow(Editor editorInstance) {
         setupStyle();
 
-        frame = new JFrame("Kebab Editor");
+        editor = editorInstance;
+
+        frame = new JFrame(APP_TITLE);
         menuBar = new MenuBar(frame);
 
         setupLayout();
-        setupActions();
+
+        editor.addProjectListener(this::updateTitle);
 
         // create editor view and navigation
-        editorView = new EditorView();
-        frame.add(editorView, BorderLayout.CENTER);
-        org.halalfoursome.kebabeditor.ui.navigation.FreeFlightNavigation nav = new org.halalfoursome.kebabeditor.ui.navigation.FreeFlightNavigation();
-        editorView.setNavigationMode(nav);
+        // editorView = new EditorView();
+        // frame.add(editorView, BorderLayout.CENTER);
+        // org.halalfoursome.kebabeditor.ui.navigation.FreeFlightNavigation nav = new org.halalfoursome.kebabeditor.ui.navigation.FreeFlightNavigation();
+        // editorView.setNavigationMode(nav);
+    }
+
+    private void updateTitle() {
+        String title = editor.currentProjectFile()
+            .map(file -> file.getFileName() + " - " + APP_TITLE)
+            .unwrapOr(APP_TITLE);
+
+        frame.setTitle(title);
     }
 
     public void show() {
@@ -107,11 +119,12 @@ public class MainWindow {
         frame.setLayout(new BorderLayout());
 
         // Menu bar
-        menuBar.addMenu("File", fileMenu());
-        menuBar.addMenu("Edit", new MenuItem[] {});
-        menuBar.addMenu("View", viewMenu());
-        menuBar.addMenu("Options", optionsMenu());
-        menuBar.addMenu("Help", new MenuItem[] {});
+        menuBar.addMenu(new FileMenu(frame, editor));
+        menuBar.addMenu(new ProjectMenu(frame, editor));
+        menuBar.addMenu(new Menu("Edit"));
+        menuBar.addMenu(new ViewMenu(frame, editor));
+        menuBar.addMenu(new OptionsMenu(frame, editor));
+        menuBar.addMenu(new Menu("Help"));
 
         // Glue between menu bar and buttons
         menuBar.add(Box.createGlue());
@@ -135,57 +148,4 @@ public class MainWindow {
             }
         ));
     }
-
-    private MenuItem[] fileMenu() {
-        return new MenuItem[] {
-            new SingleItem("New file...", Optional.of("control N"), () -> {
-                CreateProjectDialog createProjectDialog = new CreateProjectDialog(frame);
-                createProjectDialog.setVisible(true);
-            }),
-
-            new SeparatorItem(),
-
-            new SingleItem("Open file", Optional.of("control O"), () -> {
-                FileChooser fileChooser = new FileChooser(FileChooserMode.FILES);
-                fileChooser.open(frame, file -> {
-                    // TODO: Open file
-                });
-            }),
-
-            new SeparatorItem(),
-
-            new SingleItem("Save", Optional.of("control S"), () -> {
-                // TODO: Save file
-            }),
-
-            new SeparatorItem(),
-
-            new SingleItem("Exit", Optional.of("control Q"), () -> {
-                frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
-            }),
-        };
-    }
-
-    private MenuItem[] viewMenu() {
-        return new MenuItem[] {
-            new SingleItem("Blockout view", Optional.of("control V B"), () -> {
-
-            }),
-
-            new SeparatorItem(),
-        };
-    }
-
-    private MenuItem[] optionsMenu() {
-        return new MenuItem[] {
-            new SingleItem("Blockout view options", Optional.of("control O B"), () -> {
-                OptionsDialog optionsDialog = new OptionsDialog(frame);
-                optionsDialog.setVisible(true);
-            }),
-
-            new SeparatorItem(),
-        };
-    }
-
-    private void setupActions() {}
 }

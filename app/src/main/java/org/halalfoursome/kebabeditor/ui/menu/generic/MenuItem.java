@@ -1,4 +1,4 @@
-package org.halalfoursome.kebabeditor.ui.menu;
+package org.halalfoursome.kebabeditor.ui.menu.generic;
 
 import javax.swing.JComponent;
 

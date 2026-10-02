@@ -1,4 +1,4 @@
-package org.halalfoursome.kebabeditor.ui.menu;
+package org.halalfoursome.kebabeditor.ui.project;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -6,14 +6,17 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Optional;
 
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.JTextField;
@@ -21,6 +24,8 @@ import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
+import org.halalfoursome.kebabeditor.editor.Editor;
+import org.halalfoursome.kebabeditor.utils.ErrorDialogs;
 import org.halalfoursome.kebabeditor.utils.FileChooser;
 import org.halalfoursome.kebabeditor.utils.FileChooser.FileChooserMode;
 import org.halalfoursome.kebabeditor.utils.KebabStyle;
@@ -30,19 +35,15 @@ public class CreateProjectDialog extends JDialog {
     private final JTextField locationField = new JTextField(24);
     private final JTextField nameField = new JTextField("Untitled", 24);
 
-
     private final JComboBox<String> templateField = new JComboBox<>(new String[] {
         "blank",
         "default preset",
     });
 
-    private final JCheckBox openAfterCreateCheckBox = new JCheckBox("Open after create", true);
-    private final JCheckBox createFolderCheckBox = new JCheckBox("Create folder for project", true);
-
     JButton createButton = new JButton("Create");
     JButton cancelButton = new JButton("Cancel");
 
-    public CreateProjectDialog(JFrame owner) {
+    public CreateProjectDialog(JFrame owner, Editor editor) {
         super(owner, "New Project", true);
 
         KebabStyle style = KebabStyle.getCurrent();
@@ -54,7 +55,7 @@ public class CreateProjectDialog extends JDialog {
         add(buildHeader(style), BorderLayout.NORTH);
         add(buildSidebar(style), BorderLayout.WEST);
         add(buildMainPanel(style, owner), BorderLayout.CENTER);
-        add(buildFooter(style), BorderLayout.SOUTH);
+        add(buildFooter(style, editor), BorderLayout.SOUTH);
 
         pack();
         setLocationRelativeTo(owner);
@@ -101,18 +102,9 @@ public class CreateProjectDialog extends JDialog {
         sidebar.add(new JSeparator(SwingConstants.HORIZONTAL), constraints);
 
         constraints.gridy = 2;
-        sidebar.add(labeledRow(style, "Template", templateField), constraints);
+        sidebar.add(labeledRow(style, "Template", Optional.empty(), templateField), constraints);
 
         constraints.gridy = 3;
-        sidebar.add(openAfterCreateCheckBox, constraints);
-
-        constraints.gridy = 4;
-        createFolderCheckBox.addActionListener(e -> {
-            nameField.setEnabled(createFolderCheckBox.isSelected());
-        });
-        sidebar.add(createFolderCheckBox, constraints);
-
-        constraints.gridy = 5;
         constraints.weighty = 1.0;
         sidebar.add(new JPanel(), constraints);
 
@@ -128,15 +120,12 @@ public class CreateProjectDialog extends JDialog {
         constraints.insets = new Insets(54, 16, 8, 16);
 
         constraints.gridy = 0;
-        content.add(new JSeparator(SwingConstants.HORIZONTAL), constraints);
+        content.add(labeledRow(style, "Location", Optional.empty(), buildLocationRow(owner)), constraints);
 
         constraints.gridy = 1;
-        content.add(labeledRow(style, "Location", buildLocationRow(owner)), constraints);
+        content.add(labeledRow(style, "Level name", Optional.of(".gltf"), nameField), constraints);
 
         constraints.gridy = 2;
-        content.add(labeledRow(style, "Folder name", nameField), constraints);
-
-        constraints.gridy = 3;
         constraints.weighty = 1.0;
         content.add(new JPanel(), constraints);
 
@@ -171,13 +160,29 @@ public class CreateProjectDialog extends JDialog {
         return row;
     }
 
-    private JPanel buildFooter(KebabStyle style) {
+    private JPanel buildFooter(KebabStyle style, Editor editor) {
         JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 10));
 
         cancelButton.addActionListener(e -> dispose());
+        cancelButton.setFont(style.uiFont());
 
-        createButton.addActionListener(e -> dispose());
+        createButton.addActionListener(e -> {
+            String name = nameField.getText().trim();
+
+            if (name.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Level name must not be empty", "New Project", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            try {
+                editor.createProject(Path.of(locationField.getText().trim()), name);
+                dispose();
+            } catch (IOException ex) {
+                ErrorDialogs.show(this, "Cannot create project", ex);
+            }
+        });
         createButton.setEnabled(false);
+        createButton.setFont(style.uiFont());
 
         footer.add(cancelButton);
         footer.add(createButton);
@@ -185,7 +190,9 @@ public class CreateProjectDialog extends JDialog {
         return footer;
     }
 
-    private JPanel labeledRow(KebabStyle style, String label, JComponent field) {
+    private JPanel labeledRow(KebabStyle style, String label, Optional<String> suffix, JComponent field) {
+        field.setFont(style.uiFont());
+
         JPanel row = new JPanel(new BorderLayout(0, 6));
 
         JLabel text = new JLabel(label);
@@ -193,6 +200,12 @@ public class CreateProjectDialog extends JDialog {
 
         row.add(text, BorderLayout.NORTH);
         row.add(field, BorderLayout.CENTER);
+
+        if (suffix.isPresent()) {
+            JLabel suffixLabel = new JLabel(suffix.get());
+            suffixLabel.setFont(style.uiFont());
+            row.add(suffixLabel, BorderLayout.EAST);
+        }
 
         return row;
     }

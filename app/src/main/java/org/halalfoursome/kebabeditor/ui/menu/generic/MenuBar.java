@@ -1,4 +1,4 @@
-package org.halalfoursome.kebabeditor.ui.menu;
+package org.halalfoursome.kebabeditor.ui.menu.generic;
 
 import java.awt.Dimension;
 
@@ -16,6 +16,10 @@ public class MenuBar extends JMenuBar {
 
         setFont(style.uiFont());
         frame.setJMenuBar(this);
+    }
+
+    public void addMenu(Menu menu) {
+        add(menu.component());
     }
 
     public void addMenu(String label, MenuItem[] items) {
