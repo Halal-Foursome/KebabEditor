@@ -3,7 +3,6 @@ package org.halalfoursome.kebabeditor.project;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -11,27 +10,20 @@ import java.util.List;
 import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeDefinition;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
+import lombok.RequiredArgsConstructor;
+
+@RequiredArgsConstructor
 public class ProjectManager {
 
-    public static final String ARCHETYPES_FILE = "archetypes.json";
-
     private final List<Runnable> listeners = new ArrayList<>();
-    private final RecentProjects recentProjects = new RecentProjects();
+    private final RecentProjects recentProjects;
+    private final ProjectWriter writer;
+    private final ProjectLoader loader;
+
     private Maybe<ProjectRepository> repository = Maybe.none();
 
     public void create(Path dir, String name) throws IOException {
-        Files.createDirectories(dir);
-
-        Path scene = dir.resolve(name + ".gltf");
-        Files.writeString(scene, MINIMAL_GLTF, StandardOpenOption.CREATE_NEW);
-
-        // one archetypes file is shared by all scenes in the same folder
-        Path archetypes = dir.resolve(ARCHETYPES_FILE);
-        if (!Files.exists(archetypes)) {
-            Files.writeString(archetypes, EMPTY_ARCHETYPES);
-        }
-
-        open(scene);
+        open(writer.createProject(dir, name));
     }
 
     public void open(Path file) throws IOException {
@@ -39,7 +31,7 @@ public class ProjectManager {
             throw new IOException("Not a file: " + file);
         }
 
-        repository = Maybe.some(ProjectRepository.load(file));
+        repository = Maybe.some(loader.load(file));
         recentProjects.add(file);
         notifyListeners();
     }
@@ -61,7 +53,8 @@ public class ProjectManager {
         return repository
             .map(r -> r.archetypeRegistry().getArchetypes().stream()
                 .sorted(Comparator.comparing(ArchetypeDefinition::getId))
-                .toList())
+                .toList()
+            )
             .unwrapOr(List.of());
     }
 
@@ -76,18 +69,4 @@ public class ProjectManager {
     private void notifyListeners() {
         listeners.forEach(Runnable::run);
     }
-
-    public static final String MINIMAL_GLTF = """
-        {
-          "asset": {
-            "version": "2.0"
-          }
-        }
-        """;
-
-    public static final String EMPTY_ARCHETYPES = """
-        {
-          "archetypes": []
-        }
-        """;
 }

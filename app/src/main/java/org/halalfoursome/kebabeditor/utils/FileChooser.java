@@ -1,11 +1,10 @@
 package org.halalfoursome.kebabeditor.utils;
 
+import java.awt.Component;
 import java.io.File;
 import java.io.IOException;
 
 import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class FileChooser {
@@ -59,32 +58,27 @@ public class FileChooser {
         return this;
     }
 
-    public void open(JFrame frame, FileHandler onOpen) {
+    public void open(Component frame, FileHandler onOpen) {
         int result = fileChooser.showOpenDialog(frame);
         if (result == JFileChooser.APPROVE_OPTION) {
             handle(frame, onOpen, "Failed to open file");
         }
     }
 
-    public void save(JFrame frame, FileHandler onSave) {
+    public void save(Component frame, FileHandler onSave) {
         int result = fileChooser.showSaveDialog(frame);
         if (result == JFileChooser.APPROVE_OPTION) {
             handle(frame, onSave, "Failed to save file");
         }
     }
 
-    private void handle(JFrame frame, FileHandler handler, String title) {
+    private void handle(Component frame, FileHandler handler, String title) {
         File file = fileChooser.getSelectedFile();
         
         try {
             handler.accept(file);
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(
-                frame,
-                file.getName() + ": " + e.getMessage(),
-                title,
-                JOptionPane.ERROR_MESSAGE
-            );
+            ErrorDialogs.show(frame, title, e);
         }
     }
 }

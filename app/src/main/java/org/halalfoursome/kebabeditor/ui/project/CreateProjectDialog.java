@@ -25,6 +25,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 import org.halalfoursome.kebabeditor.editor.Editor;
+import org.halalfoursome.kebabeditor.utils.ErrorDialogs;
 import org.halalfoursome.kebabeditor.utils.FileChooser;
 import org.halalfoursome.kebabeditor.utils.FileChooser.FileChooserMode;
 import org.halalfoursome.kebabeditor.utils.KebabStyle;
@@ -176,8 +177,8 @@ public class CreateProjectDialog extends JDialog {
             try {
                 editor.createProject(Path.of(locationField.getText().trim()), name);
                 dispose();
-            } catch (IOException | RuntimeException ex) {
-                JOptionPane.showMessageDialog(this, "Cannot create project: " + ex, "New Project", JOptionPane.ERROR_MESSAGE);
+            } catch (IOException ex) {
+                ErrorDialogs.show(this, "Cannot create project", ex);
             }
         });
         createButton.setEnabled(false);

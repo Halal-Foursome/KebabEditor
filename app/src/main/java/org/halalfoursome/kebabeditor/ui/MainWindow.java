@@ -33,6 +33,7 @@ public class MainWindow {
     private final Editor editor;
 
     private final MenuBar menuBar;
+    @SuppressWarnings("unused")
     private EditorView editorView;
 
     static {

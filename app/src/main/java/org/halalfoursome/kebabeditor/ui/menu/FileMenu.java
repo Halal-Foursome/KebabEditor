@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Optional;
 
 import javax.swing.JFrame;
-import javax.swing.JOptionPane;
 
 import org.halalfoursome.kebabeditor.editor.Editor;
 import org.halalfoursome.kebabeditor.project.RecentProjects;
@@ -17,6 +16,7 @@ import org.halalfoursome.kebabeditor.ui.menu.generic.MenuItem;
 import org.halalfoursome.kebabeditor.ui.menu.generic.SeparatorItem;
 import org.halalfoursome.kebabeditor.ui.menu.generic.SingleItem;
 import org.halalfoursome.kebabeditor.ui.project.CreateProjectDialog;
+import org.halalfoursome.kebabeditor.utils.ErrorDialogs;
 import org.halalfoursome.kebabeditor.utils.FileChooser;
 import org.halalfoursome.kebabeditor.utils.FileChooser.FileChooserMode;
 
@@ -76,12 +76,7 @@ public class FileMenu extends Menu {
                     } catch (IOException e) {
                         recent.remove(path);
                         updateRecent(menu, frame, editor);
-                        JOptionPane.showMessageDialog(
-                            frame,
-                            path.getFileName() + ": " + e.getMessage(),
-                            "Failed to open file",
-                            JOptionPane.ERROR_MESSAGE
-                        );
+                        ErrorDialogs.show(frame, "Failed to open file", e);
                     }
                 }
             ));

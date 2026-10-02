@@ -7,35 +7,55 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.io.File;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.KeyEvent;
 import java.util.function.Consumer;
 
 import javax.swing.*;
-import javax.swing.filechooser.FileNameExtensionFilter;
 
-import org.halalfoursome.kebabeditor.archetype.ParamType;
+import org.halalfoursome.kebabeditor.archetype.ArchetypeIcon;
 import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeDefinition;
+import org.halalfoursome.kebabeditor.ui.validation.Rules;
+import org.halalfoursome.kebabeditor.ui.validation.ValidationGroup;
 import org.halalfoursome.kebabeditor.utils.KebabStyle;
+import org.halalfoursome.kebabeditor.utils.Maybe;
 
 public class CreateArchetypeDialog extends JDialog {
 
+    private final ValidationGroup validation = new ValidationGroup();
+    private final Consumer<ArchetypeDefinition> onCreate;
+
     private final JTextField idField = new JTextField();
     private final JTextField displayNameField = new JTextField();
-    private final JTextField iconPathField = new JTextField();
-    private final JPanel paramsPanel = new JPanel();
-    private File iconFile;
+    private final IconPickerPanel iconPicker;
+    private final ParamListPanel paramList;
+    private JButton createButton;
 
     public CreateArchetypeDialog(JDialog owner, Consumer<ArchetypeDefinition> consumer) {
         super(owner, "Create new archetype", true);
 
         KebabStyle style = KebabStyle.getCurrent();
+        onCreate = consumer;
+        iconPicker = new IconPickerPanel(style);
+        paramList = new ParamListPanel(style, validation);
+
+        addComponentListener(new CreateArchetypeAdapter());
+        validation.addListener(this::updateCreateEnabled);
 
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setLayout(new BorderLayout());
-        setMinimumSize(new Dimension(540, 420));
+        setMinimumSize(new Dimension(540, 640));
 
         add(buildCenter(style), BorderLayout.CENTER);
         add(buildFooter(style), BorderLayout.SOUTH);
+
+        // Escape closes the dialog
+        getRootPane().registerKeyboardAction(
+            e -> dispose(),
+            KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
+            JComponent.WHEN_IN_FOCUSED_WINDOW
+        );
 
         setLocationRelativeTo(owner);
     }
@@ -48,45 +68,34 @@ public class CreateArchetypeDialog extends JDialog {
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.insets = new Insets(8, 16, 4, 16);
 
-        // id
-        center.add(label("ID", style), constraints);
         idField.setFont(style.uiFont());
-        center.add(idField, constraints);
+        validation.add(idField, Rules.identifier("ID"));
+        addLabeled(center, constraints, "ID", idField, style);
+
         JLabel idNote = label("The ID cannot be changed after the archetype is created.", style);
         idNote.setFont(style.uiFont().deriveFont(Font.ITALIC, style.uiFont().getSize2D() - 1f));
         center.add(idNote, constraints);
 
-        // display name
-        center.add(label("Display name", style), constraints);
         displayNameField.setFont(style.uiFont());
-        center.add(displayNameField, constraints);
+        validation.add(displayNameField, Rules.notEmpty("Display name"));
+        addLabeled(center, constraints, "Display name", displayNameField, style);
 
-        // icon
-        center.add(label("Icon", style), constraints);
-        center.add(buildIconPicker(style), constraints);
+        addLabeled(center, constraints, "Icon", iconPicker, style);
 
-        // params
-        JPanel paramsHeader = new JPanel(new BorderLayout());
-        paramsHeader.add(label("Parameters", style), BorderLayout.WEST);
-        JButton addButton = new JButton("Add");
-        addButton.setFont(style.uiFont());
-        addButton.addActionListener(e -> addParamRow(style));
-        paramsHeader.add(addButton, BorderLayout.EAST);
-        center.add(paramsHeader, constraints);
-
-        paramsPanel.setLayout(new BoxLayout(paramsPanel, BoxLayout.Y_AXIS));
-        JPanel paramsWrapper = new JPanel(new BorderLayout());
-        paramsWrapper.add(paramsPanel, BorderLayout.NORTH);
-        JScrollPane scrollPane = new JScrollPane(paramsWrapper);
-        scrollPane.setPreferredSize(new Dimension(0, 140));
-        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
-
+        // the parameter list takes all remaining space
         constraints.weighty = 1.0;
         constraints.fill = GridBagConstraints.BOTH;
-        constraints.insets = new Insets(4, 16, 8, 16);
-        center.add(scrollPane, constraints);
+        center.add(paramList, constraints);
 
         return center;
+    }
+
+    private void addLabeled(
+        JPanel panel, GridBagConstraints constraints,
+        String text, JComponent component, KebabStyle style
+    ) {
+        panel.add(label(text, style), constraints);
+        panel.add(component, constraints);
     }
 
     private JLabel label(String text, KebabStyle style) {
@@ -95,77 +104,33 @@ public class CreateArchetypeDialog extends JDialog {
         return label;
     }
 
-    private JComponent buildIconPicker(KebabStyle style) {
-        JPanel panel = new JPanel(new BorderLayout(8, 0));
+    private ArchetypeDefinition buildDefinition() {
+        Maybe<ArchetypeIcon> icon = iconPicker.selectedFile()
+            .<ArchetypeIcon>map(file -> new ArchetypeIcon.Handle(file.getAbsolutePath()));
 
-        iconPathField.setEditable(false);
-        iconPathField.setFont(style.uiFont());
-        panel.add(iconPathField, BorderLayout.CENTER);
-
-        JButton browse = new JButton("Browse...");
-        browse.setFont(style.uiFont());
-        browse.addActionListener(e -> {
-            JFileChooser chooser = new JFileChooser();
-            chooser.setFileFilter(new FileNameExtensionFilter(
-                    "Images (png, jpg, gif, svg)", "png", "jpg", "jpeg", "gif", "svg"));
-            if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-                iconFile = chooser.getSelectedFile();
-                iconPathField.setText(iconFile.getAbsolutePath());
-            }
-        });
-        panel.add(browse, BorderLayout.EAST);
-
-        return panel;
+        return new ArchetypeDefinition(
+            idField.getText(),
+            displayNameField.getText().trim(),
+            icon,
+            paramList.params()
+        );
     }
 
-    private void addParamRow(KebabStyle style) {
-        JPanel row = new JPanel(new GridBagLayout());
-        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, row.getPreferredSize().height));
-        GridBagConstraints c = new GridBagConstraints();
-        c.insets = new Insets(2, 4, 2, 4);
-        c.fill = GridBagConstraints.HORIZONTAL;
-
-        JTextField nameField = new JTextField();
-        nameField.setFont(style.uiFont());
-        c.weightx = 1.0;
-        row.add(nameField, c);
-
-        JComboBox<ParamType> typeBox = new JComboBox<>(ParamType.values());
-        typeBox.setFont(style.uiFont());
-        typeBox.setRenderer(new DefaultListCellRenderer() {
-            @Override
-            public java.awt.Component getListCellRendererComponent(JList<?> list, Object value, int index,
-                    boolean isSelected, boolean cellHasFocus) {
-                return super.getListCellRendererComponent(list,
-                        value instanceof ParamType type ? type.displayName() : value,
-                        index, isSelected, cellHasFocus);
-            }
-        });
-        c.weightx = 0;
-        row.add(typeBox, c);
-
-        JButton removeButton = new JButton("Remove");
-        removeButton.setFont(style.uiFont());
-        removeButton.addActionListener(e -> {
-            paramsPanel.remove(row);
-            paramsPanel.revalidate();
-            paramsPanel.repaint();
-        });
-        row.add(removeButton, c);
-
-        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, row.getPreferredSize().height));
-        paramsPanel.add(row);
-        paramsPanel.revalidate();
-        paramsPanel.repaint();
+    private void updateCreateEnabled() {
+        if (createButton != null) {
+            createButton.setEnabled(validation.isValid());
+        }
     }
 
     private JPanel buildFooter(KebabStyle style) {
         JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 8));
 
-        JButton createButton = new JButton("Create");
+        createButton = new JButton("Create");
         createButton.setFont(style.uiFont());
+        updateCreateEnabled();
         createButton.addActionListener(e -> {
-            
+            onCreate.accept(buildDefinition());
+            dispose();
         });
         footer.add(createButton);
 
@@ -175,5 +140,16 @@ public class CreateArchetypeDialog extends JDialog {
         footer.add(cancelButton);
 
         return footer;
+    }
+
+    private class CreateArchetypeAdapter extends ComponentAdapter {
+
+        @Override public void componentMoved(ComponentEvent e) { 
+            validation.hidePopups(); 
+        }
+
+        @Override public void componentResized(ComponentEvent e) { 
+            validation.hidePopups();
+        }
     }
 }

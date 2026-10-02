@@ -13,6 +13,7 @@ public enum ParamType {
     FLOAT,
     BOOL,
     STRING,
+    REL_PATH,
     VEC3,
     NODE_REF;
 
@@ -24,6 +25,7 @@ public enum ParamType {
             case STRING     -> "String";
             case VEC3       -> "Vec3";
             case NODE_REF   -> "NodeRef";
+            case REL_PATH   -> "RelPath";
         };
     }
 
@@ -43,6 +45,7 @@ public enum ParamType {
             case FLOAT      -> Float.class;
             case BOOL       -> Boolean.class;
             case STRING     -> String.class;
+            case REL_PATH   -> String.class;
             case VEC3       -> Vec3.class;
             case NODE_REF   -> Maybe.class; // Maybe<String>
         };
@@ -54,6 +57,7 @@ public enum ParamType {
             case FLOAT      -> 0.0f;
             case BOOL       -> false;
             case STRING     -> "";
+            case REL_PATH   -> "";
             case VEC3       -> new Vec3();
             case NODE_REF   -> Maybe.none(); // Maybe<String>
         };
