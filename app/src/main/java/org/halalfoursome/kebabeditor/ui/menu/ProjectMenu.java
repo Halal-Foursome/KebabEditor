@@ -18,7 +18,7 @@ public class ProjectMenu extends Menu {
         SingleItem manageArchetypes = new SingleItem(
             "Manage archetypes", 
             Optional.of("control shift A"), 
-            () -> new ArchetypeManagerDialog(frame, editor.archetypes()).setVisible(true)
+            () -> new ArchetypeManagerDialog(frame, editor).setVisible(true)
         );
 
         manageArchetypes.setEnabled(editor.isProjectOpen());

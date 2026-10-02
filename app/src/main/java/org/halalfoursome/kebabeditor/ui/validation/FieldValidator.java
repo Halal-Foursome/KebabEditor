@@ -72,7 +72,6 @@ public final class FieldValidator {
         popup.setVisible(false);
     }
 
-    /** Re-checks the rule and updates the border and popup. Does not notify the group. */
     public void updateVisuals() {
         Maybe<String> error = rule.check(field.getText());
         field.setBorder(error.isSome() && touched ? ERROR_BORDER : UIManager.getBorder("TextField.border"));

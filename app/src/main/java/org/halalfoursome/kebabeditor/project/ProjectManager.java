@@ -58,6 +58,34 @@ public class ProjectManager {
             .unwrapOr(List.of());
     }
 
+    public void addArchetype(ArchetypeDefinition definition) throws IOException {
+        if (repository.isNone()) {
+            throw new IllegalStateException("No project is open");
+        }
+
+        ProjectRepository current = repository.unwrap();
+        current.archetypeRegistry().add(definition);
+
+        try {
+            writer.saveArchetypes(current.filePath(), current.archetypeRegistry());
+        } catch (IOException e) {
+            current.archetypeRegistry().remove(definition);
+            throw e;
+        }
+
+        notifyListeners();
+    }
+
+    public void save() throws IOException {
+        if (repository.isNone()) {
+            throw new IllegalStateException("No project is open");
+        }
+
+        ProjectRepository current = repository.unwrap();
+        writer.saveScene(current.filePath(), current.currentSceneData());
+        writer.saveArchetypes(current.filePath(), current.archetypeRegistry());
+    }
+
     public RecentProjects recentProjects() {
         return recentProjects;
     }

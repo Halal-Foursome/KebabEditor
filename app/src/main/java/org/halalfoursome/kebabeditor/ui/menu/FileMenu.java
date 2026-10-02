@@ -49,7 +49,13 @@ public class FileMenu extends Menu {
             new SeparatorItem(),
 
             new SingleItem("Save", Optional.of("control S"), () -> {
-                // TODO: Save file
+                if (editor.isProjectOpen()) {
+                    try {
+                        editor.saveProject();
+                    } catch (IOException e) {
+                        ErrorDialogs.show(frame, "Cannot save project", e);
+                    }
+                }
             }),
 
             new SeparatorItem(),

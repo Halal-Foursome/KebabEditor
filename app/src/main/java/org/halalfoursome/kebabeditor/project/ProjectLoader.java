@@ -5,6 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeRegistry;
+import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeRegistryJson;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -19,8 +20,7 @@ public class ProjectLoader {
         // Temporarily, scene is just an unparsed glTF string 🥂
         String currentSceneData = Files.readString(file);
 
-        Path registryPath = file.toAbsolutePath()
-            .resolveSibling(ProjectTemplates.ARCHETYPES_FILE);
+        Path registryPath = ProjectTemplates.archetypesFileFor(file);
 
         return new ProjectRepository(
             file, 
@@ -38,7 +38,7 @@ public class ProjectLoader {
 
         return mapper.readValue(
             Files.readString(registryPath),
-            ArchetypeRegistry.class
-        );
+            ArchetypeRegistryJson.class
+        ).toRegistry();
     }
 }

@@ -10,6 +10,7 @@ import java.awt.Insets;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import javax.swing.*;
@@ -32,7 +33,11 @@ public class CreateArchetypeDialog extends JDialog {
     private final ParamListPanel paramList;
     private JButton createButton;
 
-    public CreateArchetypeDialog(JDialog owner, Consumer<ArchetypeDefinition> consumer) {
+    public CreateArchetypeDialog(
+        JDialog owner, 
+        Set<String> existingIds,
+        Consumer<ArchetypeDefinition> consumer
+    ) {
         super(owner, "Create new archetype", true);
 
         KebabStyle style = KebabStyle.getCurrent();
@@ -47,7 +52,7 @@ public class CreateArchetypeDialog extends JDialog {
         setLayout(new BorderLayout());
         setMinimumSize(new Dimension(540, 640));
 
-        add(buildCenter(style), BorderLayout.CENTER);
+        add(buildCenter(style, existingIds), BorderLayout.CENTER);
         add(buildFooter(style), BorderLayout.SOUTH);
 
         // Escape closes the dialog
@@ -60,7 +65,7 @@ public class CreateArchetypeDialog extends JDialog {
         setLocationRelativeTo(owner);
     }
 
-    private JComponent buildCenter(KebabStyle style) {
+    private JComponent buildCenter(KebabStyle style, Set<String> existingIds) {
         JPanel center = new JPanel(new GridBagLayout());
         GridBagConstraints constraints = new GridBagConstraints();
         constraints.gridx = 0;
@@ -69,7 +74,10 @@ public class CreateArchetypeDialog extends JDialog {
         constraints.insets = new Insets(8, 16, 4, 16);
 
         idField.setFont(style.uiFont());
-        validation.add(idField, Rules.identifier("ID"));
+        validation.add(idField, Rules.all(
+            Rules.identifier("ID"),
+            Rules.unique("ID", () -> existingIds)
+        ));
         addLabeled(center, constraints, "ID", idField, style);
 
         JLabel idNote = label("The ID cannot be changed after the archetype is created.", style);

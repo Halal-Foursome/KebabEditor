@@ -4,16 +4,22 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.util.List;
+import java.awt.event.KeyEvent;
+import java.io.IOException;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.swing.*;
 
 import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeDefinition;
+import org.halalfoursome.kebabeditor.editor.Editor;
+import org.halalfoursome.kebabeditor.utils.ErrorDialogs;
 import org.halalfoursome.kebabeditor.utils.KebabStyle;
 
 public class ArchetypeManagerDialog extends JDialog {
 
-    private final List<ArchetypeDefinition> archetypes;
+    private final Editor editor;
+    private final DefaultListModel<ArchetypeDefinition> model = new DefaultListModel<>();
 
     private JList<ArchetypeDefinition> archetypeList;
     private JButton createButton;
@@ -21,10 +27,10 @@ public class ArchetypeManagerDialog extends JDialog {
     private JButton duplicateAsButton;
     private JButton deleteButton;
 
-    public ArchetypeManagerDialog(JFrame owner, List<ArchetypeDefinition> archetypes) {
+    public ArchetypeManagerDialog(JFrame owner, Editor editor) {
         super(owner, "Manage archetypes", true);
 
-        this.archetypes = archetypes;
+        this.editor = editor;
 
         KebabStyle style = KebabStyle.getCurrent();
 
@@ -36,12 +42,18 @@ public class ArchetypeManagerDialog extends JDialog {
         add(buildFooter(style), BorderLayout.SOUTH);
 
         pack();
+
+        // Escape closes the dialog
+        getRootPane().registerKeyboardAction(
+            e -> dispose(),
+            KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
+            JComponent.WHEN_IN_FOCUSED_WINDOW
+        );
         setLocationRelativeTo(owner);
     }
 
     private JComponent buildCenter(KebabStyle style) {
-        DefaultListModel<ArchetypeDefinition> model = new DefaultListModel<>();
-        model.addAll(archetypes);
+        reload();
 
         archetypeList = new JList<>(model);
         archetypeList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -73,11 +85,11 @@ public class ArchetypeManagerDialog extends JDialog {
         createButton = new JButton("Create");
         createButton.setFont(style.uiFont());
         createButton.addActionListener(e -> {
-            CreateArchetypeDialog dialog = new CreateArchetypeDialog(
-                this,
-                archDef -> {}
-            );
-            dialog.setVisible(true);
+            Set<String> existingIds = editor.archetypes().stream()
+                .map(ArchetypeDefinition::getId)
+                .collect(Collectors.toSet());
+
+            new CreateArchetypeDialog(this, existingIds, this::addArchetype).setVisible(true);
         });
         footer.add(createButton);
 
@@ -95,6 +107,22 @@ public class ArchetypeManagerDialog extends JDialog {
 
         updateButtons();
         return footer;
+    }
+
+    private void addArchetype(ArchetypeDefinition definition) {
+        try {
+            editor.addArchetype(definition);
+            reload();
+            archetypeList.setSelectedValue(definition, true);
+        } catch (IOException e) {
+            ErrorDialogs.show(this, "Cannot save archetype", e);
+        }
+    }
+
+    // the editor holds the real archetypes; the list model is only a view of them
+    private void reload() {
+        model.clear();
+        model.addAll(editor.archetypes());
     }
 
     private void updateButtons() {

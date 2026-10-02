@@ -25,6 +25,10 @@ public class Editor {
         projectManager.open(file);
     }
 
+    public void saveProject() throws IOException {
+        projectManager.save();
+    }
+
     public Maybe<Path> currentProjectFile() {
         return projectManager.currentFile();
     }
@@ -35,6 +39,10 @@ public class Editor {
 
     public List<ArchetypeDefinition> archetypes() {
         return projectManager.archetypes();
+    }
+
+    public void addArchetype(ArchetypeDefinition definition) throws IOException {
+        projectManager.addArchetype(definition);
     }
 
     public RecentProjects recentProjects() {

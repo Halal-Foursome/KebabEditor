@@ -32,14 +32,12 @@ public final class Rules {
         };
     }
 
-    /** Fails if another field already holds the same text, ignoring case. */
     public static Rule unique(String name, Supplier<Collection<String>> others) {
         return text -> others.get().stream().anyMatch(other -> other.equalsIgnoreCase(text.trim()))
             ? Maybe.some(name + " must be unique")
             : Maybe.none();
     }
 
-    /** Applies the rules in order and reports the first error. */
     public static Rule all(Rule... rules) {
         return text -> {
             for (Rule rule : rules) {

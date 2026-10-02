@@ -19,8 +19,9 @@ public class KebabApplication {
             KebabStyle.setCurrent(KebabStyle.defaultStyle());
 
             RecentProjects recentProjects = new RecentProjects();
-            ProjectWriter writer = new ProjectWriter();
-            ProjectLoader loader = new ProjectLoader(new ObjectMapper());
+            ObjectMapper mapper = new ObjectMapper();
+            ProjectWriter writer = new ProjectWriter(mapper);
+            ProjectLoader loader = new ProjectLoader(mapper);
             ProjectManager projectManager = new ProjectManager(
                 recentProjects,
                 writer,

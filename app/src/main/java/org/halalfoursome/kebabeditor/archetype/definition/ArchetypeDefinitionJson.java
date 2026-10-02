@@ -13,6 +13,18 @@ public record ArchetypeDefinitionJson(
     @Nullable String icon,
     Map<String, ParamType> params
 ) {
+    public static ArchetypeDefinitionJson from(ArchetypeDefinition def) {
+        // only a handle has a path that can be stored
+        String icon = null;
+        if (def.getIcon() instanceof Maybe.Some<ArchetypeIcon>(var value)
+            && value instanceof ArchetypeIcon.Handle handle
+        ) {
+            icon = handle.path();
+        }
+
+        return new ArchetypeDefinitionJson(def.getId(), def.getDisplayName(), icon, def.getParams());
+    }
+
     public ArchetypeDefinition toDefinition() {
         return new ArchetypeDefinition(
             id,
