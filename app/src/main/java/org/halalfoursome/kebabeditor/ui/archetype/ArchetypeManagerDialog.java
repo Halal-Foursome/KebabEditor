@@ -82,30 +82,23 @@ public class ArchetypeManagerDialog extends JDialog {
     private JPanel buildFooter(KebabStyle style) {
         JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 8));
 
-        Set<String> existingIds = editor.archetypes().stream()
-            .map(ArchetypeDefinition::getId)
-            .collect(Collectors.toSet());
-
         createButton = new JButton("Create");
         createButton.setFont(style.uiFont());
         createButton.addActionListener(e -> 
-            new CreateArchetypeDialog(this, existingIds, this::addArchetype)
+            new CreateArchetypeDialog(this, this::existingIds, this::addArchetype)
                 .setVisible(true)
         );
         footer.add(createButton);
 
         editButton = new JButton("Edit");
         editButton.setFont(style.uiFont());
-        editButton.addActionListener(e ->
-            new EditArchetypeDialog(this, archetypeList.getSelectedValue(), this::onArchetypeEdited)
-                .setVisible(true)
-        );
+        editButton.addActionListener(e -> editSelected());
         footer.add(editButton);
 
         duplicateAsButton = new JButton("Duplicate as...");
         duplicateAsButton.setFont(style.uiFont());
         duplicateAsButton.addActionListener(e ->
-            new DuplicateAsDialog(this, archetypeList.getSelectedValue(), existingIds, this::addArchetype)
+            new DuplicateAsDialog(this, archetypeList.getSelectedValue(), this::existingIds, this::addArchetype)
                 .setVisible(true)
         );
         footer.add(duplicateAsButton);
@@ -141,12 +134,30 @@ public class ArchetypeManagerDialog extends JDialog {
         }
     }
 
-    private void onArchetypeEdited() {
+    private void editSelected() {
+        ArchetypeDefinition definition = archetypeList.getSelectedValue();
+        ArchetypeDefinition snapshot = definition.duplicateAs(definition.getId());
+
+        new EditArchetypeDialog(this, definition, () -> onArchetypeEdited(definition, snapshot))
+            .setVisible(true);
+    }
+
+    private void onArchetypeEdited(ArchetypeDefinition definition, ArchetypeDefinition snapshot) {
         try {
             editor.saveArchetypes();
         } catch (IOException e) {
+            definition.setDisplayName(snapshot.getDisplayName());
+            definition.setIcon(snapshot.getIcon());
+            definition.setParams(snapshot.getParams());
             ErrorDialogs.show(this, "Cannot save archetypes", e);
         }
+        archetypeList.repaint();
+    }
+
+    private Set<String> existingIds() {
+        return editor.archetypes().stream()
+            .map(ArchetypeDefinition::getId)
+            .collect(Collectors.toSet());
     }
 
     // the editor holds the real archetypes; the list model is only a view of them

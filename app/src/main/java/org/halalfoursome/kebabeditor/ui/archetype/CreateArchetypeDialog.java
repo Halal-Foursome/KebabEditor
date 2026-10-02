@@ -1,158 +1,62 @@
 package org.halalfoursome.kebabeditor.ui.archetype;
 
-import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.awt.event.KeyEvent;
-import java.util.Set;
+import java.util.Collection;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import javax.swing.*;
 
 import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeDefinition;
 import org.halalfoursome.kebabeditor.ui.validation.Rules;
-import org.halalfoursome.kebabeditor.ui.validation.ValidationGroup;
-import org.halalfoursome.kebabeditor.utils.KebabStyle;
 
-public class CreateArchetypeDialog extends JDialog {
+public class CreateArchetypeDialog extends AbstractArchetypeDialog {
 
-    private final ValidationGroup validation = new ValidationGroup();
+    private final Supplier<Collection<String>> existingIds;
     private final Consumer<ArchetypeDefinition> onCreate;
 
-    private final JTextField idField = new JTextField();
     private final JTextField displayNameField = new JTextField();
-    private final IconPickerPanel iconPicker;
-    private final ParamListPanel paramList;
-    private JButton createButton;
+    private final IconPickerPanel iconPicker = new IconPickerPanel(style);
+    private final ParamListPanel paramList = new ParamListPanel(style, validation);
+    private JTextField idField;
 
     public CreateArchetypeDialog(
-        JDialog owner, 
-        Set<String> existingIds,
+        JDialog owner,
+        Supplier<Collection<String>> existingIds,
         Consumer<ArchetypeDefinition> consumer
     ) {
-        super(owner, "Create new archetype", true);
+        super(owner, "Create new archetype", "Create");
 
-        KebabStyle style = KebabStyle.getCurrent();
+        this.existingIds = existingIds;
         onCreate = consumer;
-        iconPicker = new IconPickerPanel(style);
-        paramList = new ParamListPanel(style, validation);
 
-        addComponentListener(new CreateArchetypeAdapter());
-        validation.addListener(this::updateCreateEnabled);
-
-        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-        setLayout(new BorderLayout());
-        setMinimumSize(new Dimension(540, 640));
-
-        add(buildCenter(style, existingIds), BorderLayout.CENTER);
-        add(buildFooter(style), BorderLayout.SOUTH);
-
-        // Escape closes the dialog
-        getRootPane().registerKeyboardAction(
-            e -> dispose(),
-            KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
-            JComponent.WHEN_IN_FOCUSED_WINDOW
-        );
-
-        setLocationRelativeTo(owner);
+        init(new Dimension(540, 640));
     }
 
-    private JComponent buildCenter(KebabStyle style, Set<String> existingIds) {
-        JPanel center = new JPanel(new GridBagLayout());
-        GridBagConstraints constraints = new GridBagConstraints();
-        constraints.gridx = 0;
-        constraints.weightx = 1.0;
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.insets = new Insets(8, 16, 4, 16);
-
-        idField.setFont(style.uiFont());
-        validation.add(idField, Rules.all(
-            Rules.identifier("ID"),
-            Rules.unique("ID", () -> existingIds)
-        ));
-        addLabeled(center, constraints, "ID", idField, style);
-
-        JLabel idNote = label("The ID cannot be changed after the archetype is created.", style);
-        idNote.setFont(style.uiFont().deriveFont(Font.ITALIC, style.uiFont().getSize2D() - 1f));
-        center.add(idNote, constraints);
+    @Override
+    protected void buildForm(JPanel form, GridBagConstraints constraints) {
+        idField = addIdField(form, constraints, existingIds);
 
         displayNameField.setFont(style.uiFont());
         validation.add(displayNameField, Rules.notEmpty("Display name"));
-        addLabeled(center, constraints, "Display name", displayNameField, style);
+        addLabeled(form, constraints, "Display name", displayNameField);
 
-        addLabeled(center, constraints, "Icon", iconPicker, style);
+        addLabeled(form, constraints, "Icon", iconPicker);
 
         // the parameter list takes all remaining space
         constraints.weighty = 1.0;
         constraints.fill = GridBagConstraints.BOTH;
-        center.add(paramList, constraints);
-
-        return center;
+        form.add(paramList, constraints);
     }
 
-    private void addLabeled(
-        JPanel panel, GridBagConstraints constraints,
-        String text, JComponent component, KebabStyle style
-    ) {
-        panel.add(label(text, style), constraints);
-        panel.add(component, constraints);
-    }
-
-    private JLabel label(String text, KebabStyle style) {
-        JLabel label = new JLabel(text);
-        label.setFont(style.uiFont());
-        return label;
-    }
-
-    private ArchetypeDefinition buildDefinition() {
-        return new ArchetypeDefinition(
+    @Override
+    protected void onConfirm() {
+        onCreate.accept(new ArchetypeDefinition(
             idField.getText(),
             displayNameField.getText().trim(),
             iconPicker.selectedIcon(),
             paramList.params()
-        );
-    }
-
-    private void updateCreateEnabled() {
-        if (createButton != null) {
-            createButton.setEnabled(validation.isValid());
-        }
-    }
-
-    private JPanel buildFooter(KebabStyle style) {
-        JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 8));
-
-        createButton = new JButton("Create");
-        createButton.setFont(style.uiFont());
-        updateCreateEnabled();
-        createButton.addActionListener(e -> {
-            onCreate.accept(buildDefinition());
-            dispose();
-        });
-        footer.add(createButton);
-
-        JButton cancelButton = new JButton("Cancel");
-        cancelButton.setFont(style.uiFont());
-        cancelButton.addActionListener(e -> dispose());
-        footer.add(cancelButton);
-
-        return footer;
-    }
-
-    private class CreateArchetypeAdapter extends ComponentAdapter {
-
-        @Override public void componentMoved(ComponentEvent e) { 
-            validation.hidePopups(); 
-        }
-
-        @Override public void componentResized(ComponentEvent e) { 
-            validation.hidePopups();
-        }
+        ));
     }
 }
