@@ -95,6 +95,10 @@ public class ArchetypeManagerDialog extends JDialog {
 
         editButton = new JButton("Edit");
         editButton.setFont(style.uiFont());
+        editButton.addActionListener(e ->
+            new EditArchetypeDialog(this, archetypeList.getSelectedValue(), this::onArchetypeEdited)
+                .setVisible(true)
+        );
         footer.add(editButton);
 
         duplicateAsButton = new JButton("Duplicate as...");
@@ -116,6 +120,14 @@ public class ArchetypeManagerDialog extends JDialog {
             archetypeList.setSelectedValue(definition, true);
         } catch (IOException e) {
             ErrorDialogs.show(this, "Cannot save archetype", e);
+        }
+    }
+
+    private void onArchetypeEdited() {
+        try {
+            editor.saveArchetypes();
+        } catch (IOException e) {
+            ErrorDialogs.show(this, "Cannot save archetypes", e);
         }
     }
 

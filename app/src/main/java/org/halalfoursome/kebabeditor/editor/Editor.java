@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
-
 import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeDefinition;
 import org.halalfoursome.kebabeditor.project.ProjectManager;
 import org.halalfoursome.kebabeditor.project.RecentProjects;
@@ -43,6 +42,10 @@ public class Editor {
 
     public void addArchetype(ArchetypeDefinition definition) throws IOException {
         projectManager.addArchetype(definition);
+    }
+
+    public void saveArchetypes() throws IOException {
+        projectManager.saveArchetypes();
     }
 
     public RecentProjects recentProjects() {

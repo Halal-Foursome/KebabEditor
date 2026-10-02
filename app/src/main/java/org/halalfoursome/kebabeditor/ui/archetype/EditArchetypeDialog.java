@@ -2,7 +2,6 @@ package org.halalfoursome.kebabeditor.ui.archetype;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -10,8 +9,6 @@ import java.awt.Insets;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
-import java.util.Set;
-import java.util.function.Consumer;
 
 import javax.swing.*;
 
@@ -20,37 +17,38 @@ import org.halalfoursome.kebabeditor.ui.validation.Rules;
 import org.halalfoursome.kebabeditor.ui.validation.ValidationGroup;
 import org.halalfoursome.kebabeditor.utils.KebabStyle;
 
-public class CreateArchetypeDialog extends JDialog {
+public class EditArchetypeDialog extends JDialog {
 
     private final ValidationGroup validation = new ValidationGroup();
-    private final Consumer<ArchetypeDefinition> onCreate;
+    private final ArchetypeDefinition definition;
+    private final Runnable callback;
 
-    private final JTextField idField = new JTextField();
     private final JTextField displayNameField = new JTextField();
     private final IconPickerPanel iconPicker;
     private final ParamListPanel paramList;
-    private JButton createButton;
+    private JButton saveButton;
 
-    public CreateArchetypeDialog(
+    public EditArchetypeDialog(
         JDialog owner, 
-        Set<String> existingIds,
-        Consumer<ArchetypeDefinition> consumer
+        ArchetypeDefinition definitionToEdit,
+        Runnable onArchetypeEdited
     ) {
-        super(owner, "Create new archetype", true);
+        super(owner, "Edit archetype", true);
 
         KebabStyle style = KebabStyle.getCurrent();
-        onCreate = consumer;
-        iconPicker = new IconPickerPanel(style);
-        paramList = new ParamListPanel(style, validation);
+        callback = onArchetypeEdited;
+        definition = definitionToEdit;
+        iconPicker = new IconPickerPanel(style, definition.getIcon());
+        paramList = new ParamListPanel(style, validation, definition.getParams());
 
-        addComponentListener(new CreateArchetypeAdapter());
-        validation.addListener(this::updateCreateEnabled);
+        addComponentListener(new EditArchetypeAdapter());
+        validation.addListener(this::updateEditEnabled);
 
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setLayout(new BorderLayout());
         setMinimumSize(new Dimension(540, 640));
 
-        add(buildCenter(style, existingIds), BorderLayout.CENTER);
+        add(buildCenter(style), BorderLayout.CENTER);
         add(buildFooter(style), BorderLayout.SOUTH);
 
         // Escape closes the dialog
@@ -63,7 +61,7 @@ public class CreateArchetypeDialog extends JDialog {
         setLocationRelativeTo(owner);
     }
 
-    private JComponent buildCenter(KebabStyle style, Set<String> existingIds) {
+    private JComponent buildCenter(KebabStyle style) {
         JPanel center = new JPanel(new GridBagLayout());
         GridBagConstraints constraints = new GridBagConstraints();
         constraints.gridx = 0;
@@ -71,18 +69,8 @@ public class CreateArchetypeDialog extends JDialog {
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.insets = new Insets(8, 16, 4, 16);
 
-        idField.setFont(style.uiFont());
-        validation.add(idField, Rules.all(
-            Rules.identifier("ID"),
-            Rules.unique("ID", () -> existingIds)
-        ));
-        addLabeled(center, constraints, "ID", idField, style);
-
-        JLabel idNote = label("The ID cannot be changed after the archetype is created.", style);
-        idNote.setFont(style.uiFont().deriveFont(Font.ITALIC, style.uiFont().getSize2D() - 1f));
-        center.add(idNote, constraints);
-
         displayNameField.setFont(style.uiFont());
+        displayNameField.setText(definition.getDisplayName());
         validation.add(displayNameField, Rules.notEmpty("Display name"));
         addLabeled(center, constraints, "Display name", displayNameField, style);
 
@@ -110,32 +98,30 @@ public class CreateArchetypeDialog extends JDialog {
         return label;
     }
 
-    private ArchetypeDefinition buildDefinition() {
-        return new ArchetypeDefinition(
-            idField.getText(),
-            displayNameField.getText().trim(),
-            iconPicker.selectedIcon(),
-            paramList.params()
-        );
+    private void buildDefinition(ArchetypeDefinition definition) {
+        definition.setDisplayName(displayNameField.getText().trim());
+        definition.setIcon(iconPicker.selectedIcon());
+        definition.setParams(paramList.params());
     }
 
-    private void updateCreateEnabled() {
-        if (createButton != null) {
-            createButton.setEnabled(validation.isValid());
+    private void updateEditEnabled() {
+        if (saveButton != null) {
+            saveButton.setEnabled(validation.isValid());
         }
     }
 
     private JPanel buildFooter(KebabStyle style) {
         JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 8));
 
-        createButton = new JButton("Create");
-        createButton.setFont(style.uiFont());
-        updateCreateEnabled();
-        createButton.addActionListener(e -> {
-            onCreate.accept(buildDefinition());
+        saveButton = new JButton("Save");
+        saveButton.setFont(style.uiFont());
+        updateEditEnabled();
+        saveButton.addActionListener(e -> {
+            buildDefinition(definition);
+            callback.run();
             dispose();
         });
-        footer.add(createButton);
+        footer.add(saveButton);
 
         JButton cancelButton = new JButton("Cancel");
         cancelButton.setFont(style.uiFont());
@@ -145,7 +131,7 @@ public class CreateArchetypeDialog extends JDialog {
         return footer;
     }
 
-    private class CreateArchetypeAdapter extends ComponentAdapter {
+    private class EditArchetypeAdapter extends ComponentAdapter {
 
         @Override public void componentMoved(ComponentEvent e) { 
             validation.hidePopups(); 

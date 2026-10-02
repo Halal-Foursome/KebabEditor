@@ -23,6 +23,18 @@ public class ParamListPanel extends JPanel {
     private final ValidationGroup validation;
     private final JPanel rows = new JPanel();
 
+    public ParamListPanel(
+        KebabStyle style, 
+        ValidationGroup validation, 
+        Map<String, ParamType> params
+    ) {
+        this(style, validation);
+
+        for (var entry : params.entrySet()) {
+            addRow(entry.getKey(), entry.getValue());
+        }
+    }
+
     public ParamListPanel(KebabStyle style, ValidationGroup validation) {
         super(new BorderLayout(0, 4));
         this.style = style;
@@ -30,6 +42,11 @@ public class ParamListPanel extends JPanel {
 
         add(buildHeader(), BorderLayout.NORTH);
         add(buildScroll(), BorderLayout.CENTER);
+    }
+
+    public void addRow(String paramName, ParamType paramType) {
+        rows.add(new ParamRowPanel(style, validation, this::removeRow, this::namesExcept, paramName, paramType));
+        refresh();
     }
 
     public void addRow() {

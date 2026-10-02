@@ -76,6 +76,15 @@ public class ProjectManager {
         notifyListeners();
     }
 
+    public void saveArchetypes() throws IOException {
+        if (repository.isNone()) {
+            throw new IllegalStateException("No project is open");
+        }
+
+        ProjectRepository current = repository.unwrap();
+        writer.saveArchetypes(current.filePath(), current.archetypeRegistry());
+    }
+
     public void save() throws IOException {
         if (repository.isNone()) {
             throw new IllegalStateException("No project is open");

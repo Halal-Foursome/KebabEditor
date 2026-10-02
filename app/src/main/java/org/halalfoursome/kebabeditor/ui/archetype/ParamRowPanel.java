@@ -29,6 +29,20 @@ public class ParamRowPanel extends JPanel {
         KebabStyle style,
         ValidationGroup validation,
         Consumer<ParamRowPanel> onRemove,
+        Function<ParamRowPanel, Collection<String>> otherNames,
+        String paramName,
+        ParamType paramType
+    ) {
+        this(style, validation, onRemove, otherNames);
+
+        nameField.setText(paramName);
+        typeBox.setSelectedIndex(paramType.ordinal());
+    }
+
+    public ParamRowPanel(
+        KebabStyle style,
+        ValidationGroup validation,
+        Consumer<ParamRowPanel> onRemove,
         Function<ParamRowPanel, Collection<String>> otherNames
     ) {
         super(new GridBagLayout());
