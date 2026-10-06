@@ -11,6 +11,8 @@ import javax.swing.JFrame;
 
 import org.halalfoursome.kebabeditor.editor.Editor;
 import org.halalfoursome.kebabeditor.project.RecentProjects;
+import org.halalfoursome.kebabeditor.scene.error.SceneException;
+import org.halalfoursome.kebabeditor.scene.error.SceneFormatException;
 import org.halalfoursome.kebabeditor.ui.menu.generic.Menu;
 import org.halalfoursome.kebabeditor.ui.menu.generic.MenuItem;
 import org.halalfoursome.kebabeditor.ui.menu.generic.SeparatorItem;
@@ -41,7 +43,15 @@ public class FileMenu extends Menu {
                 FileChooser fileChooser = new FileChooser(FileChooserMode.FILES)
                     .addFilter("glTF scene", "gltf", "glb");
 
-                fileChooser.open(frame, file -> editor.openProject(file.toPath()));
+                fileChooser.open(frame, file -> {
+                    try {
+                        editor.openProject(file.toPath());
+                    } catch (SceneException e) {
+                        ErrorDialogs.show(frame, "Scene error, cannot open project", e);
+                    } catch (IOException e) {
+                        ErrorDialogs.show(frame, "I/O error, cannot open project", e);
+                    }
+                });
             }),
 
             openRecent,
@@ -52,8 +62,10 @@ public class FileMenu extends Menu {
                 if (editor.isProjectOpen()) {
                     try {
                         editor.saveProject();
+                    } catch (SceneFormatException e) {
+                        ErrorDialogs.show(frame, "Scene format error, cannot save project", e);
                     } catch (IOException e) {
-                        ErrorDialogs.show(frame, "Cannot save project", e);
+                        ErrorDialogs.show(frame, "I/O error, cannot save project", e);
                     }
                 }
             }),
@@ -79,10 +91,14 @@ public class FileMenu extends Menu {
                 () -> {
                     try {
                         editor.openProject(path);
+                    } catch (SceneException e) {
+                        recent.remove(path);
+                        updateRecent(menu, frame, editor);
+                        ErrorDialogs.show(frame, "Scene error, failed to open scene file", e);
                     } catch (IOException e) {
                         recent.remove(path);
                         updateRecent(menu, frame, editor);
-                        ErrorDialogs.show(frame, "Failed to open file", e);
+                        ErrorDialogs.show(frame, "I/O error, failed to open scene file", e);
                     }
                 }
             ));

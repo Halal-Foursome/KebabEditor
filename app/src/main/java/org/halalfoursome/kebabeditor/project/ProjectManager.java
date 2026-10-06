@@ -8,6 +8,8 @@ import java.util.Comparator;
 import java.util.List;
 
 import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeDefinition;
+import org.halalfoursome.kebabeditor.scene.error.SceneException;
+import org.halalfoursome.kebabeditor.scene.error.SceneFormatException;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
 import lombok.RequiredArgsConstructor;
@@ -22,11 +24,11 @@ public class ProjectManager {
 
     private Maybe<ProjectRepository> repository = Maybe.none();
 
-    public void create(Path dir, String name) throws IOException {
+    public void create(Path dir, String name) throws SceneException, IOException {
         open(writer.createProject(dir, name));
     }
 
-    public void open(Path file) throws IOException {
+    public void open(Path file) throws SceneException, IOException {
         if (!Files.isRegularFile(file)) {
             throw new IOException("Not a file: " + file);
         }
@@ -103,13 +105,13 @@ public class ProjectManager {
         writer.saveArchetypes(current.filePath(), current.archetypeRegistry());
     }
 
-    public void save() throws IOException {
+    public void save() throws SceneFormatException, IOException {
         if (repository.isNone()) {
             throw new IllegalStateException("No project is open");
         }
 
         ProjectRepository current = repository.unwrap();
-        writer.saveScene(current.filePath(), current.currentSceneData());
+        writer.saveScene(current.filePath(), current.sceneData());
         writer.saveArchetypes(current.filePath(), current.archetypeRegistry());
     }
 
