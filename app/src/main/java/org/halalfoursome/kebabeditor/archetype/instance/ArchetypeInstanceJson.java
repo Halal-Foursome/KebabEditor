@@ -5,9 +5,8 @@ import java.util.Map;
 
 import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeDefinition;
 import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeRegistry;
-import org.halalfoursome.kebabeditor.archetype.error.InvalidParamType;
-import org.halalfoursome.kebabeditor.archetype.error.ParamDecodeException;
 import org.halalfoursome.kebabeditor.archetype.error.UnknownParamException;
+import org.halalfoursome.kebabeditor.error.KebabException;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -54,7 +53,7 @@ public record ArchetypeInstanceJson(
                             instance.set(entry.getKey(), ParamJson.decode(entry.getValue(), raw));
                         }
                     }
-                } catch (ParamDecodeException | InvalidParamType | UnknownParamException e) {
+                } catch (KebabException e) {
                     System.err.println("Archetype `" + id + "` is unresolved: " + e.getMessage());
                     return unresolved();
                 }

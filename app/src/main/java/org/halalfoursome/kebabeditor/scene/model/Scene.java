@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import org.halalfoursome.kebabeditor.scene.error.SceneException;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -44,26 +45,26 @@ public class Scene {
         return rootNodes.stream().flatMap(Scene::subtree);
     }
 
-    public void add(SceneNode node) {
+    public void add(SceneNode node) throws SceneException {
         register(node);
         rootNodes.add(node);
     }
 
-    public void add(SceneNode node, SceneNode parent) {
+    public void add(SceneNode node, SceneNode parent) throws SceneException {
         requireInScene(parent);
         register(node);
         parent.attachChild(node);
     }
 
-    public void add(SceneNode node, NodeId parent) {
+    public void add(SceneNode node, NodeId parent) throws SceneException {
         add(node, get(parent));
     }
 
-    public void remove(NodeId id) {
+    public void remove(NodeId id) throws SceneException {
         remove(get(id));
     }
 
-    public void remove(SceneNode node) {
+    public void remove(SceneNode node) throws SceneException {
         requireInScene(node);
 
         if (node.getParent().isSome()) {
@@ -76,9 +77,9 @@ public class Scene {
     }
 
     // Checks the whole subtree first, so a failed add leaves the scene untouched
-    private void register(SceneNode node) {
+    private void register(SceneNode node) throws SceneException {
         if (node.getParent().isSome()) {
-            throw new IllegalArgumentException(
+            throw new SceneException(
                 "Node '" + node.getName() + "' already has a parent"
             );
         }
@@ -88,7 +89,7 @@ public class Scene {
 
         for (SceneNode n : added) {
             if (byId.containsKey(n.getId()) || !seen.add(n.getId())) {
-                throw new IllegalArgumentException(
+                throw new SceneException(
                     "Duplicate node id " + n.getId().value() + " ('" + n.getName() + "')"
                 );
             }
@@ -97,13 +98,17 @@ public class Scene {
         added.forEach(n -> byId.put(n.getId(), n));
     }
 
-    private SceneNode get(NodeId id) {
-        return find(id).expect("No node with id " + id.value() + " in this scene");
+    private SceneNode get(NodeId id) throws SceneException {
+        if (byId.get(id) == null) {
+            throw new SceneException("No node with id " + id.value() + " in this scene");
+        }
+
+        return byId.get(id);
     }
 
-    private void requireInScene(SceneNode node) {
+    private void requireInScene(SceneNode node) throws SceneException {
         if (byId.get(node.getId()) != node) {
-            throw new IllegalArgumentException(
+            throw new SceneException(
                 "Node '" + node.getName() + "' is not in this scene"
             );
         }
