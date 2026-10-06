@@ -10,6 +10,7 @@ import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeRegistryJson;
 import org.halalfoursome.kebabeditor.scene.error.SceneFormatException;
 import org.halalfoursome.kebabeditor.scene.io.GltfSceneWriter;
 import org.halalfoursome.kebabeditor.scene.model.Scene;
+import org.halalfoursome.kebabeditor.utils.AtomicFiles;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -38,13 +39,16 @@ public class ProjectWriter {
 
     public void saveScene(Path path, Scene sceneData) throws SceneFormatException, IOException {
         JsonNode root = writer.write(sceneData);
-        mapper.writerWithDefaultPrettyPrinter().writeValue(path.toFile(), root);
+        AtomicFiles.write(
+            path,
+            mapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(root)
+        );
     }
 
     public void saveArchetypes(Path scene, ArchetypeRegistry registry) throws IOException {
-        mapper.writerWithDefaultPrettyPrinter().writeValue(
-            ProjectTemplates.archetypesFileFor(scene).toFile(),
-            ArchetypeRegistryJson.from(registry)
+        AtomicFiles.write(
+            ProjectTemplates.archetypesFileFor(scene),
+            mapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(ArchetypeRegistryJson.from(registry))
         );
     }
 }
