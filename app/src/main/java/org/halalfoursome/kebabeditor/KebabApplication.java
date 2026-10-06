@@ -7,6 +7,8 @@ import org.halalfoursome.kebabeditor.project.ProjectLoader;
 import org.halalfoursome.kebabeditor.project.ProjectManager;
 import org.halalfoursome.kebabeditor.project.ProjectWriter;
 import org.halalfoursome.kebabeditor.project.RecentProjects;
+import org.halalfoursome.kebabeditor.scene.io.GltfSceneReader;
+import org.halalfoursome.kebabeditor.scene.io.GltfSceneWriter;
 import org.halalfoursome.kebabeditor.ui.MainWindow;
 import org.halalfoursome.kebabeditor.utils.KebabStyle;
 
@@ -18,12 +20,11 @@ public class KebabApplication {
         SwingUtilities.invokeLater(() -> {
             KebabStyle.setCurrent(KebabStyle.defaultStyle());
 
-            RecentProjects recentProjects = new RecentProjects();
             ObjectMapper mapper = new ObjectMapper();
-            ProjectWriter writer = new ProjectWriter(mapper);
-            ProjectLoader loader = new ProjectLoader(mapper);
+            ProjectWriter writer = new ProjectWriter(new GltfSceneWriter(), mapper);
+            ProjectLoader loader = new ProjectLoader(new GltfSceneReader(), mapper);
             ProjectManager projectManager = new ProjectManager(
-                recentProjects,
+                new RecentProjects(),
                 writer,
                 loader
             );

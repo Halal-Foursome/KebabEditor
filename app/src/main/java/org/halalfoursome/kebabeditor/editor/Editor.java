@@ -7,6 +7,8 @@ import java.util.List;
 import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeDefinition;
 import org.halalfoursome.kebabeditor.project.ProjectManager;
 import org.halalfoursome.kebabeditor.project.RecentProjects;
+import org.halalfoursome.kebabeditor.scene.error.SceneException;
+import org.halalfoursome.kebabeditor.scene.error.SceneFormatException;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
 import lombok.RequiredArgsConstructor;
@@ -16,15 +18,15 @@ public class Editor {
 
     private final ProjectManager projectManager;
 
-    public void createProject(Path dir, String name) throws IOException {
+    public void createProject(Path dir, String name) throws SceneException, IOException {
         projectManager.create(dir, name);
     }
 
-    public void openProject(Path file) throws IOException {
+    public void openProject(Path file) throws SceneException, IOException {
         projectManager.open(file);
     }
 
-    public void saveProject() throws IOException {
+    public void saveProject() throws SceneFormatException, IOException {
         projectManager.save();
     }
 

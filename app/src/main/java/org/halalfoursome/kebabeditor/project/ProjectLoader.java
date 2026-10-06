@@ -6,7 +6,11 @@ import java.nio.file.Path;
 
 import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeRegistry;
 import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeRegistryJson;
+import org.halalfoursome.kebabeditor.scene.error.SceneException;
+import org.halalfoursome.kebabeditor.scene.io.GltfSceneReader;
+import org.halalfoursome.kebabeditor.scene.model.Scene;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
@@ -14,19 +18,18 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor 
 public class ProjectLoader {
 
+    private final GltfSceneReader sceneReader;
     private final ObjectMapper mapper;
     
-    public ProjectRepository load(Path file) throws IOException {
-        // Temporarily, scene is just an unparsed glTF string 🥂
-        String currentSceneData = Files.readString(file);
+    public ProjectRepository load(Path file) throws SceneException, IOException {
+        JsonNode root = mapper.readTree(file.toFile());
 
         Path registryPath = ProjectTemplates.archetypesFileFor(file);
+        ArchetypeRegistry registry = loadRegistry(registryPath);
 
-        return new ProjectRepository(
-            file, 
-            currentSceneData, 
-            loadRegistry(registryPath)
-        );
+        Scene scene = sceneReader.read(root, registry);
+
+        return new ProjectRepository(file, scene, registry);
     }
 
     // A missing registry is just an empty one; 

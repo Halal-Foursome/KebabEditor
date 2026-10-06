@@ -4,6 +4,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.halalfoursome.kebabeditor.utils.Maybe;
+
 import lombok.Getter;
 
 public class ArchetypeRegistry {
@@ -17,6 +19,14 @@ public class ArchetypeRegistry {
 
     public ArchetypeRegistry(Collection<ArchetypeDefinition> archetypes) {
         this.archetypes = new HashSet<>(archetypes);
+    }
+
+    public Maybe<ArchetypeDefinition> find(String id) {
+        return Maybe.fromOptional(
+            archetypes.stream()
+                .filter(def -> def.getId().equals(id))
+                .findAny()
+        );
     }
 
     // Definitions are equal by id, so a plain Set.add would silently drop a duplicate

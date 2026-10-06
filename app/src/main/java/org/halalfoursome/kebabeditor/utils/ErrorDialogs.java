@@ -11,12 +11,18 @@ import java.nio.file.Path;
 
 import javax.swing.JOptionPane;
 
+import org.halalfoursome.kebabeditor.error.KebabException;
+
 public final class ErrorDialogs {
 
     private ErrorDialogs() {}
 
     public static void show(Component parent, String title, IOException e) {
         JOptionPane.showMessageDialog(parent, describe(e), title, JOptionPane.ERROR_MESSAGE);
+    }
+
+    public static void show(Component parent, String title, KebabException e) {
+        JOptionPane.showMessageDialog(parent, e.getMessage(), title, JOptionPane.ERROR_MESSAGE);
     }
 
     static String describe(IOException e) {

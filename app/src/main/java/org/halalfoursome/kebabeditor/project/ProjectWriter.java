@@ -7,7 +7,12 @@ import java.nio.file.StandardOpenOption;
 
 import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeRegistry;
 import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeRegistryJson;
+import org.halalfoursome.kebabeditor.scene.error.SceneFormatException;
+import org.halalfoursome.kebabeditor.scene.io.GltfSceneWriter;
+import org.halalfoursome.kebabeditor.scene.model.Scene;
+import org.halalfoursome.kebabeditor.utils.AtomicFiles;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
@@ -15,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ProjectWriter {
 
+    private final GltfSceneWriter writer;
     private final ObjectMapper mapper;
 
     public Path createProject(Path dir, String name) throws IOException {
@@ -31,15 +37,18 @@ public class ProjectWriter {
         return scene;
     }
 
-    public void saveScene(Path scene, String data) throws IOException {
-        // Temporary write string instead of glTF scene
-        Files.writeString(scene, data);
+    public void saveScene(Path path, Scene sceneData) throws SceneFormatException, IOException {
+        JsonNode root = writer.write(sceneData);
+        AtomicFiles.write(
+            path,
+            mapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(root)
+        );
     }
 
     public void saveArchetypes(Path scene, ArchetypeRegistry registry) throws IOException {
-        mapper.writerWithDefaultPrettyPrinter().writeValue(
-            ProjectTemplates.archetypesFileFor(scene).toFile(),
-            ArchetypeRegistryJson.from(registry)
+        AtomicFiles.write(
+            ProjectTemplates.archetypesFileFor(scene),
+            mapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(ArchetypeRegistryJson.from(registry))
         );
     }
 }
