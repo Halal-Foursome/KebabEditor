@@ -18,7 +18,7 @@ public sealed interface Maybe<T> extends Serializable
 {
     public record Some<T>(T value) implements Maybe<T> {
         public Some {
-            Objects.requireNonNull(value, "Some can't hold null, use Maybe.none()");
+            Objects.requireNonNull(value, "Some can't hold null, use Maybe.ofNullable instead");
         }
     }
 

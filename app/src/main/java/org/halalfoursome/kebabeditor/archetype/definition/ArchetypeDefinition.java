@@ -25,7 +25,7 @@ public class ArchetypeDefinition {
     private final String id;
     private String displayName = "<unnamed>";
     private Maybe<ArchetypeIcon> icon = Maybe.none();
-    private Map<String, ParamType> params = Map.of();
+    private Map<String, ParamType> params = new LinkedHashMap<>();
 
     public ArchetypeDefinition duplicateAs(String newId) {
         return new ArchetypeDefinition(
