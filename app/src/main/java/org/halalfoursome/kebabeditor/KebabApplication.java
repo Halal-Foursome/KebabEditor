@@ -31,11 +31,8 @@ public class KebabApplication {
             );
             
             Editor editor = new Editor(projectManager);
-            LogService logs = new LogService();
-            MainWindow window = new MainWindow(editor, logs);
-            logs.info("Kebab Editor started");
-            logs.warn("Niggers");
-            logs.error("Mega Error", new Exception("Mega Error"));
+            MainWindow window = new MainWindow(editor);
+            LogService.get().info("Kebab Editor started");
 
             window.show();
         });

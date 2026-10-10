@@ -7,11 +7,18 @@ import java.util.Objects;
 
 /** Thread-safe in-memory application log. Listeners may run on any calling thread. */
 public final class LogService {
+    
     private static final int DEFAULT_CAPACITY = 1000;
+
+    private static final LogService INSTANCE = new LogService();
 
     private final int capacity;
     private final List<LogEntry> entries = new ArrayList<>();
     private final List<Runnable> listeners = new ArrayList<>();
+
+    public static LogService get() {
+        return INSTANCE;
+    }
 
     public LogService() {
         this(DEFAULT_CAPACITY);

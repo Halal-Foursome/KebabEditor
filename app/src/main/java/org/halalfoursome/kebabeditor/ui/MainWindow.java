@@ -48,14 +48,14 @@ public class MainWindow {
         FlatMTGitHubDarkIJTheme.setup();
     }
 
-    public MainWindow(Editor editorInstance, LogService logService) {
+    public MainWindow(Editor editorInstance) {
         setupStyle();
 
         editor = editorInstance;
 
         frame = new JFrame(APP_TITLE);
         menuBar = new MenuBar(frame);
-        logsTab = new LogsTab(logService);
+        logsTab = new LogsTab(LogService.get());
 
         setupLayout();
 
@@ -77,7 +77,11 @@ public class MainWindow {
     }
 
     public void show() {
+        FocusDummy focusDummy = new FocusDummy();
+        frame.add(focusDummy, BorderLayout.SOUTH);
         frame.setVisible(true);
+
+        SwingUtilities.invokeLater(focusDummy::requestFocusInWindow);
     }
 
     private void setupStyle() {
@@ -92,6 +96,7 @@ public class MainWindow {
         UIManager.put("TitlePane.font", style.uiFont());
 
         // Tabbed panes
+        UIManager.put("TabbedPane.font", style.uiFont());
         UIManager.put("TabbedPane.tabHeight", 36);
         UIManager.put("TabbedPane.tabInsets", new Insets(6, 14, 6, 14));
         UIManager.put("TabbedPane.showTabSeparators", true);
@@ -126,6 +131,7 @@ public class MainWindow {
         bottomTabs.addTab("Logs", logsTab);
         JSplitPane workspace = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
             new JPanel(new BorderLayout()), bottomTabs);
+        workspace.setContinuousLayout(false);
         workspace.setResizeWeight(0.75);
         SwingUtilities.invokeLater(() -> workspace.setDividerLocation(0.75));
         frame.add(workspace, BorderLayout.CENTER);
