@@ -3,11 +3,9 @@ package org.halalfoursome.kebabeditor.model;
 import java.awt.Color;
 import java.util.Objects;
 
-import org.halalfoursome.kebabeditor.utils.Maybe;
-
 public record Material(
     Color baseColor,
-    Maybe<TextureRef> baseTexture,
+    TextureSlot baseTexture,
     AlphaMode alpha,
     boolean doubleSided
 ) {
@@ -23,7 +21,7 @@ public record Material(
     public static Material solid(Color color) {
         AlphaMode alpha = color.getAlpha() < 255 ? AlphaMode.BLEND : AlphaMode.OPAQUE;
 
-        return new Material(color, Maybe.none(), alpha, false);
+        return new Material(color, TextureSlot.NONE, alpha, false);
     }
 
     public Material withBaseColor(Color color) {
