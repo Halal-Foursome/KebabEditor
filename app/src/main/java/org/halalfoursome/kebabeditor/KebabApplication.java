@@ -3,6 +3,7 @@ package org.halalfoursome.kebabeditor;
 import javax.swing.SwingUtilities;
 
 import org.halalfoursome.kebabeditor.editor.Editor;
+import org.halalfoursome.kebabeditor.logging.LogService;
 import org.halalfoursome.kebabeditor.project.ProjectLoader;
 import org.halalfoursome.kebabeditor.project.ProjectManager;
 import org.halalfoursome.kebabeditor.project.ProjectWriter;
@@ -31,6 +32,7 @@ public class KebabApplication {
             
             Editor editor = new Editor(projectManager);
             MainWindow window = new MainWindow(editor);
+            LogService.get().info("Kebab Editor started");
 
             window.show();
         });

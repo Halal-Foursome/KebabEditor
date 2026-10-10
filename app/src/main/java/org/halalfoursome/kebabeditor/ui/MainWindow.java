@@ -8,11 +8,16 @@ import java.awt.Insets;
 import javax.swing.Box;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JSplitPane;
+import javax.swing.JTabbedPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 
 import org.halalfoursome.kebabeditor.editor.Editor;
+import org.halalfoursome.kebabeditor.logging.LogService;
+import org.halalfoursome.kebabeditor.ui.logs.LogsTab;
 import org.halalfoursome.kebabeditor.ui.menu.FileMenu;
 import org.halalfoursome.kebabeditor.ui.menu.OptionsMenu;
 import org.halalfoursome.kebabeditor.ui.menu.ProjectMenu;
@@ -31,6 +36,7 @@ public class MainWindow {
 
     private final JFrame frame;
     private final Editor editor;
+    private final LogsTab logsTab;
 
     private final MenuBar menuBar;
     @SuppressWarnings("unused")
@@ -49,6 +55,7 @@ public class MainWindow {
 
         frame = new JFrame(APP_TITLE);
         menuBar = new MenuBar(frame);
+        logsTab = new LogsTab(LogService.get());
 
         setupLayout();
 
@@ -89,6 +96,7 @@ public class MainWindow {
         UIManager.put("TitlePane.font", style.uiFont());
 
         // Tabbed panes
+        UIManager.put("TabbedPane.font", style.uiFont());
         UIManager.put("TabbedPane.tabHeight", 36);
         UIManager.put("TabbedPane.tabInsets", new Insets(6, 14, 6, 14));
         UIManager.put("TabbedPane.showTabSeparators", true);
@@ -117,6 +125,16 @@ public class MainWindow {
         frame.setLocationRelativeTo(null);
         frame.setIconImage(style.favicon().getImage());
         frame.setLayout(new BorderLayout());
+
+        // Placeholder for the future EditorView and a resizable bottom tool window.
+        JTabbedPane bottomTabs = new JTabbedPane();
+        bottomTabs.addTab("Logs", logsTab);
+        JSplitPane workspace = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
+            new JPanel(new BorderLayout()), bottomTabs);
+        workspace.setContinuousLayout(false);
+        workspace.setResizeWeight(0.75);
+        SwingUtilities.invokeLater(() -> workspace.setDividerLocation(0.75));
+        frame.add(workspace, BorderLayout.CENTER);
 
         // Menu bar
         menuBar.addMenu(new FileMenu(frame, editor));
