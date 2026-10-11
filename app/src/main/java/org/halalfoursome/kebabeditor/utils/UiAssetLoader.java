@@ -14,17 +14,18 @@ import java.util.Map;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 
-public class AssetLoader {
-    private static AssetLoader instance;
+public class UiAssetLoader {
+    
+    private static UiAssetLoader instance;
     private static final Path[] DEV_RESOURCE_ROOTS = new Path[] {
         Paths.get("src", "main", "resources"),
     };
 
-    private AssetLoader() {}
+    private UiAssetLoader() {}
 
-    public static synchronized AssetLoader getInstance() {
+    public static synchronized UiAssetLoader getInstance() {
         if (instance == null) {
-            instance = new AssetLoader();
+            instance = new UiAssetLoader();
         }
         return instance;
     }

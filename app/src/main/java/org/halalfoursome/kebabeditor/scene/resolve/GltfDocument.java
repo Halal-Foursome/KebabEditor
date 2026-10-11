@@ -1,17 +1,14 @@
 package org.halalfoursome.kebabeditor.scene.resolve;
 
 import java.io.IOException;
-import java.net.URLDecoder;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.regex.Pattern;
 
 import org.halalfoursome.kebabeditor.scene.error.ModelLoadException;
+import org.halalfoursome.kebabeditor.utils.AssetPaths;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -30,7 +27,6 @@ public record GltfDocument(
     private static final int CHUNK_BIN = 0x004E4942;
     private static final int GLB_HEADER_SIZE = 12;
     private static final int CHUNK_HEADER_SIZE = 8;
-    private static final Pattern SCHEME = Pattern.compile("^[A-Za-z][A-Za-z0-9+.-]*:");
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     public static GltfDocument read(Path file, Path assetRoot) throws ModelLoadException {
@@ -59,42 +55,7 @@ public record GltfDocument(
     }
 
     public Maybe<Path> resolveInside(String uri) {
-        if (SCHEME.matcher(uri).find() || uri.startsWith("/") || uri.startsWith("\\")) {
-            return Maybe.none();
-        }
-
-        try {
-            Path resolved = directory.resolve(decode(uri)).normalize();
-
-            return isInsideRoot(resolved) ? Maybe.some(resolved) : Maybe.none();
-        } catch (InvalidPathException e) {
-            return Maybe.none();
-        }
-    }
-
-    private static String decode(String uri) {
-        try {
-            return URLDecoder.decode(uri.replace("+", "%2B"), StandardCharsets.UTF_8);
-        } catch (IllegalArgumentException e) {
-            return uri;
-        }
-    }
-
-    private boolean isInsideRoot(Path resolved) {
-        if (!resolved.startsWith(assetRoot)) {
-            return false;
-        }
-
-        if (!Files.exists(resolved)) {
-            return true;
-        }
-
-        // A symlink inside the project must not lead outside it
-        try {
-            return resolved.toRealPath().startsWith(assetRoot.toRealPath());
-        } catch (IOException e) {
-            return false;
-        }
+        return AssetPaths.resolveInside(directory, assetRoot, uri);
     }
 
     private static boolean isGlb(byte[] bytes) {

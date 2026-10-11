@@ -10,6 +10,5 @@ public interface ModelExtractor {
 
     boolean supports(Path file);
 
-    // assetRoot is the folder the model's own files may not escape
     List<ModelPart> extract(Path file, Path assetRoot) throws ModelLoadException;
 }

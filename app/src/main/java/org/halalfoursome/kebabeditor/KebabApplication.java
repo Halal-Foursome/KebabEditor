@@ -1,5 +1,7 @@
 package org.halalfoursome.kebabeditor;
 
+import java.util.List;
+
 import javax.swing.SwingUtilities;
 
 import org.halalfoursome.kebabeditor.editor.Editor;
@@ -12,6 +14,9 @@ import org.halalfoursome.kebabeditor.project.ProjectManager;
 import org.halalfoursome.kebabeditor.project.ProjectWriter;
 import org.halalfoursome.kebabeditor.scene.io.GltfSceneReader;
 import org.halalfoursome.kebabeditor.scene.io.GltfSceneWriter;
+import org.halalfoursome.kebabeditor.scene.resolve.CompositeModelExtractor;
+import org.halalfoursome.kebabeditor.scene.resolve.GltfMeshExtractor;
+import org.halalfoursome.kebabeditor.scene.resolve.ModelExtractor;
 import org.halalfoursome.kebabeditor.ui.MainWindow;
 import org.halalfoursome.kebabeditor.utils.KebabStyle;
 
@@ -24,8 +29,12 @@ public class KebabApplication {
             KebabStyle.setCurrent(KebabStyle.defaultStyle());
 
             ObjectMapper mapper = new ObjectMapper();
+            ModelExtractor modelExtractor = new CompositeModelExtractor(List.of(
+                // Add other extractors later?
+                new GltfMeshExtractor()
+            ));
             ProjectWriter writer = new FileProjectWriter(new GltfSceneWriter(mapper), mapper);
-            ProjectLoader loader = new FileProjectLoader(new GltfSceneReader(mapper), mapper);
+            ProjectLoader loader = new FileProjectLoader(new GltfSceneReader(mapper), mapper, modelExtractor);
             ProjectManager projectManager = new ProjectManager(
                 new FileRecentProjects(),
                 writer,

@@ -56,4 +56,19 @@ public class Aabb {
 
         return result;
     }
+
+    public Aabb copy() {
+        return new Aabb(minX, maxX, minY, maxY, minZ, maxZ);
+    }
+
+    public Aabb union(Aabb other) {
+        return new Aabb(
+            Math.min(minX, other.minX),
+            Math.max(maxX, other.maxX),
+            Math.min(minY, other.minY),
+            Math.max(maxY, other.maxY),
+            Math.min(minZ, other.minZ),
+            Math.max(maxZ, other.maxZ)
+        );
+    }
 }

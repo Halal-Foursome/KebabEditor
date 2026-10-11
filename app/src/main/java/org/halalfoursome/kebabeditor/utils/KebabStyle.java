@@ -41,7 +41,7 @@ public record KebabStyle(
     }
 
     public static KebabStyle defaultStyle() {
-        AssetLoader assetLoader = AssetLoader.getInstance();
+        UiAssetLoader assetLoader = UiAssetLoader.getInstance();
         FavIcon favicon = assetLoader.loadIcon(DEFAULT_ICON);
         Font uiFont = assetLoader.loadFont(DEFAULT_UI_FONT, 16f, false);
         Font techFont = assetLoader.loadFont(DEFAULT_TECH_FONT, 14f, true);

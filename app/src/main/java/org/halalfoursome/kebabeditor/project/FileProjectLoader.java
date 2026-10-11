@@ -10,6 +10,9 @@ import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeRegistryJson;
 import org.halalfoursome.kebabeditor.scene.error.SceneException;
 import org.halalfoursome.kebabeditor.scene.io.SceneReader;
 import org.halalfoursome.kebabeditor.scene.model.Scene;
+import org.halalfoursome.kebabeditor.scene.resolve.CachingModelResolver;
+import org.halalfoursome.kebabeditor.scene.resolve.ModelExtractor;
+import org.halalfoursome.kebabeditor.scene.resolve.ModelResolver;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -21,6 +24,7 @@ public class FileProjectLoader implements ProjectLoader {
 
     private final SceneReader sceneReader;
     private final ObjectMapper mapper;
+    private final ModelExtractor modelExtractor;
 
     @Override
     public ProjectRepository load(Path file) throws SceneException, IOException {
@@ -30,7 +34,11 @@ public class FileProjectLoader implements ProjectLoader {
 
         Scene scene = sceneReader.read(file, catalog);
 
-        return new ProjectRepository(file, scene, catalog);
+        // Each project gets its own resolver, rooted at the project folder, so models never leak between projects
+        Path projectRoot = file.toAbsolutePath().getParent();
+        ModelResolver modelResolver = new CachingModelResolver(modelExtractor, projectRoot);
+
+        return new ProjectRepository(file, scene, catalog, modelResolver);
     }
 
     // A missing registry is just an empty one; 
