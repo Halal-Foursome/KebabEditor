@@ -1,5 +1,7 @@
 package org.halalfoursome.kebabeditor.archetype.instance;
 
+import java.awt.Color;
+
 import org.halalfoursome.kebabeditor.archetype.ParamType;
 import org.halalfoursome.kebabeditor.archetype.error.ParamDecodeException;
 import org.halalfoursome.kebabeditor.math.Vec3;
@@ -27,6 +29,7 @@ public final class ParamJson {
                 NullNode.getInstance(),
                 id -> TextNode.valueOf((String) id)
             );
+            case COLOR              -> TextNode.valueOf(Vec3.fromColor((Color) value).toString());
         };
     }
 
@@ -54,6 +57,8 @@ public final class ParamJson {
                 : node.isTextual()
                     ? Maybe.some(node.textValue())
                     : fail(type, node);
+
+            case COLOR -> decodeVec3(node).toColor();
         };
     }
 

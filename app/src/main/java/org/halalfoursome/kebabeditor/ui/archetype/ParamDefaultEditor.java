@@ -1,16 +1,20 @@
 package org.halalfoursome.kebabeditor.ui.archetype;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.util.function.Supplier;
 
+import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JColorChooser;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.SwingUtilities;
 
 import org.halalfoursome.kebabeditor.archetype.ParamType;
 import org.halalfoursome.kebabeditor.math.Vec3;
@@ -48,6 +52,7 @@ public final class ParamDefaultEditor extends JPanel {
             case STRING, REL_PATH -> textEditor(value instanceof String s ? s : "");
             case VEC3 -> vec3Editor(value instanceof Vec3 v ? v : Vec3.zero());
             case NODE_REF -> noDefault();
+            case COLOR -> colorEditor(value instanceof Color c ? c : Color.BLACK);
         };
 
         editor.setFont(style.uiFont());
@@ -106,6 +111,38 @@ public final class ParamDefaultEditor extends JPanel {
         reader = () -> Vec3.fromString(field.getText()).unwrapOr(Vec3.zero());
 
         return field;
+    }
+
+    // The button shows the colour and opens the chooser on click; Cancel keeps the current one
+    private JComponent colorEditor(Color value) {
+        Color[] current = { value };
+        JButton button = new JButton();
+        Runnable refresh = () -> {
+            button.setBackground(current[0]);
+            button.setForeground(isLight(current[0]) ? Color.BLACK : Color.WHITE);
+            button.setText(String.format("#%02X%02X%02X", current[0].getRed(), current[0].getGreen(), current[0].getBlue()));
+        };
+
+        button.addActionListener(e -> {
+            Color chosen = JColorChooser.showDialog(
+                SwingUtilities.getWindowAncestor(button),
+                "Default colour",
+                current[0]
+            );
+
+            if (chosen != null) {
+                current[0] = chosen;
+                refresh.run();
+            }
+        });
+        refresh.run();
+        reader = () -> current[0];
+
+        return button;
+    }
+
+    private static boolean isLight(Color color) {
+        return 0.299 * color.getRed() + 0.587 * color.getGreen() + 0.114 * color.getBlue() > 140;
     }
 
     private JComponent noDefault() {

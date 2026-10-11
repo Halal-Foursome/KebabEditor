@@ -1,5 +1,6 @@
 package org.halalfoursome.kebabeditor.archetype;
 
+import java.awt.Color;
 import java.util.Locale;
 
 import org.halalfoursome.kebabeditor.math.Vec3;
@@ -15,7 +16,8 @@ public enum ParamType {
     STRING,
     REL_PATH,
     VEC3,
-    NODE_REF;
+    NODE_REF,
+    COLOR;
 
     public String displayName() {
         return switch (this) {
@@ -26,6 +28,7 @@ public enum ParamType {
             case VEC3       -> "Vec3";
             case NODE_REF   -> "NodeRef";
             case REL_PATH   -> "RelPath";
+            case COLOR      -> "Color";
         };
     }
 
@@ -48,6 +51,7 @@ public enum ParamType {
             case REL_PATH   -> String.class;    // json: string, validated
             case VEC3       -> Vec3.class;      // json: string, validated
             case NODE_REF   -> Maybe.class;     // Maybe<String>, json: @Nullable string
+            case COLOR      -> Color.class;     // json: string like a Vec3 with components from 0 to 1
         };
     }
 
@@ -60,6 +64,7 @@ public enum ParamType {
             case REL_PATH   -> "";
             case VEC3       -> new Vec3();
             case NODE_REF   -> Maybe.none(); // Maybe<String>
+            case COLOR      -> Color.BLACK;
         };
     }
 }
