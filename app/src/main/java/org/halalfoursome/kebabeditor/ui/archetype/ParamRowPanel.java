@@ -14,6 +14,7 @@ import javax.swing.JComboBox;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
+import org.halalfoursome.kebabeditor.archetype.ParamSpec;
 import org.halalfoursome.kebabeditor.archetype.ParamType;
 import org.halalfoursome.kebabeditor.ui.validation.FieldValidator;
 import org.halalfoursome.kebabeditor.ui.validation.Rules;
@@ -24,6 +25,7 @@ public class ParamRowPanel extends JPanel {
 
     private final JTextField nameField = new JTextField();
     private final JComboBox<ParamType> typeBox = new JComboBox<>(ParamType.values());
+    private final ParamDefaultEditor defaultEditor;
 
     public ParamRowPanel(
         KebabStyle style,
@@ -31,12 +33,13 @@ public class ParamRowPanel extends JPanel {
         Consumer<ParamRowPanel> onRemove,
         Function<ParamRowPanel, Collection<String>> otherNames,
         String paramName,
-        ParamType paramType
+        ParamSpec spec
     ) {
         this(style, validation, onRemove, otherNames);
 
         nameField.setText(paramName);
-        typeBox.setSelectedIndex(paramType.ordinal());
+        typeBox.setSelectedIndex(spec.type().ordinal());
+        defaultEditor.showFor(spec.type(), spec.defaultValue());
     }
 
     public ParamRowPanel(
@@ -64,12 +67,18 @@ public class ParamRowPanel extends JPanel {
         c.weightx = 0;
         add(typeBox, c);
 
+        defaultEditor = new ParamDefaultEditor(style, validation);
+        defaultEditor.showFor(type(), type().defaultValue());
+        typeBox.addActionListener(e -> defaultEditor.showFor(type(), type().defaultValue()));
+        add(defaultEditor, c);
+
         JButton removeButton = new JButton("Remove");
         removeButton.setFont(style.uiFont());
         removeButton.addActionListener(e -> {
             // the row must leave the list first, or the others still see its name as taken
             onRemove.accept(this);
             validation.remove(nameValidator);
+            defaultEditor.dispose();
         });
         add(removeButton, c);
     }
@@ -80,6 +89,14 @@ public class ParamRowPanel extends JPanel {
 
     public ParamType type() {
         return (ParamType) typeBox.getSelectedItem();
+    }
+
+    public ParamSpec spec() {
+        try {
+            return new ParamSpec(type(), defaultEditor.value());
+        } catch (IllegalArgumentException e) {
+            return ParamSpec.of(type());
+        }
     }
 
     // BoxLayout would otherwise stretch the row vertically

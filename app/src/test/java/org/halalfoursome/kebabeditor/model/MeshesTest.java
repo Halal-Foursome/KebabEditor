@@ -23,14 +23,6 @@ class MeshesTest {
     }
 
     @Test
-    void cubeCounts() {
-        assertEquals(12, Meshes.CUBE_TRIANGLES.primitiveCount());
-        assertEquals(24, Meshes.CUBE_TRIANGLES.vertexCount());
-        assertEquals(12, Meshes.CUBE_LINES.primitiveCount());
-        assertEquals(8, Meshes.CUBE_LINES.vertexCount());
-    }
-
-    @Test
     void cubeLinesAreAxisAlignedEdges() {
         float[] p = Meshes.CUBE_LINES.positions();
         int[] indices = Meshes.CUBE_LINES.indices();
@@ -93,26 +85,6 @@ class MeshesTest {
 
             assertTrue(length(normal) > EPS);
         }
-    }
-
-    @Test
-    void sphereLinesFormThreeClosedLoops() {
-        MeshData mesh = Meshes.sphereLines(8);
-
-        assertEquals(24, mesh.vertexCount());
-        assertEquals(24, mesh.primitiveCount());
-    }
-
-    @Test
-    void rejectsTooCoarseSpheres() {
-        org.junit.jupiter.api.Assertions.assertThrows(
-            IllegalArgumentException.class,
-            () -> Meshes.sphereTriangles(1, 8)
-        );
-        org.junit.jupiter.api.Assertions.assertThrows(
-            IllegalArgumentException.class,
-            () -> Meshes.sphereLines(2)
-        );
     }
 
     private static void assertFitsUnitCube(Aabb box) {

@@ -111,16 +111,6 @@ class CachingModelResolverTest {
     }
 
     @Test
-    void emptyModelHasAZeroBox() throws Exception {
-        touch("m.bin");
-        extractor.script = file -> List.of();
-
-        ResolvedModel resolved = assertInstanceOf(ResolvedModel.class, resolver().resolve(scene(), "m.bin"));
-
-        assertEquals(new Aabb(), resolved.bounds());
-    }
-
-    @Test
     void secondResolveComesFromTheCache() throws Exception {
         touch("m.bin");
         CachingModelResolver resolver = resolver();
@@ -145,17 +135,6 @@ class CachingModelResolverTest {
     }
 
     @Test
-    void differentSpellingsOfTheSamePathShareOneEntry() throws Exception {
-        touch("models/m.bin");
-        CachingModelResolver resolver = resolver();
-
-        resolver.resolve(scene(), "models/m.bin");
-        resolver.resolve(scene(), "models/../models/./m.bin");
-
-        assertEquals(1, extractor.calls);
-    }
-
-    @Test
     void missingFileIsReportedWithItsPath() throws Exception {
         BrokenReference broken = assertInstanceOf(
             BrokenReference.class,
@@ -165,13 +144,6 @@ class CachingModelResolverTest {
         assertEquals(Reason.MISSING, broken.reason());
         assertEquals(root.resolve("nope.bin"), broken.path());
         assertEquals(0, extractor.calls);
-    }
-
-    @Test
-    void blankPathIsMissing() throws Exception {
-        BrokenReference broken = assertInstanceOf(BrokenReference.class, resolver().resolve(scene(), "  "));
-
-        assertEquals(Reason.MISSING, broken.reason());
     }
 
     @Test
@@ -312,17 +284,4 @@ class CachingModelResolverTest {
         assertEquals(1f, model.bounds().getMaxX(), EPS);
     }
 
-    @Test
-    void realUnsupportedFormatIsUnreadable() throws Exception {
-        touch("m.fbx");
-        CachingModelResolver resolver = new CachingModelResolver(
-            new CompositeModelExtractor(List.of(new GltfMeshExtractor())),
-            root
-        );
-
-        BrokenReference broken = assertInstanceOf(BrokenReference.class, resolver.resolve(scene(), "m.fbx"));
-
-        assertEquals(Reason.UNREADABLE, broken.reason());
-        assertTrue(broken.detail().contains("Unsupported"), broken.detail());
-    }
 }

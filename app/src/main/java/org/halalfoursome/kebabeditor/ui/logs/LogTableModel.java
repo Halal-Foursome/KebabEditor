@@ -7,9 +7,9 @@ import javax.swing.table.AbstractTableModel;
 
 import org.halalfoursome.kebabeditor.logging.LogEntry;
 
-final class LogTableModel extends AbstractTableModel {
+public final class LogTableModel extends AbstractTableModel {
 
-    enum Column {
+    public enum Column {
         TIME("Time"),
         LEVEL("Level"),
         MESSAGE("Message");
@@ -26,12 +26,12 @@ final class LogTableModel extends AbstractTableModel {
 
     private List<LogEntry> entries = List.of();
 
-    void setEntries(List<LogEntry> updated) {
+    public void setEntries(List<LogEntry> updated) {
         entries = updated;
         fireTableDataChanged();
     }
 
-    LogEntry entryAt(int row) {
+    public LogEntry entryAt(int row) {
         return entries.get(row);
     }
 

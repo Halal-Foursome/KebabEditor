@@ -3,7 +3,7 @@ package org.halalfoursome.kebabeditor.archetype.instance;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.halalfoursome.kebabeditor.archetype.ParamType;
+import org.halalfoursome.kebabeditor.archetype.ParamSpec;
 import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeDefinition;
 import org.halalfoursome.kebabeditor.archetype.error.InvalidParamType;
 import org.halalfoursome.kebabeditor.archetype.error.UnknownParamException;
@@ -49,13 +49,13 @@ public final class ArchetypeInstance implements NodeArchetype {
             UnknownParamException, 
             InvalidParamType 
     {
-        ParamType param = definition.getParams().get(name);
+        ParamSpec spec = definition.getParams().get(name);
 
-        if (param == null) {
+        if (spec == null) {
             throw new UnknownParamException(name, definition.getParams().keySet());
         }
 
-        var expected = param.javaClass();
+        var expected = spec.type().javaClass();
 
         if (value == null) {
             throw new InvalidParamType(null, expected);

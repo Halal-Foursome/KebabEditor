@@ -13,7 +13,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
-import org.halalfoursome.kebabeditor.archetype.ParamType;
+import org.halalfoursome.kebabeditor.archetype.ParamSpec;
 import org.halalfoursome.kebabeditor.ui.validation.ValidationGroup;
 import org.halalfoursome.kebabeditor.utils.KebabStyle;
 
@@ -26,7 +26,7 @@ public class ParamListPanel extends JPanel {
     public ParamListPanel(
         KebabStyle style, 
         ValidationGroup validation, 
-        Map<String, ParamType> params
+        Map<String, ParamSpec> params
     ) {
         this(style, validation);
 
@@ -44,8 +44,8 @@ public class ParamListPanel extends JPanel {
         add(buildScroll(), BorderLayout.CENTER);
     }
 
-    public void addRow(String paramName, ParamType paramType) {
-        rows.add(new ParamRowPanel(style, validation, this::removeRow, this::namesExcept, paramName, paramType));
+    public void addRow(String paramName, ParamSpec spec) {
+        rows.add(new ParamRowPanel(style, validation, this::removeRow, this::namesExcept, paramName, spec));
         refresh();
     }
 
@@ -54,11 +54,11 @@ public class ParamListPanel extends JPanel {
         refresh();
     }
 
-    public Map<String, ParamType> params() {
-        Map<String, ParamType> params = new LinkedHashMap<>();
+    public Map<String, ParamSpec> params() {
+        Map<String, ParamSpec> params = new LinkedHashMap<>();
         for (var component : rows.getComponents()) {
             if (component instanceof ParamRowPanel row) {
-                params.put(row.name().trim(), row.type());
+                params.put(row.name().trim(), row.spec());
             }
         }
         return params;

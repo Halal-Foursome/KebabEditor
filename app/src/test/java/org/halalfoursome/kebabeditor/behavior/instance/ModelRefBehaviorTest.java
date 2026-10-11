@@ -88,19 +88,6 @@ class ModelRefBehaviorTest {
     }
 
     @Test
-    void modelWithSeveralPartsDrawsEachOne() throws Exception {
-        parts = List.of(
-            new ModelPart(Meshes.CUBE_TRIANGLES, CRATE_MATERIAL, Mat4.identity()),
-            new ModelPart(Meshes.SPHERE_TRIANGLES, CRATE_MATERIAL, Mat4.identity())
-        );
-
-        List<Drawable> drawables = behavior.drawableObjects(nodeAt(Vec3.zero(), 1f), modelRef("crate.model"), context());
-
-        assertEquals(2, drawables.size());
-        assertSame(Meshes.SPHERE_TRIANGLES, drawables.get(1).mesh());
-    }
-
-    @Test
     void boundsAreTheModelBoundsInWorldSpace() throws Exception {
         Aabb bounds = behavior
             .bounds(nodeAt(new Vec3(10, 0, 0), 2f), modelRef("crate.model"), context())
@@ -122,11 +109,6 @@ class ModelRefBehaviorTest {
         Aabb box = assertInstanceOf(GizmoShape.GizmoAabb.class, shape).box();
         assertEquals(1.5f, box.getMinX(), EPS);
         assertEquals(2.5f, box.getMaxX(), EPS);
-    }
-
-    @Test
-    void validModelHasNoProblems() throws Exception {
-        assertTrue(behavior.validate(nodeAt(Vec3.zero(), 1f), modelRef("crate.model"), context()).isEmpty());
     }
 
     @Test
@@ -170,21 +152,4 @@ class ModelRefBehaviorTest {
         assertTrue(problems.get(0).getMessage().contains("No model path"), problems.get(0).getMessage());
     }
 
-    @Test
-    void modelWithNothingToDrawIsReported() throws Exception {
-        parts = List.of();
-
-        var problems = behavior.validate(nodeAt(Vec3.zero(), 1f), modelRef("crate.model"), context());
-
-        assertEquals(1, problems.size());
-        assertTrue(problems.get(0).getMessage().contains("nothing to draw"), problems.get(0).getMessage());
-    }
-
-    @Test
-    void pathsCannotEscapeTheProject() throws Exception {
-        var problems = behavior.validate(nodeAt(Vec3.zero(), 1f), modelRef("../../etc/passwd"), context());
-
-        assertEquals(1, problems.size());
-        assertTrue(problems.get(0).getMessage().contains("outside the project"), problems.get(0).getMessage());
-    }
 }

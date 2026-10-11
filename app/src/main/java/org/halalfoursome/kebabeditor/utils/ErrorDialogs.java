@@ -25,7 +25,7 @@ public final class ErrorDialogs {
         JOptionPane.showMessageDialog(parent, e.getMessage(), title, JOptionPane.ERROR_MESSAGE);
     }
 
-    static String describe(IOException e) {
+    public static String describe(IOException e) {
         return switch (e) {
             case FileAlreadyExistsException x -> name(x) + " already exists";
             case NoSuchFileException x        -> name(x) + " does not exist";

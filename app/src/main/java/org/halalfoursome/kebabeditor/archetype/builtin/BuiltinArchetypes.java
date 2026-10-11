@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.halalfoursome.kebabeditor.archetype.ParamType;
 import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeDefinition;
+import org.halalfoursome.kebabeditor.math.Vec3;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
 public final class BuiltinArchetypes {
@@ -28,15 +29,15 @@ public final class BuiltinArchetypes {
 
         new ArchetypeDefinition(COLLIDER_BOX)
             .withDisplayName("Box Collider")
-            .withParam("size", ParamType.VEC3),
+            .withParam("size", ParamType.VEC3, Vec3.one()),
 
         new ArchetypeDefinition(COLLIDER_SPHERE)
             .withDisplayName("Sphere Collider")
-            .withParam("radius", ParamType.FLOAT),
+            .withParam("radius", ParamType.FLOAT, 0.5f),
 
         new ArchetypeDefinition(TRIGGER)
             .withDisplayName("Trigger")
-            .withParam("size", ParamType.VEC3)
+            .withParam("size", ParamType.VEC3, Vec3.one())
     );
 
     private BuiltinArchetypes() {}

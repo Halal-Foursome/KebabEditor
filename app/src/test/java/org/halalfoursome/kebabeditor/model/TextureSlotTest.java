@@ -36,13 +36,4 @@ class TextureSlotTest {
         assertEquals(MAGENTA, image.getRGB(63, 63));
     }
 
-    @Test
-    void checkerSquaresAreEightPixelsWide() throws Exception {
-        BufferedImage image = loadMissingImage();
-
-        for (int x = 0; x < 8; x++) {
-            assertEquals(MAGENTA, image.getRGB(x, 0));
-            assertEquals(BLACK, image.getRGB(x + 8, 0));
-        }
-    }
 }

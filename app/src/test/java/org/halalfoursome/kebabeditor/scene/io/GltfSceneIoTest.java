@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.halalfoursome.kebabeditor.archetype.ParamSpec;
 import org.halalfoursome.kebabeditor.archetype.ParamType;
 import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeDefinition;
 import org.halalfoursome.kebabeditor.archetype.ArchetypeCatalog;
@@ -48,10 +49,10 @@ class GltfSceneIoTest {
         """;
 
     private static ArchetypeCatalog catalog() {
-        Map<String, ParamType> params = new LinkedHashMap<>();
-        params.put("label", ParamType.STRING);
-        params.put("pos", ParamType.VEC3);
-        params.put("target", ParamType.NODE_REF);
+        Map<String, ParamSpec> params = new LinkedHashMap<>();
+        params.put("label", ParamSpec.of(ParamType.STRING));
+        params.put("pos", ParamSpec.of(ParamType.VEC3));
+        params.put("target", ParamSpec.of(ParamType.NODE_REF));
 
         ArchetypeRegistry registry = new ArchetypeRegistry();
         registry.add(new ArchetypeDefinition("tag", "Tag", Maybe.none(), params));

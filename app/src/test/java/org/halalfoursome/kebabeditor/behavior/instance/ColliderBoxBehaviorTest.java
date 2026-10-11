@@ -68,8 +68,9 @@ class ColliderBoxBehaviorTest {
     }
 
     @Test
-    void defaultZeroSizeIsReportedAndNotDrawn() {
+    void zeroSizeIsReportedAndNotDrawn() throws Exception {
         ArchetypeInstance box = instanceOf(BuiltinArchetypes.COLLIDER_BOX);
+        box.set("size", Vec3.zero());
         SceneNode node = nodeAt(Vec3.zero(), 1f);
 
         assertEquals(1, behavior.validate(node, box, CONTEXT).size());
@@ -97,4 +98,5 @@ class ColliderBoxBehaviorTest {
 
         assertTrue(behavior.validate(nodeAt(Vec3.zero(), 1f), box, CONTEXT).isEmpty());
     }
+
 }
