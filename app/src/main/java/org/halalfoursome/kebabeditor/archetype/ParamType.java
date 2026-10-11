@@ -1,6 +1,5 @@
 package org.halalfoursome.kebabeditor.archetype;
 
-import java.nio.file.Path;
 import java.util.Locale;
 
 import org.halalfoursome.kebabeditor.math.Vec3;

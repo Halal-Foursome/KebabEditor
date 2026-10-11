@@ -1,5 +1,6 @@
 package org.halalfoursome.kebabeditor.behavior.instance;
 
+import static org.halalfoursome.kebabeditor.behavior.instance.BehaviorTestSupport.CONTEXT;
 import static org.halalfoursome.kebabeditor.behavior.instance.BehaviorTestSupport.instanceOf;
 import static org.halalfoursome.kebabeditor.behavior.instance.BehaviorTestSupport.nodeAt;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -25,14 +26,14 @@ class TriggerBehaviorTest {
         trigger.set("size", new Vec3(2, 2, 2));
         SceneNode node = nodeAt(Vec3.zero(), 1f);
 
-        Drawable drawable = behavior.drawableObjects(node, trigger, null).get(0);
+        Drawable drawable = behavior.drawableObjects(node, trigger, CONTEXT).get(0);
 
         assertEquals(Meshes.CUBE_LINES, drawable.mesh());
         assertEquals(DrawMode.OVERLAY, drawable.mode());
 
         ArchetypeInstance box = instanceOf(BuiltinArchetypes.COLLIDER_BOX);
         box.set("size", new Vec3(2, 2, 2));
-        Drawable boxDrawable = new ColliderBoxBehavior().drawableObjects(node, box, null).get(0);
+        Drawable boxDrawable = new ColliderBoxBehavior().drawableObjects(node, box, CONTEXT).get(0);
         assertNotEquals(boxDrawable.material().baseColor(), drawable.material().baseColor());
     }
 
@@ -40,7 +41,7 @@ class TriggerBehaviorTest {
     void validationMessageNamesTheTrigger() {
         ArchetypeInstance trigger = instanceOf(BuiltinArchetypes.TRIGGER);
 
-        var problems = behavior.validate(nodeAt(Vec3.zero(), 1f), trigger);
+        var problems = behavior.validate(nodeAt(Vec3.zero(), 1f), trigger, CONTEXT);
 
         assertEquals(1, problems.size());
         assertTrue(problems.get(0).getMessage().startsWith("trigger:"));

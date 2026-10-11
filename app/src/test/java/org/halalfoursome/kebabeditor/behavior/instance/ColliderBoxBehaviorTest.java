@@ -1,5 +1,6 @@
 package org.halalfoursome.kebabeditor.behavior.instance;
 
+import static org.halalfoursome.kebabeditor.behavior.instance.BehaviorTestSupport.CONTEXT;
 import static org.halalfoursome.kebabeditor.behavior.instance.BehaviorTestSupport.EPS;
 import static org.halalfoursome.kebabeditor.behavior.instance.BehaviorTestSupport.instanceOf;
 import static org.halalfoursome.kebabeditor.behavior.instance.BehaviorTestSupport.nodeAt;
@@ -30,7 +31,7 @@ class ColliderBoxBehaviorTest {
         box.set("size", new Vec3(1, 2, 3));
         SceneNode node = nodeAt(new Vec3(1, 2, 3), 2f);
 
-        List<Drawable> drawableObjects = behavior.drawableObjects(node, box, null);
+        List<Drawable> drawableObjects = behavior.drawableObjects(node, box, CONTEXT);
 
         assertEquals(1, drawableObjects.size());
         Drawable drawable = drawableObjects.get(0);
@@ -46,7 +47,7 @@ class ColliderBoxBehaviorTest {
         box.set("size", new Vec3(1, 2, 3));
         SceneNode node = nodeAt(new Vec3(1, 2, 3), 2f);
 
-        Aabb bounds = behavior.bounds(node, box).unwrap();
+        Aabb bounds = behavior.bounds(node, box, CONTEXT).unwrap();
 
         assertEquals(0f, bounds.getMinX(), EPS);
         assertEquals(2f, bounds.getMaxX(), EPS);
@@ -61,7 +62,7 @@ class ColliderBoxBehaviorTest {
         ArchetypeInstance box = instanceOf(BuiltinArchetypes.COLLIDER_BOX);
         box.set("size", new Vec3(1, 2, 3));
 
-        GizmoShape shape = behavior.gizmoSelectionShape(nodeAt(Vec3.zero(), 5f), box).unwrap();
+        GizmoShape shape = behavior.gizmoSelectionShape(nodeAt(Vec3.zero(), 5f), box, CONTEXT).unwrap();
 
         assertEquals(new GizmoShape.GizmoBox(new Vec3(1, 2, 3)), shape);
     }
@@ -71,10 +72,10 @@ class ColliderBoxBehaviorTest {
         ArchetypeInstance box = instanceOf(BuiltinArchetypes.COLLIDER_BOX);
         SceneNode node = nodeAt(Vec3.zero(), 1f);
 
-        assertEquals(1, behavior.validate(node, box).size());
-        assertTrue(behavior.drawableObjects(node, box, null).isEmpty());
-        assertTrue(behavior.bounds(node, box).isNone());
-        assertTrue(behavior.gizmoSelectionShape(node, box).isNone());
+        assertEquals(1, behavior.validate(node, box, CONTEXT).size());
+        assertTrue(behavior.drawableObjects(node, box, CONTEXT).isEmpty());
+        assertTrue(behavior.bounds(node, box, CONTEXT).isNone());
+        assertTrue(behavior.gizmoSelectionShape(node, box, CONTEXT).isNone());
     }
 
     @Test
@@ -83,10 +84,10 @@ class ColliderBoxBehaviorTest {
         SceneNode node = nodeAt(Vec3.zero(), 1f);
 
         box.set("size", new Vec3(1, -1, 1));
-        assertEquals(1, behavior.validate(node, box).size());
+        assertEquals(1, behavior.validate(node, box, CONTEXT).size());
 
         box.set("size", new Vec3(1, Float.NaN, 1));
-        assertEquals(1, behavior.validate(node, box).size());
+        assertEquals(1, behavior.validate(node, box, CONTEXT).size());
     }
 
     @Test
@@ -94,6 +95,6 @@ class ColliderBoxBehaviorTest {
         ArchetypeInstance box = instanceOf(BuiltinArchetypes.COLLIDER_BOX);
         box.set("size", new Vec3(1, 1, 1));
 
-        assertTrue(behavior.validate(nodeAt(Vec3.zero(), 1f), box).isEmpty());
+        assertTrue(behavior.validate(nodeAt(Vec3.zero(), 1f), box, CONTEXT).isEmpty());
     }
 }

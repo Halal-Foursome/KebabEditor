@@ -24,6 +24,14 @@ public final class Params {
         }
     }
 
+    public static Maybe<String> text(ArchetypeInstance archetype, String name) {
+        try {
+            return archetype.get(name) instanceof String value ? Maybe.some(value) : Maybe.none();
+        } catch (UnknownParamException e) {
+            return Maybe.none();
+        }
+    }
+
     public static boolean positive(float value) {
         return Float.isFinite(value) && value > 0f;
     }

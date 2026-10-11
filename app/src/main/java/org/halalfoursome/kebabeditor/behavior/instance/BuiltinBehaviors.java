@@ -8,8 +8,8 @@ import org.halalfoursome.kebabeditor.utils.Maybe;
 
 public final class BuiltinBehaviors {
 
-    // TODO: add model_ref and prefab_ref
     private static final Map<String, ArchetypeBehavior> ALL = Map.of(
+        BuiltinArchetypes.MODEL_REF,        new ModelRefBehavior(),
         BuiltinArchetypes.COLLIDER_BOX,     new ColliderBoxBehavior(),
         BuiltinArchetypes.COLLIDER_SPHERE,  new ColliderSphereBehavior(),
         BuiltinArchetypes.TRIGGER,          new TriggerBehavior()

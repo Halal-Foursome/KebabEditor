@@ -1,5 +1,6 @@
 package org.halalfoursome.kebabeditor.behavior.instance;
 
+import static org.halalfoursome.kebabeditor.behavior.instance.BehaviorTestSupport.CONTEXT;
 import static org.halalfoursome.kebabeditor.behavior.instance.BehaviorTestSupport.EPS;
 import static org.halalfoursome.kebabeditor.behavior.instance.BehaviorTestSupport.instanceOf;
 import static org.halalfoursome.kebabeditor.behavior.instance.BehaviorTestSupport.nodeAt;
@@ -29,7 +30,7 @@ class ColliderSphereBehaviorTest {
         sphere.set("radius", 1.5f);
         SceneNode node = nodeAt(new Vec3(1, 2, 3), 2f);
 
-        List<Drawable> drawableObjects = behavior.drawableObjects(node, sphere, null);
+        List<Drawable> drawableObjects = behavior.drawableObjects(node, sphere, CONTEXT);
 
         assertEquals(1, drawableObjects.size());
         assertSame(Meshes.SPHERE_LINES, drawableObjects.get(0).mesh());
@@ -43,7 +44,7 @@ class ColliderSphereBehaviorTest {
         ArchetypeInstance sphere = instanceOf(BuiltinArchetypes.COLLIDER_SPHERE);
         sphere.set("radius", 1.5f);
 
-        Aabb bounds = behavior.bounds(nodeAt(new Vec3(1, 2, 3), 2f), sphere).unwrap();
+        Aabb bounds = behavior.bounds(nodeAt(new Vec3(1, 2, 3), 2f), sphere, CONTEXT).unwrap();
 
         assertEquals(-2f, bounds.getMinX(), EPS);
         assertEquals(4f, bounds.getMaxX(), EPS);
@@ -58,7 +59,7 @@ class ColliderSphereBehaviorTest {
         ArchetypeInstance sphere = instanceOf(BuiltinArchetypes.COLLIDER_SPHERE);
         sphere.set("radius", 1.5f);
 
-        GizmoShape shape = behavior.gizmoSelectionShape(nodeAt(Vec3.zero(), 4f), sphere).unwrap();
+        GizmoShape shape = behavior.gizmoSelectionShape(nodeAt(Vec3.zero(), 4f), sphere, CONTEXT).unwrap();
 
         assertEquals(new GizmoShape.GizmoSphere(1.5f), shape);
     }
@@ -68,9 +69,9 @@ class ColliderSphereBehaviorTest {
         ArchetypeInstance sphere = instanceOf(BuiltinArchetypes.COLLIDER_SPHERE);
         SceneNode node = nodeAt(Vec3.zero(), 1f);
 
-        assertEquals(1, behavior.validate(node, sphere).size());
-        assertTrue(behavior.drawableObjects(node, sphere, null).isEmpty());
-        assertTrue(behavior.bounds(node, sphere).isNone());
+        assertEquals(1, behavior.validate(node, sphere, CONTEXT).size());
+        assertTrue(behavior.drawableObjects(node, sphere, CONTEXT).isEmpty());
+        assertTrue(behavior.bounds(node, sphere, CONTEXT).isNone());
     }
 
     @Test
@@ -78,6 +79,6 @@ class ColliderSphereBehaviorTest {
         ArchetypeInstance sphere = instanceOf(BuiltinArchetypes.COLLIDER_SPHERE);
         sphere.set("radius", 0.25f);
 
-        assertTrue(behavior.validate(nodeAt(Vec3.zero(), 1f), sphere).isEmpty());
+        assertTrue(behavior.validate(nodeAt(Vec3.zero(), 1f), sphere, CONTEXT).isEmpty());
     }
 }
