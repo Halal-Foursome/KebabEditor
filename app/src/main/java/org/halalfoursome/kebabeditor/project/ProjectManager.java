@@ -8,8 +8,10 @@ import java.util.Comparator;
 import java.util.List;
 
 import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeDefinition;
+import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeRegistry;
 import org.halalfoursome.kebabeditor.scene.error.SceneException;
 import org.halalfoursome.kebabeditor.scene.error.SceneFormatException;
+import org.halalfoursome.kebabeditor.scene.resolve.ModelResolver;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
 import lombok.RequiredArgsConstructor;
@@ -53,11 +55,23 @@ public class ProjectManager {
 
     public List<ArchetypeDefinition> archetypes() {
         return repository
-            .map(r -> r.archetypeRegistry().getArchetypes().stream()
+            .map(r -> r.archetypeCatalog()
+                .all()
+                .stream()
                 .sorted(Comparator.comparing(ArchetypeDefinition::getId))
                 .toList()
             )
             .unwrapOr(List.of());
+    }
+
+    public Maybe<ModelResolver> modelResolver() {
+        return repository.map(ProjectRepository::modelResolver);
+    }
+
+    public boolean isBuiltin(String archetypeId) {
+        return repository
+            .map(r -> r.archetypeCatalog().isBuiltin(archetypeId))
+            .unwrapOr(false);
     }
 
     public void addArchetype(ArchetypeDefinition definition) throws IOException {
@@ -66,12 +80,20 @@ public class ProjectManager {
         }
 
         ProjectRepository current = repository.unwrap();
-        current.archetypeRegistry().add(definition);
+        ArchetypeRegistry registry = current.archetypeCatalog().getRegistry();
+
+        if (current.archetypeCatalog().isBuiltin(definition.getId())) {
+            throw new IllegalArgumentException(
+                "Archetype '" + definition.getId() + "' is built in and cannot be redefined"
+            );
+        }
+
+        registry.add(definition);
 
         try {
-            writer.saveArchetypes(current.filePath(), current.archetypeRegistry());
+            writer.saveArchetypes(current.filePath(), registry);
         } catch (IOException e) {
-            current.archetypeRegistry().remove(definition);
+            registry.remove(definition);
             throw e;
         }
 
@@ -84,12 +106,20 @@ public class ProjectManager {
         }
 
         ProjectRepository current = repository.unwrap();
-        current.archetypeRegistry().remove(definition);
+        ArchetypeRegistry registry = current.archetypeCatalog().getRegistry();
+
+        if (current.archetypeCatalog().isBuiltin(definition.getId())) {
+            throw new IllegalArgumentException(
+                "Archetype '" + definition.getId() + "' is built in and cannot be removed"
+            );
+        }
+
+        registry.remove(definition);
 
         try {
-            writer.saveArchetypes(current.filePath(), current.archetypeRegistry());
+            writer.saveArchetypes(current.filePath(), registry);
         } catch (IOException e) {
-            current.archetypeRegistry().add(definition);
+            registry.add(definition);
             throw e;
         }
 
@@ -102,7 +132,7 @@ public class ProjectManager {
         }
 
         ProjectRepository current = repository.unwrap();
-        writer.saveArchetypes(current.filePath(), current.archetypeRegistry());
+        writer.saveArchetypes(current.filePath(), current.archetypeCatalog().getRegistry());
     }
 
     public void save() throws SceneFormatException, IOException {
@@ -112,7 +142,7 @@ public class ProjectManager {
 
         ProjectRepository current = repository.unwrap();
         writer.saveScene(current.filePath(), current.sceneData());
-        writer.saveArchetypes(current.filePath(), current.archetypeRegistry());
+        writer.saveArchetypes(current.filePath(), current.archetypeCatalog().getRegistry());
     }
 
     public RecentProjects recentProjects() {

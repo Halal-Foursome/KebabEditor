@@ -181,14 +181,14 @@ classDiagram
     class KebabStyle {
         <<record>>
     }
-    class AssetLoader
+    class UiAssetLoader
     class FavIcon
     class FileChooser
     class ErrorDialogs
     class LucideIcon {
         <<enumeration>>
     }
-    AssetLoader ..> FavIcon
+    UiAssetLoader ..> FavIcon
 ```
 
 ## 4. UI: вікно, меню, навігація

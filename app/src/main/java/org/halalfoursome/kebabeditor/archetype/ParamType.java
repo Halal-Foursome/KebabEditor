@@ -1,6 +1,5 @@
 package org.halalfoursome.kebabeditor.archetype;
 
-import java.nio.file.Path;
 import java.util.Locale;
 
 import org.halalfoursome.kebabeditor.math.Vec3;
@@ -46,7 +45,7 @@ public enum ParamType {
             case FLOAT      -> Float.class;     // json: float
             case BOOL       -> Boolean.class;   // json: boolean
             case STRING     -> String.class;    // json: string
-            case REL_PATH   -> Path.class;      // json: string, validated
+            case REL_PATH   -> String.class;    // json: string, validated
             case VEC3       -> Vec3.class;      // json: string, validated
             case NODE_REF   -> Maybe.class;     // Maybe<String>, json: @Nullable string
         };

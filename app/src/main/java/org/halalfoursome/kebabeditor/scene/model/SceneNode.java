@@ -7,6 +7,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 import org.halalfoursome.kebabeditor.archetype.instance.NodeArchetype;
+import org.halalfoursome.kebabeditor.math.Mat4;
 import org.halalfoursome.kebabeditor.math.Transform;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
@@ -72,6 +73,12 @@ public class SceneNode {
 
     public void removeArchetype(NodeArchetype archetype) {
         archetypes.remove(archetype);
+    }
+
+    public Mat4 worldMatrix() {
+        Mat4 local = transform.toMat4();
+
+        return parent.mapOr(local, p -> p.worldMatrix().mul(local));
     }
 
     void attachChild(SceneNode child) {

@@ -1,12 +1,14 @@
 package org.halalfoursome.kebabeditor.scene.io;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeRegistry;
+import org.halalfoursome.kebabeditor.archetype.ArchetypeCatalog;
 import org.halalfoursome.kebabeditor.archetype.instance.ArchetypeInstanceJson;
 import org.halalfoursome.kebabeditor.math.Quat;
 import org.halalfoursome.kebabeditor.math.Transform;
@@ -19,13 +21,29 @@ import org.halalfoursome.kebabeditor.scene.model.SceneNode;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-public class GltfSceneReader {
+public class GltfSceneReader implements SceneReader {
 
     private static final float UNIFORM_EPSILON = 1e-6f;
 
-    public Scene read(JsonNode document, ArchetypeRegistry registry) throws SceneException {
+    private final ObjectMapper mapper;
+
+    public GltfSceneReader() {
+        this(new ObjectMapper());
+    }
+
+    public GltfSceneReader(ObjectMapper mapper) {
+        this.mapper = mapper;
+    }
+
+    @Override
+    public Scene read(Path file, ArchetypeCatalog catalog) throws SceneException, IOException {
+        return read(mapper.readTree(file.toFile()), catalog);
+    }
+
+    public Scene read(JsonNode document, ArchetypeCatalog catalog) throws SceneException {
         Scene scene = new Scene(document);
 
         JsonNode scenes = document.path(GltfKeys.SCENES);
@@ -39,7 +57,7 @@ public class GltfSceneReader {
             throw new SceneFormatException("Scene " + sceneIndex + " does not exist");
         }
 
-        new Loading(scene, document.path(GltfKeys.NODES), registry)
+        new Loading(scene, document.path(GltfKeys.NODES), catalog)
             .loadAll(sceneJson.path(GltfKeys.NODES));
 
         return scene;
@@ -49,13 +67,13 @@ public class GltfSceneReader {
 
         private final Scene scene;
         private final JsonNode nodes;
-        private final ArchetypeRegistry registry;
+        private final ArchetypeCatalog catalog;
         private final Set<Integer> visited = new HashSet<>();
 
-        Loading(Scene scene, JsonNode nodes, ArchetypeRegistry registry) {
+        Loading(Scene scene, JsonNode nodes, ArchetypeCatalog catalog) {
             this.scene = scene;
             this.nodes = nodes;
-            this.registry = registry;
+            this.catalog = catalog;
         }
 
         void loadAll(JsonNode rootIndices) throws SceneException {
@@ -183,7 +201,7 @@ public class GltfSceneReader {
 
                 node.addArchetype(
                     new ArchetypeInstanceJson(archetype.get(GltfKeys.ID).textValue(), params)
-                        .toInstance(registry)
+                        .toInstance(catalog)
                 );
             }
         }

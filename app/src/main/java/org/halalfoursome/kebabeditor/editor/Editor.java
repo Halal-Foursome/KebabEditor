@@ -9,6 +9,7 @@ import org.halalfoursome.kebabeditor.project.ProjectManager;
 import org.halalfoursome.kebabeditor.project.RecentProjects;
 import org.halalfoursome.kebabeditor.scene.error.SceneException;
 import org.halalfoursome.kebabeditor.scene.error.SceneFormatException;
+import org.halalfoursome.kebabeditor.scene.resolve.ModelResolver;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
 import lombok.RequiredArgsConstructor;
@@ -40,6 +41,14 @@ public class Editor {
 
     public List<ArchetypeDefinition> archetypes() {
         return projectManager.archetypes();
+    }
+
+    public Maybe<ModelResolver> modelResolver() {
+        return projectManager.modelResolver();
+    }
+
+    public boolean isBuiltinArchetype(String archetypeId) {
+        return projectManager.isBuiltin(archetypeId);
     }
 
     public void addArchetype(ArchetypeDefinition definition) throws IOException {
