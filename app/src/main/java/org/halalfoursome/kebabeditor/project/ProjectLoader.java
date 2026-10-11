@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import org.halalfoursome.kebabeditor.archetype.ArchetypeCatalog;
 import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeRegistry;
 import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeRegistryJson;
 import org.halalfoursome.kebabeditor.scene.error.SceneException;
@@ -26,10 +27,11 @@ public class ProjectLoader {
 
         Path registryPath = ProjectTemplates.archetypesFileFor(file);
         ArchetypeRegistry registry = loadRegistry(registryPath);
+        ArchetypeCatalog catalog = new ArchetypeCatalog(registry);
 
-        Scene scene = sceneReader.read(root, registry);
+        Scene scene = sceneReader.read(root, catalog);
 
-        return new ProjectRepository(file, scene, registry);
+        return new ProjectRepository(file, scene, catalog);
     }
 
     // A missing registry is just an empty one; 

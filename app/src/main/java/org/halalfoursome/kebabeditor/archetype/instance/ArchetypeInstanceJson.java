@@ -3,8 +3,8 @@ package org.halalfoursome.kebabeditor.archetype.instance;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.halalfoursome.kebabeditor.archetype.ArchetypeCatalog;
 import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeDefinition;
-import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeRegistry;
 import org.halalfoursome.kebabeditor.archetype.error.UnknownParamException;
 import org.halalfoursome.kebabeditor.error.KebabException;
 import org.halalfoursome.kebabeditor.utils.Maybe;
@@ -34,8 +34,8 @@ public record ArchetypeInstanceJson(
         return new ArchetypeInstanceJson(instance.archetypeId(), params);
     }
 
-    public NodeArchetype toInstance(ArchetypeRegistry registry) {        
-        switch (registry.find(id)) {
+    public NodeArchetype toInstance(ArchetypeCatalog catalog) {        
+        switch (catalog.find(id)) {
             case Maybe.None<ArchetypeDefinition> _: {
                 System.err.println("Unknown archetype `" + id + "`, keeping it unresolved");
                 return unresolved();

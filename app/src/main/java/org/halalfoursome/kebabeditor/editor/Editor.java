@@ -42,6 +42,10 @@ public class Editor {
         return projectManager.archetypes();
     }
 
+    public boolean isBuiltinArchetype(String archetypeId) {
+        return projectManager.isBuiltin(archetypeId);
+    }
+
     public void addArchetype(ArchetypeDefinition definition) throws IOException {
         projectManager.addArchetype(definition);
     }

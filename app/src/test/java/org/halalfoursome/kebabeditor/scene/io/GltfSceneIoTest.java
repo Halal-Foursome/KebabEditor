@@ -10,6 +10,7 @@ import java.util.Map;
 
 import org.halalfoursome.kebabeditor.archetype.ParamType;
 import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeDefinition;
+import org.halalfoursome.kebabeditor.archetype.ArchetypeCatalog;
 import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeRegistry;
 import org.halalfoursome.kebabeditor.archetype.instance.ArchetypeInstance;
 import org.halalfoursome.kebabeditor.archetype.instance.UnresolvedArchetype;
@@ -46,7 +47,7 @@ class GltfSceneIoTest {
         }
         """;
 
-    private static ArchetypeRegistry registry() {
+    private static ArchetypeCatalog catalog() {
         Map<String, ParamType> params = new LinkedHashMap<>();
         params.put("label", ParamType.STRING);
         params.put("pos", ParamType.VEC3);
@@ -54,7 +55,7 @@ class GltfSceneIoTest {
 
         ArchetypeRegistry registry = new ArchetypeRegistry();
         registry.add(new ArchetypeDefinition("tag", "Tag", Maybe.none(), params));
-        return registry;
+        return new ArchetypeCatalog(registry);
     }
 
     private static JsonNode json(String text) throws Exception {
@@ -63,7 +64,7 @@ class GltfSceneIoTest {
 
     @Test
     void readBuildsTreeTransformsAndArchetypes() throws Exception {
-        Scene scene = new GltfSceneReader().read(json(SAMPLE), registry());
+        Scene scene = new GltfSceneReader().read(json(SAMPLE), catalog());
 
         assertEquals(2, scene.getRootNodes().size());
         SceneNode root = scene.getRootNodes().get(0);
@@ -82,8 +83,8 @@ class GltfSceneIoTest {
         GltfSceneReader reader = new GltfSceneReader();
         GltfSceneWriter writer = new GltfSceneWriter();
 
-        JsonNode first = writer.write(reader.read(json(SAMPLE), registry())).deepCopy();
-        JsonNode second = writer.write(reader.read(first.deepCopy(), registry())).deepCopy();
+        JsonNode first = writer.write(reader.read(json(SAMPLE), catalog())).deepCopy();
+        JsonNode second = writer.write(reader.read(first.deepCopy(), catalog())).deepCopy();
 
         assertEquals(first, second);
 
@@ -101,7 +102,7 @@ class GltfSceneIoTest {
 
     @Test
     void nodesWithoutIdsGetStableIdsOnSave() throws Exception {
-        Scene scene = new GltfSceneReader().read(json(SAMPLE), registry());
+        Scene scene = new GltfSceneReader().read(json(SAMPLE), catalog());
         JsonNode written = new GltfSceneWriter().write(scene);
 
         String id = written.get("nodes").get(2).get("extras").get("kebab").get("id").asText();
@@ -110,7 +111,7 @@ class GltfSceneIoTest {
 
     @Test
     void addedNodesAreAppendedAndRemovedOnesStayAsOrphans() throws Exception {
-        Scene scene = new GltfSceneReader().read(json(SAMPLE), registry());
+        Scene scene = new GltfSceneReader().read(json(SAMPLE), catalog());
         SceneNode root = scene.getRootNodes().get(0);
         SceneNode added = new SceneNode("added");
         scene.add(added, root);
@@ -153,7 +154,7 @@ class GltfSceneIoTest {
         for (String doc : new String[] { nonUniform, matrix, twoParents, outOfRange }) {
             assertThrows(
                 SceneFormatException.class,
-                () -> new GltfSceneReader().read(json(doc), registry()),
+                () -> new GltfSceneReader().read(json(doc), catalog()),
                 doc
             );
         }
@@ -166,6 +167,6 @@ class GltfSceneIoTest {
               { "extras": { "kebab": { "id": "11111111-1111-1111-1111-111111111111" } } },
               { "extras": { "kebab": { "id": "11111111-1111-1111-1111-111111111111" } } } ] }""";
 
-        assertThrows(SceneException.class, () -> new GltfSceneReader().read(json(doc), registry()));
+        assertThrows(SceneException.class, () -> new GltfSceneReader().read(json(doc), catalog()));
     }
 }

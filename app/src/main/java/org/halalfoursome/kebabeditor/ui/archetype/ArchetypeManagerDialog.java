@@ -167,9 +167,12 @@ public class ArchetypeManagerDialog extends JDialog {
     }
 
     private void updateButtons() {
-        boolean selected = archetypeList.getSelectedValue() != null;
-        editButton.setEnabled(selected);
+        ArchetypeDefinition selection = archetypeList.getSelectedValue();
+        boolean selected = selection != null;
+        // Built-ins are shared and read-only: they can be copied, never edited or deleted
+        boolean editable = selected && !editor.isBuiltinArchetype(selection.getId());
+        editButton.setEnabled(editable);
         duplicateAsButton.setEnabled(selected);
-        deleteButton.setEnabled(selected);
+        deleteButton.setEnabled(editable);
     }
 }
