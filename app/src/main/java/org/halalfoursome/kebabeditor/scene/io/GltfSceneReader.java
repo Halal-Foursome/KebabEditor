@@ -1,5 +1,7 @@
 package org.halalfoursome.kebabeditor.scene.io;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -19,11 +21,27 @@ import org.halalfoursome.kebabeditor.scene.model.SceneNode;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-public class GltfSceneReader {
+public class GltfSceneReader implements SceneReader {
 
     private static final float UNIFORM_EPSILON = 1e-6f;
+
+    private final ObjectMapper mapper;
+
+    public GltfSceneReader() {
+        this(new ObjectMapper());
+    }
+
+    public GltfSceneReader(ObjectMapper mapper) {
+        this.mapper = mapper;
+    }
+
+    @Override
+    public Scene read(Path file, ArchetypeCatalog catalog) throws SceneException, IOException {
+        return read(mapper.readTree(file.toFile()), catalog);
+    }
 
     public Scene read(JsonNode document, ArchetypeCatalog catalog) throws SceneException {
         Scene scene = new Scene(document);

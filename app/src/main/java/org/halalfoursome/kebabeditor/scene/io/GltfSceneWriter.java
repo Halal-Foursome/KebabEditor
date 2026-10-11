@@ -1,5 +1,7 @@
 package org.halalfoursome.kebabeditor.scene.io;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -15,13 +17,33 @@ import org.halalfoursome.kebabeditor.math.Vec3;
 import org.halalfoursome.kebabeditor.scene.error.SceneFormatException;
 import org.halalfoursome.kebabeditor.scene.model.Scene;
 import org.halalfoursome.kebabeditor.scene.model.SceneNode;
+import org.halalfoursome.kebabeditor.utils.AtomicFiles;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-public class GltfSceneWriter {
+public class GltfSceneWriter implements SceneWriter {
+
+    private final ObjectMapper mapper;
+
+    public GltfSceneWriter() {
+        this(new ObjectMapper());
+    }
+
+    public GltfSceneWriter(ObjectMapper mapper) {
+        this.mapper = mapper;
+    }
+
+    @Override
+    public void write(Scene scene, Path file) throws SceneFormatException, IOException {
+        AtomicFiles.write(
+            file,
+            mapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(write(scene))
+        );
+    }
 
     public JsonNode write(Scene scene) throws SceneFormatException {
         if (!(scene.getDocument() instanceof ObjectNode document)) {

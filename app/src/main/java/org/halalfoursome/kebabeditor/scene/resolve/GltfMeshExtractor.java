@@ -24,7 +24,7 @@ import org.halalfoursome.kebabeditor.utils.Maybe;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-public final class GltfMeshExtractor {
+public final class GltfMeshExtractor implements ModelExtractor {
 
     private static final int MODE_POINTS = 0;
     private static final int MODE_LINES = 1;
@@ -34,24 +34,30 @@ public final class GltfMeshExtractor {
     private static final int MODE_TRIANGLE_STRIP = 5;
     private static final int MODE_TRIANGLE_FAN = 6;
 
-    private GltfMeshExtractor() {}
+    @Override
+    public boolean supports(Path file) {
+        String name = file.getFileName().toString().toLowerCase();
 
-    public static List<ModelPart> extract(Path file) throws ModelLoadException {
+        return name.endsWith(".gltf") || name.endsWith(".glb");
+    }
+
+    public List<ModelPart> extract(Path file) throws ModelLoadException {
         return extract(file, file.toAbsolutePath().getParent());
     }
 
-    public static List<ModelPart> extract(Path file, Path assetRoot) throws ModelLoadException {
+    @Override
+    public List<ModelPart> extract(Path file, Path assetRoot) throws ModelLoadException {
         return extract(GltfDocument.read(file, assetRoot));
     }
 
-    public static List<ModelPart> extract(
+    public List<ModelPart> extract(
         JsonNode document, 
         Path directory
     ) throws ModelLoadException {
         return extract(document, directory, directory);
     }
 
-    public static List<ModelPart> extract(
+    public List<ModelPart> extract(
         JsonNode document, 
         Path directory, 
         Path assetRoot
@@ -64,7 +70,7 @@ public final class GltfMeshExtractor {
         ));
     }
 
-    public static List<ModelPart> extract(GltfDocument document) throws ModelLoadException {
+    public List<ModelPart> extract(GltfDocument document) throws ModelLoadException {
         if (!document.json().isObject()) {
             throw new ModelLoadException("A glTF document must be a JSON object");
         }

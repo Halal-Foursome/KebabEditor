@@ -37,6 +37,8 @@ class GltfMeshExtractorTest {
     private static final float[] TRIANGLE = { 0, 0, 0, 1, 0, 0, 0, 1, 0 };
     private static final float[] QUAD = { 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0 };
 
+    private final GltfMeshExtractor extractor = new GltfMeshExtractor();
+
     @TempDir
     Path directory;
 
@@ -126,7 +128,7 @@ class GltfMeshExtractorTest {
     }
 
     private List<ModelPart> extract(String json) throws Exception {
-        return GltfMeshExtractor.extract(new ObjectMapper().readTree(json), directory);
+        return extractor.extract(new ObjectMapper().readTree(json), directory);
     }
 
     private List<ModelPart> extract(Model model) throws Exception {
@@ -391,7 +393,7 @@ class GltfMeshExtractorTest {
         Path file = directory.resolve("model.glb");
         Files.write(file, glb(model.json(""), model.bytes()));
 
-        List<ModelPart> parts = GltfMeshExtractor.extract(file);
+        List<ModelPart> parts = extractor.extract(file);
 
         assertEquals(1, parts.size());
         assertEquals(3, parts.get(0).mesh().vertexCount());
@@ -404,7 +406,7 @@ class GltfMeshExtractorTest {
         Path file = directory.resolve("model.gltf");
         Files.writeString(file, model.json("\"uri\":\"data.bin\","));
 
-        assertEquals(1, GltfMeshExtractor.extract(file).size());
+        assertEquals(1, extractor.extract(file).size());
     }
 
     @Test
@@ -415,7 +417,7 @@ class GltfMeshExtractorTest {
         Path file = nested.resolve("model.gltf");
         Files.writeString(file, model.json("\"uri\":\"../data.bin\","));
 
-        assertThrows(ModelLoadException.class, () -> GltfMeshExtractor.extract(file));
+        assertThrows(ModelLoadException.class, () -> extractor.extract(file));
     }
 
     @Test
@@ -426,7 +428,7 @@ class GltfMeshExtractorTest {
         Path file = nested.resolve("model.gltf");
         Files.writeString(file, model.json("\"uri\":\"../data.bin\","));
 
-        assertEquals(1, GltfMeshExtractor.extract(file, directory).size());
+        assertEquals(1, extractor.extract(file, directory).size());
     }
 
     @Test
@@ -439,7 +441,7 @@ class GltfMeshExtractorTest {
 
         assertThrows(
             ModelLoadException.class,
-            () -> GltfMeshExtractor.extract(file, directory.resolve("project"))
+            () -> extractor.extract(file, directory.resolve("project"))
         );
     }
 
@@ -459,14 +461,14 @@ class GltfMeshExtractorTest {
         Files.writeString(file, model.json("\"uri\":\"" + dataUri(model.bytes()) + "\","));
         assertEquals(
             root.resolve("textures/a.png"),
-            pathOf(GltfMeshExtractor.extract(file, root).get(0).material().baseTexture())
+            pathOf(extractor.extract(file, root).get(0).material().baseTexture())
         );
 
         Files.writeString(
             file,
             model.json("\"uri\":\"" + dataUri(model.bytes()) + "\",").replace("../textures/a.png", "../../a.png")
         );
-        assertMissing(GltfMeshExtractor.extract(file, root).get(0).material().baseTexture());
+        assertMissing(extractor.extract(file, root).get(0).material().baseTexture());
     }
 
     @Test
@@ -488,7 +490,7 @@ class GltfMeshExtractorTest {
         Path file = root.resolve("model.gltf");
         Files.writeString(file, model.json("\"uri\":\"" + dataUri(model.bytes()) + "\","));
 
-        assertMissing(GltfMeshExtractor.extract(file, root).get(0).material().baseTexture());
+        assertMissing(extractor.extract(file, root).get(0).material().baseTexture());
     }
 
     @Test
@@ -498,14 +500,14 @@ class GltfMeshExtractorTest {
         Path file = directory.resolve("model.gltf");
         Files.writeString(file, model.inlineJson());
 
-        assertThrows(ModelLoadException.class, () -> GltfMeshExtractor.extract(file, root));
+        assertThrows(ModelLoadException.class, () -> extractor.extract(file, root));
     }
 
     @Test
     void missingFileIsReported() {
         assertThrows(
             ModelLoadException.class,
-            () -> GltfMeshExtractor.extract(directory.resolve("nope.gltf"))
+            () -> extractor.extract(directory.resolve("nope.gltf"))
         );
     }
 
@@ -541,7 +543,7 @@ class GltfMeshExtractorTest {
     void nonObjectDocumentIsRejected() throws IOException {
         JsonNode array = new ObjectMapper().readTree("[]");
 
-        assertThrows(ModelLoadException.class, () -> GltfMeshExtractor.extract(array, directory));
+        assertThrows(ModelLoadException.class, () -> extractor.extract(array, directory));
     }
 
     private static byte[] glb(String json, byte[] binary) {
