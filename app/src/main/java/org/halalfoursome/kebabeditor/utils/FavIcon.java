@@ -8,7 +8,7 @@ public class FavIcon {
     @Getter
     private BufferedImage image;
 
-    FavIcon(BufferedImage image) {
+    public FavIcon(BufferedImage image) {
         this.image = image;
     }
 }

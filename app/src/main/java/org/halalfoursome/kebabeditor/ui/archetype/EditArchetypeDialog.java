@@ -29,7 +29,7 @@ public class EditArchetypeDialog extends AbstractArchetypeDialog {
         iconPicker = new IconPickerPanel(style, definition.getIcon());
         paramList = new ParamListPanel(style, validation, definition.getParams());
 
-        init(new Dimension(540, 640));
+        init(new Dimension(680, 640));
     }
 
     @Override

@@ -65,8 +65,9 @@ class ColliderSphereBehaviorTest {
     }
 
     @Test
-    void defaultZeroRadiusIsReportedAndNotDrawn() {
+    void zeroRadiusIsReportedAndNotDrawn() throws Exception {
         ArchetypeInstance sphere = instanceOf(BuiltinArchetypes.COLLIDER_SPHERE);
+        sphere.set("radius", 0f);
         SceneNode node = nodeAt(Vec3.zero(), 1f);
 
         assertEquals(1, behavior.validate(node, sphere, CONTEXT).size());
@@ -80,5 +81,14 @@ class ColliderSphereBehaviorTest {
         sphere.set("radius", 0.25f);
 
         assertTrue(behavior.validate(nodeAt(Vec3.zero(), 1f), sphere, CONTEXT).isEmpty());
+    }
+
+    @Test
+    void aNewSphereIsVisibleWithoutAnyEditing() {
+        ArchetypeInstance sphere = instanceOf(BuiltinArchetypes.COLLIDER_SPHERE);
+        SceneNode node = nodeAt(Vec3.zero(), 1f);
+
+        assertEquals(1, behavior.drawableObjects(node, sphere, CONTEXT).size());
+        assertTrue(behavior.validate(node, sphere, CONTEXT).isEmpty());
     }
 }

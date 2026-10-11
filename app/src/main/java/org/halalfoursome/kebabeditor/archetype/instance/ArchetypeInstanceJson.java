@@ -24,7 +24,7 @@ public record ArchetypeInstanceJson(
             try {
                 params.put(
                     entry.getKey(),
-                    ParamJson.encode(entry.getValue(), instance.get(entry.getKey()))
+                    ParamJson.encode(entry.getValue().type(), instance.get(entry.getKey()))
                 );
             } catch (UnknownParamException e) {
                 throw new IllegalStateException("Param vanished from its own definition", e);
@@ -50,7 +50,7 @@ public record ArchetypeInstanceJson(
                         JsonNode raw = params.get(entry.getKey());
 
                         if (raw != null) {
-                            instance.set(entry.getKey(), ParamJson.decode(entry.getValue(), raw));
+                            instance.set(entry.getKey(), ParamJson.decode(entry.getValue().type(), raw));
                         }
                     }
                 } catch (KebabException e) {

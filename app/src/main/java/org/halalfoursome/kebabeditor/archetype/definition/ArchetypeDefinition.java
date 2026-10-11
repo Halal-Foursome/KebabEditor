@@ -4,6 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.halalfoursome.kebabeditor.archetype.ArchetypeIcon;
+import org.halalfoursome.kebabeditor.archetype.ParamSpec;
 import org.halalfoursome.kebabeditor.archetype.ParamType;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
@@ -25,7 +26,7 @@ public class ArchetypeDefinition {
     private final String id;
     private String displayName = "<unnamed>";
     private Maybe<ArchetypeIcon> icon = Maybe.none();
-    private Map<String, ParamType> params = new LinkedHashMap<>();
+    private Map<String, ParamSpec> params = new LinkedHashMap<>();
 
     public ArchetypeDefinition duplicateAs(String newId) {
         return new ArchetypeDefinition(
@@ -46,8 +47,13 @@ public class ArchetypeDefinition {
         return this;
     }
 
-    public ArchetypeDefinition withParam(String name, ParamType param) {
-        this.params.put(name, param);
+    public ArchetypeDefinition withParam(String name, ParamType type) {
+        this.params.put(name, ParamSpec.of(type));
+        return this;
+    }
+
+    public ArchetypeDefinition withParam(String name, ParamType type, Object defaultValue) {
+        this.params.put(name, new ParamSpec(type, defaultValue));
         return this;
     }
 }

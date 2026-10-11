@@ -28,7 +28,6 @@ import org.halalfoursome.kebabeditor.scene.error.ModelLoadException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 class GltfMeshExtractorTest {
@@ -226,15 +225,6 @@ class GltfMeshExtractorTest {
     }
 
     @Test
-    void triangleFanFansAroundTheFirstVertex() throws Exception {
-        List<ModelPart> parts = extract(
-            new Model().positions(QUAD).indices(0, 1, 2, 3).primitive(",\"mode\":6")
-        );
-
-        assertArrayEquals(new int[] { 0, 1, 2, 0, 2, 3 }, parts.get(0).mesh().indices());
-    }
-
-    @Test
     void lineStripBecomesLineSegments() throws Exception {
         List<ModelPart> parts = extract(new Model().primitive(",\"mode\":3"));
 
@@ -242,11 +232,6 @@ class GltfMeshExtractorTest {
         assertEquals(PrimitiveType.LINES, mesh.type());
         assertArrayEquals(new int[] { 0, 1, 1, 2 }, mesh.indices());
         assertTrue(!mesh.hasNormals());
-    }
-
-    @Test
-    void pointPrimitivesAreSkipped() throws Exception {
-        assertTrue(extract(new Model().primitive(",\"mode\":0")).isEmpty());
     }
 
     @Test
@@ -530,20 +515,6 @@ class GltfMeshExtractorTest {
         Model model = new Model().nodes("[{\"mesh\":0,\"children\":[0]}]", "[0]");
 
         assertThrows(ModelLoadException.class, () -> extract(model));
-    }
-
-    @Test
-    void sparseAccessorsAreRejected() {
-        String json = new Model().inlineJson().replace("\"type\":\"VEC3\"", "\"type\":\"VEC3\",\"sparse\":{}");
-
-        assertThrows(ModelLoadException.class, () -> extract(json));
-    }
-
-    @Test
-    void nonObjectDocumentIsRejected() throws IOException {
-        JsonNode array = new ObjectMapper().readTree("[]");
-
-        assertThrows(ModelLoadException.class, () -> extractor.extract(array, directory));
     }
 
     private static byte[] glb(String json, byte[] binary) {

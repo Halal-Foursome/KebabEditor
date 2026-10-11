@@ -8,7 +8,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 
 import org.halalfoursome.kebabeditor.logging.LogLevel;
 
-final class LogLevelRenderer extends DefaultTableCellRenderer {
+public final class LogLevelRenderer extends DefaultTableCellRenderer {
 
     private static final Color INFO_COLOR = new Color(110, 190, 130);
     private static final Color WARN_COLOR = new Color(230, 180, 80);
@@ -16,7 +16,7 @@ final class LogLevelRenderer extends DefaultTableCellRenderer {
 
     private final LogTableModel model;
 
-    LogLevelRenderer(LogTableModel model) {
+    public LogLevelRenderer(LogTableModel model) {
         this.model = model;
     }
 

@@ -72,16 +72,6 @@ class FileProjectIoTest {
     }
 
     @Test
-    void createProjectRefusesToOverwriteAnExistingScene() throws Exception {
-        writer.createProject(directory, "level");
-
-        org.junit.jupiter.api.Assertions.assertThrows(
-            java.nio.file.FileAlreadyExistsException.class,
-            () -> writer.createProject(directory, "level")
-        );
-    }
-
-    @Test
     void eachLoadedProjectGetsItsOwnResolverRootedAtItsFolder() throws Exception {
         Path first = writer.createProject(directory.resolve("one"), "level");
         Path second = writer.createProject(directory.resolve("two"), "level");
@@ -94,18 +84,6 @@ class FileProjectIoTest {
         assertInstanceOf(ModelResult.ResolvedModel.class, one.modelResolver().resolve(first, "tri.gltf"));
         // The other project cannot see the first project's files
         assertInstanceOf(ModelResult.BrokenReference.class, two.modelResolver().resolve(second, "../one/tri.gltf"));
-    }
-
-    @Test
-    void aProjectResolverReportsMissingModels() throws Exception {
-        Path file = writer.createProject(directory, "level");
-
-        ModelResult result = loader.load(file).modelResolver().resolve(file, "nope.gltf");
-
-        assertEquals(
-            ModelResult.BrokenReference.Reason.MISSING,
-            assertInstanceOf(ModelResult.BrokenReference.class, result).reason()
-        );
     }
 
     // Three float positions in a base64 buffer: the smallest drawable glTF

@@ -38,8 +38,9 @@ class TriggerBehaviorTest {
     }
 
     @Test
-    void validationMessageNamesTheTrigger() {
+    void validationMessageNamesTheTrigger() throws Exception {
         ArchetypeInstance trigger = instanceOf(BuiltinArchetypes.TRIGGER);
+        trigger.set("size", Vec3.zero());
 
         var problems = behavior.validate(nodeAt(Vec3.zero(), 1f), trigger, CONTEXT);
 

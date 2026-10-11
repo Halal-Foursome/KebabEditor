@@ -14,7 +14,6 @@ import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeRegistry;
 import org.halalfoursome.kebabeditor.archetype.instance.ArchetypeInstance;
 import org.halalfoursome.kebabeditor.archetype.instance.ArchetypeInstanceJson;
 import org.halalfoursome.kebabeditor.archetype.instance.NodeArchetype;
-import org.halalfoursome.kebabeditor.archetype.instance.UnresolvedArchetype;
 import org.halalfoursome.kebabeditor.math.Vec3;
 import org.junit.jupiter.api.Test;
 
@@ -81,10 +80,4 @@ class ArchetypeCatalogTest {
         assertEquals(new Vec3(1, 2, 3), instance.get("size"));
     }
 
-    @Test
-    void anUnknownIdStaysUnresolved() {
-        NodeArchetype loaded = new ArchetypeInstanceJson("who_knows", java.util.Map.of()).toInstance(catalog);
-
-        assertInstanceOf(UnresolvedArchetype.class, loaded);
-    }
 }

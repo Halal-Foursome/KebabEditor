@@ -31,7 +31,7 @@ public class CreateArchetypeDialog extends AbstractArchetypeDialog {
         this.existingIds = existingIds;
         onCreate = consumer;
 
-        init(new Dimension(540, 640));
+        init(new Dimension(680, 640));
     }
 
     @Override
