@@ -2,6 +2,7 @@ package org.halalfoursome.kebabeditor.ui.archetype;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.awt.Color;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -32,6 +33,7 @@ class ParamListPanelTest {
         specs.put("label", new ParamSpec(ParamType.STRING, "crate"));
         specs.put("path", new ParamSpec(ParamType.REL_PATH, "models/crate.gltf"));
         specs.put("size", new ParamSpec(ParamType.VEC3, new Vec3(4, 5, 6)));
+        specs.put("tint", new ParamSpec(ParamType.COLOR, new Color(255, 128, 0)));
         specs.put("target", ParamSpec.of(ParamType.NODE_REF));
 
         return specs;
