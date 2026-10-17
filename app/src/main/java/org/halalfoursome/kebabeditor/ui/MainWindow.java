@@ -27,6 +27,7 @@ import org.halalfoursome.kebabeditor.ui.menu.generic.MenuBar;
 import org.halalfoursome.kebabeditor.ui.menu.generic.MenuButton;
 import org.halalfoursome.kebabeditor.utils.KebabStyle;
 import org.halalfoursome.kebabeditor.utils.LucideIcon;
+import org.halalfoursome.kebabeditor.ui.assets.AssetExplorerTab;
 
 import com.formdev.flatlaf.intellijthemes.materialthemeuilite.FlatMTGitHubDarkIJTheme;
 
@@ -37,6 +38,7 @@ public class MainWindow {
     private final JFrame frame;
     private final Editor editor;
     private final LogsTab logsTab;
+    private final AssetExplorerTab assetExplorerTab;
 
     private final MenuBar menuBar;
     @SuppressWarnings("unused")
@@ -56,6 +58,7 @@ public class MainWindow {
         frame = new JFrame(APP_TITLE);
         menuBar = new MenuBar(frame);
         logsTab = new LogsTab(LogService.get());
+        assetExplorerTab = new AssetExplorerTab(editor);
 
         setupLayout();
 
@@ -128,6 +131,8 @@ public class MainWindow {
 
         // Placeholder for the future EditorView and a resizable bottom tool window.
         JTabbedPane bottomTabs = new JTabbedPane();
+
+        bottomTabs.addTab("Assets", assetExplorerTab);
         bottomTabs.addTab("Logs", logsTab);
         JSplitPane workspace = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
             new JPanel(new BorderLayout()), bottomTabs);
