@@ -9,6 +9,7 @@ import org.halalfoursome.kebabeditor.logging.LogService;
 import org.halalfoursome.kebabeditor.project.FileProjectLoader;
 import org.halalfoursome.kebabeditor.project.FileProjectWriter;
 import org.halalfoursome.kebabeditor.project.FileRecentProjects;
+import org.halalfoursome.kebabeditor.project.ModelImporter;
 import org.halalfoursome.kebabeditor.project.ProjectLoader;
 import org.halalfoursome.kebabeditor.project.ProjectManager;
 import org.halalfoursome.kebabeditor.project.ProjectWriter;
@@ -41,7 +42,7 @@ public class KebabApplication {
                 loader
             );
             
-            Editor editor = new Editor(projectManager);
+            Editor editor = new Editor(projectManager, new ModelImporter(mapper));
             MainWindow window = new MainWindow(editor);
             LogService.get().info("Kebab Editor started");
 

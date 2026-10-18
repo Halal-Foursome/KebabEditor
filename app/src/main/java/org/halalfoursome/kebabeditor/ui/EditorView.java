@@ -1,52 +1,342 @@
 package org.halalfoursome.kebabeditor.ui;
 
-import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
+import java.awt.Point;
+import java.awt.geom.Point2D;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
-import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
+import org.halalfoursome.kebabeditor.editor.Editor;
+import org.halalfoursome.kebabeditor.logging.LogService;
+import org.halalfoursome.kebabeditor.behavior.BehaviorContext;
+import org.halalfoursome.kebabeditor.math.Mat4;
+import org.halalfoursome.kebabeditor.math.Ray;
+import org.halalfoursome.kebabeditor.math.Vec3;
+import org.halalfoursome.kebabeditor.render.Camera;
+import org.halalfoursome.kebabeditor.render.DrawableRenderer;
+import org.halalfoursome.kebabeditor.render.GizmoMode;
+import org.halalfoursome.kebabeditor.render.GizmoRenderer;
+import org.halalfoursome.kebabeditor.render.GreyboxRenderer;
+import org.halalfoursome.kebabeditor.render.ArchetypeRenderer;
+import org.halalfoursome.kebabeditor.render.GizmoInteraction;
+import org.halalfoursome.kebabeditor.render.PickHit;
+import org.halalfoursome.kebabeditor.render.Picker;
+import org.halalfoursome.kebabeditor.render.PlacementRenderer;
+import org.halalfoursome.kebabeditor.render.GridRenderer;
+import org.halalfoursome.kebabeditor.render.RenderContext;
+import org.halalfoursome.kebabeditor.render.RenderPass;
+import org.halalfoursome.kebabeditor.scene.model.SceneNode;
 import org.halalfoursome.kebabeditor.ui.navigation.NavigationMode;
+import org.halalfoursome.kebabeditor.ui.placement.PlacementTool;
+import org.halalfoursome.kebabeditor.utils.Maybe;
 
-public class EditorView extends JPanel {
+import com.jogamp.opengl.GL3;
+import com.jogamp.opengl.GLAutoDrawable;
+import com.jogamp.opengl.GLCapabilities;
+import com.jogamp.opengl.GLEventListener;
+import com.jogamp.opengl.GLProfile;
+import com.jogamp.opengl.awt.GLJPanel;
 
-    public static class Camera {
-        public double x = 0, y = 10, z = 20;
-        public double yaw = Math.toRadians(180); // look towards origin
-        public double pitch = Math.toRadians(-20);
-        public double fov = Math.toRadians(60);
-    }
+/**
+ * The 3D viewport. A lightweight {@link GLJPanel}, so Swing popups and split
+ * panes draw over it correctly.
+ *
+ * Frames are driven by a Swing timer and rendered synchronously on the EDT,
+ * which means navigation, scene edits and rendering never race each other.
+ *
+ * A left click (press and release without dragging) selects what is under the
+ * cursor, or places an object while the {@link PlacementTool} is active.
+ * Pressing on a gizmo handle drags it instead; 1, 2 and 3 switch the gizmo
+ * between move, rotate and scale.
+ */
+public class EditorView extends GLJPanel implements GLEventListener, GizmoInteraction.Viewport {
 
+    private static final int FRAME_MILLIS = 16;
+    private static final float[] CLEAR_COLOR = { 28 / 255f, 30 / 255f, 34 / 255f };
+    private static final float SPAWN_DISTANCE = 8f;
+    private static final float MAX_GROUND_DISTANCE = 60f;
+    private static final int CLICK_SLOP_PIXELS = 4;
+
+    private final Editor editor;
     private final Camera camera = new Camera();
-    private NavigationMode navigationMode;
+    private final DrawableRenderer drawables = new DrawableRenderer();
+    private final GizmoRenderer gizmo = new GizmoRenderer();
+    private final GizmoInteraction gizmoInteraction;
+    private final Picker picker = new Picker();
+    private final PlacementTool placement;
+    private final List<Runnable> gizmoModeListeners = new ArrayList<>();
+    private final List<RenderPass> passes = new ArrayList<>();
+    private final Set<RenderPass> failedPasses = new HashSet<>();
     private final Timer timer;
-    private long lastTime;
 
-    public EditorView() {
-        setBackground(new Color(28, 30, 34));
+    private NavigationMode navigationMode;
+    private long lastTime;
+    private boolean glReady;
+    private Maybe<Point> pressedAt = Maybe.none();
+
+    public EditorView(Editor editor) {
+        super(capabilities());
+        this.editor = editor;
+
         setPreferredSize(new Dimension(800, 600));
+        setMinimumSize(new Dimension(100, 100));
         setFocusable(true);
 
-        lastTime = System.nanoTime();
-        timer = new Timer(16, e -> tick());
-        timer.start();
+        // Order matters: opaque scene geometry, then the translucent grid and placement
+        // ghost over it, then the gizmo, which clears depth to stay on top.
+        passes.add(new GreyboxRenderer(drawables));
+        passes.add(new ArchetypeRenderer(drawables));
+        passes.add(new GridRenderer());
+        passes.add(new PlacementRenderer(drawables));
+        passes.add(gizmo);
 
-        // Repaint when resized so rendering bounds update
-        addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentResized(ComponentEvent e) {
-                repaint();
-            }
-        });
+        placement = new PlacementTool(this, editor, picker);
+        gizmoInteraction = new GizmoInteraction(gizmo, editor::snapStep);
+        // Registered before any navigation mode, so these listeners see events first.
+        installInput();
+
+        addGLEventListener(this);
+
+        lastTime = System.nanoTime();
+        timer = new Timer(FRAME_MILLIS, e -> tick());
+        timer.start();
+    }
+
+    private static GLCapabilities capabilities() {
+        GLCapabilities caps = new GLCapabilities(GLProfile.get(GLProfile.GL3));
+        caps.setDepthBits(24);
+        caps.setSampleBuffers(true);
+        caps.setNumSamples(4);
+        return caps;
     }
 
     public Camera getCamera() {
         return camera;
+    }
+
+    @Override
+    public Camera camera() {
+        return camera;
+    }
+
+    public PlacementTool getPlacement() {
+        return placement;
+    }
+
+    /** The ray from the eye through a point of this component, in component pixels. */
+    @Override
+    public Ray rayAt(int x, int y) {
+        float width = Math.max(getWidth(), 1);
+        float height = Math.max(getHeight(), 1);
+        return camera.ray(2f * x / width - 1f, 1f - 2f * y / height, width / height);
+    }
+
+    @Override
+    public Maybe<Point2D.Float> project(Vec3 world) {
+        float width = Math.max(getWidth(), 1);
+        float height = Math.max(getHeight(), 1);
+        Mat4 viewProjection = camera.projection(width / height).mul(camera.view());
+        float[] m = viewProjection.toArray();
+
+        float x = m[0] * world.getX() + m[4] * world.getY() + m[8] * world.getZ() + m[12];
+        float y = m[1] * world.getX() + m[5] * world.getY() + m[9] * world.getZ() + m[13];
+        float w = m[3] * world.getX() + m[7] * world.getY() + m[11] * world.getZ() + m[15];
+        if (w <= 1e-5f) {
+            return Maybe.none();
+        }
+        return Maybe.some(new Point2D.Float((x / w + 1f) / 2f * width, (1f - y / w) / 2f * height));
+    }
+
+    /** What archetype behaviors need to draw and pick: the project's model resolver and scene file. */
+    public Maybe<BehaviorContext> behaviorContext() {
+        return editor.modelResolver().andThen(models ->
+            editor.currentProjectFile().map(file -> new BehaviorContext(models, file)));
+    }
+
+    /**
+     * Where a new object should go: the point on the ground the camera looks at,
+     * or a point a short way ahead when the ground is out of sight. Snapped to
+     * the grid while snapping is on.
+     */
+    public Vec3 spawnPoint() {
+        Vec3 eye = camera.getPosition();
+        Vec3 dir = camera.forward();
+        float distance = SPAWN_DISTANCE;
+        boolean onGround = false;
+
+        if (Math.abs(dir.getY()) > 1e-4f) {
+            float t = -eye.getY() / dir.getY();
+            if (t > 0 && t < MAX_GROUND_DISTANCE) {
+                distance = t;
+                onGround = true;
+            }
+        }
+
+        Vec3 point = eye.add(dir.mulLocal(distance));
+        if (onGround) {
+            point.setY(0f);
+        }
+        editor.snapStep().ifSome(step -> point.set(
+            snap(point.getX(), step),
+            snap(point.getY(), step),
+            snap(point.getZ(), step)
+        ));
+        return point;
+    }
+
+    private static float snap(float value, float step) {
+        return Math.round(value / step) * step;
+    }
+
+    private void installInput() {
+        addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                pressedAt = Maybe.none();
+                if (!SwingUtilities.isLeftMouseButton(e)) {
+                    return;
+                }
+                // A press on a gizmo handle starts a drag, which the camera must not see.
+                if (!placement.isActive()
+                    && gizmoInteraction.press(EditorView.this, editor.selection().primary(), e.getX(), e.getY())) {
+                    requestFocusInWindow();
+                    e.consume();
+                    return;
+                }
+                pressedAt = Maybe.some(e.getPoint());
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (gizmoInteraction.release()) {
+                    e.consume();
+                    return;
+                }
+                boolean click = pressedAt.isSomeAnd(p -> p.distance(e.getPoint()) <= CLICK_SLOP_PIXELS);
+                pressedAt = Maybe.none();
+                if (click && SwingUtilities.isLeftMouseButton(e)) {
+                    clicked(e.getX(), e.getY());
+                }
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                placement.cursorLeft();
+            }
+        });
+
+        addMouseMotionListener(new MouseMotionAdapter() {
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                placement.cursorMoved(e.getX(), e.getY());
+                placement.setSurfacesIgnored(e.isAltDown());
+                if (!placement.isActive()) {
+                    gizmoInteraction.hover(EditorView.this, editor.selection().primary(), e.getX(), e.getY());
+                }
+            }
+
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                if (gizmoInteraction.isDragging()) {
+                    gizmoInteraction.drag(EditorView.this, e.getX(), e.getY());
+                    e.consume();
+                    return;
+                }
+                placement.cursorMoved(e.getX(), e.getY());
+                placement.setSurfacesIgnored(e.isAltDown());
+            }
+        });
+
+        // While placing, the wheel sets the ghost's distance instead of moving the camera.
+        addMouseWheelListener(e -> {
+            if (placement.isActive()) {
+                placement.wheel(e.getPreciseWheelRotation());
+                e.consume();
+            }
+        });
+
+        addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ESCAPE && gizmoInteraction.isDragging()) {
+                    gizmoInteraction.cancel();
+                    e.consume();
+                    return;
+                }
+                if (!e.isControlDown() && !e.isAltDown() && !gizmoInteraction.isDragging()) {
+                    switch (e.getKeyCode()) {
+                        case KeyEvent.VK_1, KeyEvent.VK_NUMPAD1 -> setGizmoMode(GizmoMode.TRANSLATE);
+                        case KeyEvent.VK_2, KeyEvent.VK_NUMPAD2 -> setGizmoMode(GizmoMode.ROTATE);
+                        case KeyEvent.VK_3, KeyEvent.VK_NUMPAD3 -> setGizmoMode(GizmoMode.SCALE);
+                        default -> { }
+                    }
+                }
+                if (!placement.isActive()) {
+                    return;
+                }
+                if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+                    placement.setActive(false);
+                    e.consume();
+                } else if (e.getKeyCode() == KeyEvent.VK_ALT) {
+                    placement.setSurfacesIgnored(true);
+                    e.consume();
+                }
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ALT) {
+                    placement.setSurfacesIgnored(false);
+                    if (placement.isActive()) {
+                        e.consume();
+                    }
+                }
+            }
+        });
+    }
+
+    private void clicked(int x, int y) {
+        if (placement.isActive()) {
+            placement.place();
+            return;
+        }
+
+        if (editor.scene().isNone()) {
+            return;
+        }
+
+        Maybe<SceneNode> node = picker.pick(editor.scene().unwrap(), behaviorContext(), rayAt(x, y), false)
+            .andThen(PickHit::node);
+
+        node.ifSomeOrElse(editor.selection()::select, editor.selection()::clear);
+    }
+
+    public GizmoMode getGizmoMode() {
+        return gizmo.getMode();
+    }
+
+    public void setGizmoMode(GizmoMode mode) {
+        if (gizmo.getMode() == mode) {
+            return;
+        }
+        gizmoInteraction.cancel();
+        gizmo.setMode(mode);
+        gizmoModeListeners.forEach(Runnable::run);
+    }
+
+    /** Called when the gizmo mode changes, e.g. to keep menu items in sync. */
+    public void addGizmoModeListener(Runnable listener) {
+        gizmoModeListeners.add(listener);
     }
 
     public void setNavigationMode(NavigationMode mode) {
@@ -62,131 +352,99 @@ public class EditorView extends JPanel {
         lastTime = now;
 
         if (navigationMode != null) navigationMode.update(dt);
-        repaint();
+        display();
     }
 
     @Override
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        Graphics2D g2 = (Graphics2D) g.create();
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+    public void init(GLAutoDrawable drawable) {
+        GL3 gl = drawable.getGL().getGL3();
+        LogService.get().info("OpenGL " + gl.glGetString(GL3.GL_VERSION)
+            + " on " + gl.glGetString(GL3.GL_RENDERER));
 
-        int w = getWidth();
-        int h = getHeight();
+        gl.glEnable(GL3.GL_DEPTH_TEST);
+        gl.glDepthFunc(GL3.GL_LEQUAL);
+        gl.glEnable(GL3.GL_CULL_FACE);
+        gl.glCullFace(GL3.GL_BACK);
+        gl.glEnable(GL3.GL_MULTISAMPLE);
 
-        // Simple 3D projection parameters
-        double f = 500; // focal length
-
-        // draw grid on XZ plane
-        g2.setColor(new Color(80, 86, 92));
-
-        int spacing = 1; // spacing between grid lines (world units)
-        int viewDistance = 200; // how far from camera (in world units) to render grid lines
-
-        // Grid lines are anchored to world coordinates
-        // only draw those within `viewDistance` of the camera.
-        int camXi = (int) Math.floor(camera.x / (double) spacing);
-        int camZi = (int) Math.floor(camera.z / (double) spacing);
-        int range = (int) Math.ceil(viewDistance / (double) spacing);
-
-        // Z-parallel lines (varying X) — lines lie at constant Z = k*spacing
-        for (int zi = camZi - range; zi <= camZi + range; zi++) {
-            int z = zi * spacing;
-            drawLine3DClipped(g2, -viewDistance + camXi * spacing, 0, z, viewDistance + camXi * spacing, 0, z, w, h, f);
+        failedPasses.clear();
+        try {
+            drawables.init(gl);
+        } catch (RuntimeException e) {
+            LogService.get().error("Viewport: mesh shader failed to initialize", e);
+        }
+        for (RenderPass pass : passes) {
+            try {
+                pass.init(gl);
+            } catch (RuntimeException e) {
+                fail(pass, "initialize", e);
+            }
         }
 
-        // X-parallel lines (varying Z) — lines lie at constant X = k*spacing
-        for (int xi = camXi - range; xi <= camXi + range; xi++) {
-            int x = xi * spacing;
-            drawLine3DClipped(g2, x, 0, -viewDistance + camZi * spacing, x, 0, viewDistance + camZi * spacing, w, h, f);
+        glReady = true;
+    }
+
+    @Override
+    public void display(GLAutoDrawable drawable) {
+        if (!glReady) {
+            return;
         }
 
-        // draw axes
-        drawLine3D(g2, -10, 0, 0, 10, 0, 0, w, h, f); // X axis
-        g2.setColor(new Color(200, 80, 80));
-        drawLine3D(g2, 0, 0, -10, 0, 0, 10, w, h, f); // Z axis
+        GL3 gl = drawable.getGL().getGL3();
+        gl.glClearColor(CLEAR_COLOR[0], CLEAR_COLOR[1], CLEAR_COLOR[2], 1f);
+        gl.glClear(GL3.GL_COLOR_BUFFER_BIT | GL3.GL_DEPTH_BUFFER_BIT);
 
-        g2.dispose();
-    }
+        RenderContext context = RenderContext.of(
+            camera,
+            drawable.getSurfaceWidth(),
+            drawable.getSurfaceHeight(),
+            editor.scene(),
+            editor.currentProjectFile(),
+            behaviorContext(),
+            editor.selection().nodes(),
+            placement.preview()
+        );
 
-    private void drawLine3D(Graphics2D g2, double x1, double y1, double z1, double x2, double y2, double z2, int w, int h, double f) {
-        double[] p1 = projectCamera(x1, y1, z1, w, h, f);
-        double[] p2 = projectCamera(x2, y2, z2, w, h, f);
-        if (p1 == null || p2 == null) return;
-        g2.drawLine((int) p1[0], (int) p1[1], (int) p2[0], (int) p2[1]);
-    }
-
-    private void drawLine3DClipped(Graphics2D g2, double x1, double y1, double z1, double x2, double y2, double z2, int w, int h, double f) {
-        double[][] pts = projectClipped(x1, y1, z1, x2, y2, z2, w, h, f);
-        if (pts == null) return;
-        double[] p1 = pts[0];
-        double[] p2 = pts[1];
-        g2.drawLine((int) p1[0], (int) p1[1], (int) p2[0], (int) p2[1]);
-    }
-
-    // world -> camera-space
-    private double[] worldToCamera(double px, double py, double pz) {
-        double dx = px - camera.x;
-        double dy = py - camera.y;
-        double dz = pz - camera.z;
-
-        double cy = Math.cos(-camera.yaw);
-        double sy = Math.sin(-camera.yaw);
-        double rx = cy * dx - sy * dz;
-        double rz = sy * dx + cy * dz;
-
-        double cp = Math.cos(-camera.pitch);
-        double sp = Math.sin(-camera.pitch);
-        double ry = cp * dy - sp * rz;
-        double rz2 = sp * dy + cp * rz;
-
-        return new double[] { rx, ry, rz2 };
-    }
-
-    // project a camera-space point (rx,ry,rz) to screen coordinates
-    private double[] projectCamera(double rx, double ry, double rz, int w, int h, double f) {
-        if (rz <= 0.0001) return null;
-        double sx = w * 0.5 + (rx * f / rz);
-        double sy2 = h * 0.5 - (ry * f / rz);
-        return new double[] { sx, sy2 };
-    }
-
-    // clip a world-space segment against near plane and return two screen points or null
-    private double[][] projectClipped(double x1, double y1, double z1, double x2, double y2, double z2, int w, int h, double f) {
-        double near = 0.1;
-        double[] c1 = worldToCamera(x1, y1, z1);
-        double[] c2 = worldToCamera(x2, y2, z2);
-
-        boolean in1 = c1[2] > near;
-        boolean in2 = c2[2] > near;
-
-        if (!in1 && !in2) return null;
-
-        if (in1 && in2) {
-            double[] p1 = projectCamera(c1[0], c1[1], c1[2], w, h, f);
-            double[] p2 = projectCamera(c2[0], c2[1], c2[2], w, h, f);
-            if (p1 == null || p2 == null) return null;
-            return new double[][] { p1, p2 };
+        for (RenderPass pass : passes) {
+            if (failedPasses.contains(pass)) {
+                continue;
+            }
+            try {
+                pass.render(gl, context);
+            } catch (RuntimeException e) {
+                fail(pass, "render", e);
+            }
         }
 
-        // one point is behind; compute intersection in camera space
-        double t = (near - c1[2]) / (c2[2] - c1[2]); // when c1 + t*(c2-c1) has z = near
-        if (t < 0) t = 0; if (t > 1) t = 1;
+        drawables.endFrame(gl);
+    }
 
-        double ix = c1[0] + t * (c2[0] - c1[0]);
-        double iy = c1[1] + t * (c2[1] - c1[1]);
-        double iz = near;
+    @Override
+    public void reshape(GLAutoDrawable drawable, int x, int y, int width, int height) {
+        // JOGL already updates glViewport; projection is rebuilt from the size every frame.
+    }
 
-        if (in1) {
-            double[] p1 = projectCamera(c1[0], c1[1], c1[2], w, h, f);
-            double[] p2 = projectCamera(ix, iy, iz, w, h, f);
-            if (p1 == null || p2 == null) return null;
-            return new double[][] { p1, p2 };
-        } else {
-            double[] p1 = projectCamera(ix, iy, iz, w, h, f);
-            double[] p2 = projectCamera(c2[0], c2[1], c2[2], w, h, f);
-            if (p1 == null || p2 == null) return null;
-            return new double[][] { p1, p2 };
+    @Override
+    public void dispose(GLAutoDrawable drawable) {
+        GL3 gl = drawable.getGL().getGL3();
+        glReady = false;
+
+        for (RenderPass pass : passes.reversed()) {
+            try {
+                pass.dispose(gl);
+            } catch (RuntimeException e) {
+                LogService.get().error("Failed to dispose " + pass.getClass().getSimpleName(), e);
+            }
         }
+        drawables.dispose(gl);
+    }
+
+    // A broken pass is disabled instead of logging the same error every frame.
+    private void fail(RenderPass pass, String stage, RuntimeException e) {
+        failedPasses.add(pass);
+        LogService.get().error(
+            "Viewport: " + pass.getClass().getSimpleName() + " failed to " + stage + " and was disabled",
+            e
+        );
     }
 }

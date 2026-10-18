@@ -47,6 +47,39 @@ public class Quat {
         return new Quat(c.getX(), c.getY(), c.getZ(), 1f + d).normalizeLocal();
     }
 
+    /**
+     * The rotation part of a transform matrix. Its upper 3x3 may carry scale; each
+     * column is normalized first, which is exact for rotation times per-axis scale.
+     */
+    public static Quat fromMatrix(Mat4 m) {
+        Vec3 c0 = new Vec3(m.getM00(), m.getM10(), m.getM20()).normalizeLocal();
+        Vec3 c1 = new Vec3(m.getM01(), m.getM11(), m.getM21()).normalizeLocal();
+        Vec3 c2 = new Vec3(m.getM02(), m.getM12(), m.getM22()).normalizeLocal();
+
+        // rRC = row R, column C of the rotation matrix
+        float r00 = c0.getX(), r10 = c0.getY(), r20 = c0.getZ();
+        float r01 = c1.getX(), r11 = c1.getY(), r21 = c1.getZ();
+        float r02 = c2.getX(), r12 = c2.getY(), r22 = c2.getZ();
+        float trace = r00 + r11 + r22;
+
+        // Branch on the largest diagonal term to keep the square root well away from zero.
+        Quat q;
+        if (trace > 0) {
+            float s = (float) Math.sqrt(trace + 1f) * 2f;
+            q = new Quat((r21 - r12) / s, (r02 - r20) / s, (r10 - r01) / s, 0.25f * s);
+        } else if (r00 > r11 && r00 > r22) {
+            float s = (float) Math.sqrt(1f + r00 - r11 - r22) * 2f;
+            q = new Quat(0.25f * s, (r01 + r10) / s, (r02 + r20) / s, (r21 - r12) / s);
+        } else if (r11 > r22) {
+            float s = (float) Math.sqrt(1f + r11 - r00 - r22) * 2f;
+            q = new Quat((r01 + r10) / s, 0.25f * s, (r12 + r21) / s, (r02 - r20) / s);
+        } else {
+            float s = (float) Math.sqrt(1f + r22 - r00 - r11) * 2f;
+            q = new Quat((r02 + r20) / s, (r12 + r21) / s, 0.25f * s, (r10 - r01) / s);
+        }
+        return q.normalizeLocal();
+    }
+
     public Quat copy() {
         return new Quat(x, y, z, w);
     }

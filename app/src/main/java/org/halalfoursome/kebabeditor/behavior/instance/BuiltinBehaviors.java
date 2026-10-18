@@ -12,7 +12,8 @@ public final class BuiltinBehaviors {
         BuiltinArchetypes.MODEL_REF,        new ModelRefBehavior(),
         BuiltinArchetypes.COLLIDER_BOX,     new ColliderBoxBehavior(),
         BuiltinArchetypes.COLLIDER_SPHERE,  new ColliderSphereBehavior(),
-        BuiltinArchetypes.TRIGGER,          new TriggerBehavior()
+        BuiltinArchetypes.TRIGGER,          new TriggerBehavior(),
+        BuiltinArchetypes.SNAP_DISTANCE,    new SnapDistanceBehavior()
     );
 
     private BuiltinBehaviors() {}

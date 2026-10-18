@@ -16,6 +16,10 @@ public final class BuiltinArchetypes {
     public static final String COLLIDER_BOX = "collider_box";
     public static final String COLLIDER_SPHERE = "collider_sphere";
     public static final String TRIGGER = "trigger";
+    public static final String SNAP_DISTANCE = "snap_distance";
+
+    /** Snap step used when a scene has no snap_distance object. */
+    public static final float DEFAULT_SNAP_DISTANCE = 0.5f;
 
     // TODO: add icons for builtin archetypes
     private static final Map<String, ArchetypeDefinition> ALL = index(
@@ -37,7 +41,12 @@ public final class BuiltinArchetypes {
 
         new ArchetypeDefinition(TRIGGER)
             .withDisplayName("Trigger")
-            .withParam("size", ParamType.VEC3, Vec3.one())
+            .withParam("size", ParamType.VEC3, Vec3.one()),
+
+        // Placed in a level, its distance is the grid step for snapping in the viewport
+        new ArchetypeDefinition(SNAP_DISTANCE)
+            .withDisplayName("Snap Distance")
+            .withParam("distance", ParamType.FLOAT, DEFAULT_SNAP_DISTANCE)
     );
 
     private BuiltinArchetypes() {}

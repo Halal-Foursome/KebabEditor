@@ -7,10 +7,12 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+import org.halalfoursome.kebabeditor.archetype.ArchetypeCatalog;
 import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeDefinition;
 import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeRegistry;
 import org.halalfoursome.kebabeditor.scene.error.SceneException;
 import org.halalfoursome.kebabeditor.scene.error.SceneFormatException;
+import org.halalfoursome.kebabeditor.scene.model.Scene;
 import org.halalfoursome.kebabeditor.scene.resolve.ModelResolver;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
@@ -62,6 +64,14 @@ public class ProjectManager {
                 .toList()
             )
             .unwrapOr(List.of());
+    }
+
+    public Maybe<Scene> scene() {
+        return repository.map(ProjectRepository::sceneData);
+    }
+
+    public Maybe<ArchetypeCatalog> catalog() {
+        return repository.map(ProjectRepository::archetypeCatalog);
     }
 
     public Maybe<ModelResolver> modelResolver() {

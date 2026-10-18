@@ -114,4 +114,24 @@ class QuatTest {
         assertVec(Vec3.unitZ(), Quat.fromEuler(HALF_PI, 0, 0).rotate(Vec3.unitY()));
         assertVec(new Vec3(0, 0, -1), Quat.fromEuler(0, HALF_PI, 0).rotate(Vec3.unitX()));
     }
+
+    @Test
+    void fromMatrixRecoversRotationEvenWithScale() {
+        // One case per branch of the conversion: small angle, and large angles about X, Y and Z.
+        Quat[] rotations = {
+            Quat.fromAxisAngle(new Vec3(1, 2, 3), 0.3f),
+            Quat.fromAxisAngle(Vec3.unitX(), 3f),
+            Quat.fromAxisAngle(Vec3.unitY(), 3f),
+            Quat.fromAxisAngle(Vec3.unitZ(), 3f),
+        };
+
+        for (Quat q : rotations) {
+            Mat4 m = Mat4.compose(new Vec3(4, 5, 6), q, new Vec3(2, 0.5f, 3));
+            Quat back = Quat.fromMatrix(m);
+
+            // q and -q are the same rotation, so compare their effect on vectors.
+            assertVec(q.rotate(Vec3.unitX()), back.rotate(Vec3.unitX()));
+            assertVec(q.rotate(Vec3.unitY()), back.rotate(Vec3.unitY()));
+        }
+    }
 }

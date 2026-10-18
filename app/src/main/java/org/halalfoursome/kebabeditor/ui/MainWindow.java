@@ -7,10 +7,13 @@ import java.awt.Insets;
 
 import javax.swing.Box;
 import javax.swing.JDialog;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
@@ -18,6 +21,8 @@ import javax.swing.WindowConstants;
 import org.halalfoursome.kebabeditor.editor.Editor;
 import org.halalfoursome.kebabeditor.logging.LogService;
 import org.halalfoursome.kebabeditor.ui.logs.LogsTab;
+import org.halalfoursome.kebabeditor.math.Vec3;
+import org.halalfoursome.kebabeditor.ui.menu.EditMenu;
 import org.halalfoursome.kebabeditor.ui.menu.FileMenu;
 import org.halalfoursome.kebabeditor.ui.menu.OptionsMenu;
 import org.halalfoursome.kebabeditor.ui.menu.ProjectMenu;
@@ -25,10 +30,13 @@ import org.halalfoursome.kebabeditor.ui.menu.ViewMenu;
 import org.halalfoursome.kebabeditor.ui.menu.generic.Menu;
 import org.halalfoursome.kebabeditor.ui.menu.generic.MenuBar;
 import org.halalfoursome.kebabeditor.ui.menu.generic.MenuButton;
+import org.halalfoursome.kebabeditor.ui.navigation.FreeFlightNavigation;
 import org.halalfoursome.kebabeditor.utils.KebabStyle;
 import org.halalfoursome.kebabeditor.utils.LucideIcon;
+import org.halalfoursome.kebabeditor.utils.Maybe;
 
 import com.formdev.flatlaf.intellijthemes.materialthemeuilite.FlatMTGitHubDarkIJTheme;
+import com.jogamp.opengl.GLException;
 
 public class MainWindow {
 
@@ -39,7 +47,6 @@ public class MainWindow {
     private final LogsTab logsTab;
 
     private final MenuBar menuBar;
-    @SuppressWarnings("unused")
     private EditorView editorView;
 
     static {
@@ -60,12 +67,26 @@ public class MainWindow {
         setupLayout();
 
         editor.addProjectListener(this::updateTitle);
+    }
 
-        // create editor view and navigation
-        // editorView = new EditorView();
-        // frame.add(editorView, BorderLayout.CENTER);
-        // org.halalfoursome.kebabeditor.ui.navigation.FreeFlightNavigation nav = new org.halalfoursome.kebabeditor.ui.navigation.FreeFlightNavigation();
-        // editorView.setNavigationMode(nav);
+    private Vec3 spawnPoint() {
+        return editorView != null ? editorView.spawnPoint() : Vec3.zero();
+    }
+
+
+    // Falls back to an explanatory placeholder when no OpenGL 3 context can be made.
+    private JComponent createViewport() {
+        try {
+            editorView = new EditorView(editor);
+            editorView.setNavigationMode(new FreeFlightNavigation());
+            return editorView;
+        } catch (GLException e) {
+            LogService.get().error("OpenGL 3.x is not available, the 3D viewport is disabled", e);
+            JLabel placeholder = new JLabel("3D viewport unavailable: OpenGL 3.x is not supported", SwingConstants.CENTER);
+            JPanel panel = new JPanel(new BorderLayout());
+            panel.add(placeholder, BorderLayout.CENTER);
+            return panel;
+        }
     }
 
     private void updateTitle() {
@@ -126,11 +147,11 @@ public class MainWindow {
         frame.setIconImage(style.favicon().getImage());
         frame.setLayout(new BorderLayout());
 
-        // Placeholder for the future EditorView and a resizable bottom tool window.
+        // 3D viewport above a resizable bottom tool window.
         JTabbedPane bottomTabs = new JTabbedPane();
         bottomTabs.addTab("Logs", logsTab);
         JSplitPane workspace = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
-            new JPanel(new BorderLayout()), bottomTabs);
+            createViewport(), bottomTabs);
         workspace.setContinuousLayout(false);
         workspace.setResizeWeight(0.75);
         SwingUtilities.invokeLater(() -> workspace.setDividerLocation(0.75));
@@ -139,8 +160,8 @@ public class MainWindow {
         // Menu bar
         menuBar.addMenu(new FileMenu(frame, editor));
         menuBar.addMenu(new ProjectMenu(frame, editor));
-        menuBar.addMenu(new Menu("Edit"));
-        menuBar.addMenu(new ViewMenu(frame, editor));
+        menuBar.addMenu(new EditMenu(frame, editor, this::spawnPoint, Maybe.ofNullable(editorView)));
+        menuBar.addMenu(new ViewMenu(frame, editor, Maybe.ofNullable(editorView).map(EditorView::getPlacement)));
         menuBar.addMenu(new OptionsMenu(frame, editor));
         menuBar.addMenu(new Menu("Help"));
 
