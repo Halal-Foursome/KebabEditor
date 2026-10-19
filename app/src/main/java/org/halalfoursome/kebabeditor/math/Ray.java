@@ -2,7 +2,6 @@ package org.halalfoursome.kebabeditor.math;
 
 import java.util.Objects;
 
-/** A half-line {@code origin + t * direction}, t >= 0. The direction is unit length. */
 public record Ray(Vec3 origin, Vec3 direction) {
 
     public Ray {

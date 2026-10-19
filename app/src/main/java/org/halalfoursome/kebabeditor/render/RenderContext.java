@@ -10,7 +10,10 @@ import org.halalfoursome.kebabeditor.scene.model.Scene;
 import org.halalfoursome.kebabeditor.scene.model.SceneNode;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
-/** Everything a pass may read while drawing one frame. Built fresh every frame. */
+/** 
+ * Everything a pass may read while drawing one frame. 
+ * Built fresh every frame. 
+ * */
 public record RenderContext(
     Camera camera,
     Mat4 view,

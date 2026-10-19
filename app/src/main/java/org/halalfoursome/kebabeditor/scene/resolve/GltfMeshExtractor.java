@@ -290,10 +290,27 @@ public final class GltfMeshExtractor implements ModelExtractor {
                 return new TextureSlot.Missing("texture has no image source");
             }
 
-            String uri = element("images", texture.path("source").asInt(-1)).path("uri").asText(null);
+            JsonNode image = element("images", texture.path("source").asInt(-1));
 
-            if (uri == null || uri.startsWith("data:")) {
-                return new TextureSlot.Missing("embedded images are not supported");
+            if (image.has("bufferView")) {
+                try {
+                    return TextureSlot.Embedded.of(accessors.viewBytes(image.path("bufferView").asInt(-1)));
+                } catch (ModelLoadException e) {
+                    return new TextureSlot.Missing(e.getMessage());
+                }
+            }
+
+            String uri = image.path("uri").asText(null);
+
+            if (uri == null) {
+                return new TextureSlot.Missing("image has neither a uri nor a bufferView");
+            }
+            if (uri.startsWith("data:")) {
+                try {
+                    return TextureSlot.Embedded.of(GltfAccessors.decodeDataUri(uri));
+                } catch (ModelLoadException e) {
+                    return new TextureSlot.Missing(e.getMessage());
+                }
             }
 
             Path file = document.resolveInside(uri).unwrapOrNull();

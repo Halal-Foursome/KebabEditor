@@ -1,6 +1,5 @@
 package org.halalfoursome.kebabeditor.behavior.instance;
 
-import java.awt.Color;
 import java.util.List;
 
 import org.halalfoursome.kebabeditor.archetype.instance.ArchetypeInstance;
@@ -13,12 +12,9 @@ import org.halalfoursome.kebabeditor.behavior.PlainBehaviorProblem;
 import org.halalfoursome.kebabeditor.math.Aabb;
 import org.halalfoursome.kebabeditor.math.Mat4;
 import org.halalfoursome.kebabeditor.math.Vec3;
-import org.halalfoursome.kebabeditor.model.AlphaMode;
 import org.halalfoursome.kebabeditor.model.GizmoShape;
-import org.halalfoursome.kebabeditor.model.Material;
 import org.halalfoursome.kebabeditor.model.Meshes;
 import org.halalfoursome.kebabeditor.model.ModelPart;
-import org.halalfoursome.kebabeditor.model.TextureSlot;
 import org.halalfoursome.kebabeditor.scene.model.SceneNode;
 import org.halalfoursome.kebabeditor.scene.resolve.ModelResult;
 import org.halalfoursome.kebabeditor.scene.resolve.ModelResult.BrokenReference;
@@ -43,17 +39,7 @@ public class ModelRefBehavior implements ArchetypeBehavior {
                 .map(part -> drawable(part, world))
                 .toList();
 
-            case BrokenReference broken -> List.of(new Drawable(
-                Meshes.CUBE_TRIANGLES,
-                world,
-                new Material(
-                    Color.WHITE, 
-                    new TextureSlot.Missing(broken.detail()), 
-                    AlphaMode.OPAQUE, 
-                    true
-                ),
-                DrawMode.SOLID
-            ));
+            case BrokenReference broken -> List.of(Placeholders.brokenCube(world, broken.detail()));
         };
     }
 

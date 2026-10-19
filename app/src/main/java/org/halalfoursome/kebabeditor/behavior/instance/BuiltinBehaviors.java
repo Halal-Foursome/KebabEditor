@@ -9,10 +9,14 @@ import org.halalfoursome.kebabeditor.utils.Maybe;
 public final class BuiltinBehaviors {
 
     private static final Map<String, ArchetypeBehavior> ALL = Map.of(
+        BuiltinArchetypes.PREFAB_REF,       new PrefabRefBehavior(),
         BuiltinArchetypes.MODEL_REF,        new ModelRefBehavior(),
         BuiltinArchetypes.COLLIDER_BOX,     new ColliderBoxBehavior(),
         BuiltinArchetypes.COLLIDER_SPHERE,  new ColliderSphereBehavior(),
         BuiltinArchetypes.TRIGGER,          new TriggerBehavior(),
+        BuiltinArchetypes.POINT_LIGHT,      new PointLightBehavior(),
+        BuiltinArchetypes.DIR_LIGHT,        new DirLightBehavior(),
+        BuiltinArchetypes.SPOT_LIGHT,       new SpotLightBehavior(),
         BuiltinArchetypes.SNAP_DISTANCE,    new SnapDistanceBehavior()
     );
 

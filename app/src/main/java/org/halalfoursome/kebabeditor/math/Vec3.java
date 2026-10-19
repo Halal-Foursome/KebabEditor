@@ -1,5 +1,7 @@
 package org.halalfoursome.kebabeditor.math;
 
+import java.awt.Color;
+
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
 import lombok.AllArgsConstructor;
@@ -43,6 +45,10 @@ public class Vec3 {
         } catch (Exception e) {
             return Maybe.none();
         }
+    }
+
+    public static Vec3 fromColor(Color color) {
+        return new Vec3(color.getRed() / 255f, color.getGreen() / 255f, color.getBlue() / 255f);
     }
 
     public static Vec3 zero() {
@@ -231,6 +237,15 @@ public class Vec3 {
 
     public boolean approxEquals(Vec3 o, float eps) {
         return Math.abs(x - o.x) <= eps && Math.abs(y - o.y) <= eps && Math.abs(z - o.z) <= eps;
+    }
+
+    // Reads the vector as RGB from 0 to 1; components outside that range are clamped
+    public Color toColor() {
+        return new Color(clamp01(x), clamp01(y), clamp01(z));
+    }
+
+    private static float clamp01(float component) {
+        return Math.max(0f, Math.min(1f, component));
     }
 
     public float[] toArray() {

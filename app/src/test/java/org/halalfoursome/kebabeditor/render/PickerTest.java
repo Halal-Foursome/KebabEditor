@@ -9,7 +9,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import org.halalfoursome.kebabeditor.archetype.ArchetypeCatalog;
 import org.halalfoursome.kebabeditor.archetype.builtin.BuiltinArchetypes;
+import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeRegistry;
 import org.halalfoursome.kebabeditor.archetype.instance.ArchetypeInstance;
 import org.halalfoursome.kebabeditor.behavior.BehaviorContext;
 import org.halalfoursome.kebabeditor.math.Mat4;
@@ -20,11 +22,13 @@ import org.halalfoursome.kebabeditor.math.Vec3;
 import org.halalfoursome.kebabeditor.model.Material;
 import org.halalfoursome.kebabeditor.model.MeshData;
 import org.halalfoursome.kebabeditor.model.ModelPart;
+import org.halalfoursome.kebabeditor.scene.io.GltfSceneReader;
 import org.halalfoursome.kebabeditor.scene.model.Greybox;
 import org.halalfoursome.kebabeditor.scene.model.GreyboxShape;
 import org.halalfoursome.kebabeditor.scene.model.Scene;
 import org.halalfoursome.kebabeditor.scene.model.SceneNode;
 import org.halalfoursome.kebabeditor.scene.resolve.CachingModelResolver;
+import org.halalfoursome.kebabeditor.scene.resolve.CachingPrefabResolver;
 import org.halalfoursome.kebabeditor.scene.resolve.ModelExtractor;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 import org.junit.jupiter.api.Test;
@@ -172,6 +176,10 @@ class PickerTest {
                 return parts;
             }
         };
-        return new BehaviorContext(new CachingModelResolver(extractor, dir), scene);
+        return new BehaviorContext(
+            new CachingModelResolver(extractor, dir),
+            new CachingPrefabResolver(new GltfSceneReader(), new ArchetypeCatalog(new ArchetypeRegistry()), dir),
+            scene
+        );
     }
 }

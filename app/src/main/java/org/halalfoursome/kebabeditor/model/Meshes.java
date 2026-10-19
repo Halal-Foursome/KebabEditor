@@ -5,11 +5,14 @@ public final class Meshes {
 
     private static final int DEFAULT_SEGMENTS = 32;
     private static final int DEFAULT_RINGS = 16;
+    private static final int DEFAULT_CONE_SEGMENTS = 24;
 
     public static final MeshData CUBE_TRIANGLES = cubeTriangles();
     public static final MeshData CUBE_LINES = cubeLines();
     public static final MeshData SPHERE_TRIANGLES = sphereTriangles(DEFAULT_RINGS, DEFAULT_SEGMENTS);
     public static final MeshData SPHERE_LINES = sphereLines(DEFAULT_SEGMENTS);
+    public static final MeshData ARROW_LINES = arrowLines();
+    public static final MeshData CONE_LINES = coneLines(DEFAULT_CONE_SEGMENTS);
 
     private Meshes() {}
 
@@ -171,6 +174,46 @@ public final class Meshes {
                 indices[index] = vertex;
                 indices[index + 1] = circle * segments + (i + 1) % segments;
             }
+        }
+
+        return MeshData.lines(positions, indices);
+    }
+
+    public static MeshData arrowLines() {
+        float[] positions = {
+            0, 0, 0,
+            0, 0, -1,
+            0.1f, 0, -0.8f,
+            -0.1f, 0, -0.8f,
+            0, 0.1f, -0.8f,
+            0, -0.1f, -0.8f,
+        };
+        int[] indices = { 0, 1, 1, 2, 1, 3, 1, 4, 1, 5 };
+
+        return MeshData.lines(positions, indices);
+    }
+
+    public static MeshData coneLines(int segments) {
+        if (segments < 4) {
+            throw new IllegalArgumentException("need at least 4 segments");
+        }
+
+        float[] positions = new float[(segments + 1) * 3];
+        for (int i = 0; i < segments; i++) {
+            double angle = 2 * Math.PI * i / segments;
+            set(positions, i + 1, (float) Math.cos(angle), (float) Math.sin(angle), -1f);
+        }
+
+        int[] indices = new int[(segments + 4) * 2];
+        int next = 0;
+
+        for (int i = 0; i < segments; i++) {
+            indices[next++] = i + 1;
+            indices[next++] = (i + 1) % segments + 1;
+        }
+        for (int side = 0; side < 4; side++) {
+            indices[next++] = 0;
+            indices[next++] = side * segments / 4 + 1;
         }
 
         return MeshData.lines(positions, indices);

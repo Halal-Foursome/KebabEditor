@@ -11,7 +11,6 @@ import org.halalfoursome.kebabeditor.math.Mat4;
 
 import com.jogamp.opengl.GL3;
 
-/** A linked GLSL program with a cached uniform-location lookup. */
 public final class ShaderProgram {
 
     private final int id;

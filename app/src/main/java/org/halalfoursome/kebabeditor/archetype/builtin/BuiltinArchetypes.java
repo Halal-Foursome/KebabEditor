@@ -1,5 +1,6 @@
 package org.halalfoursome.kebabeditor.archetype.builtin;
 
+import java.awt.Color;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -16,6 +17,9 @@ public final class BuiltinArchetypes {
     public static final String COLLIDER_BOX = "collider_box";
     public static final String COLLIDER_SPHERE = "collider_sphere";
     public static final String TRIGGER = "trigger";
+    public static final String POINT_LIGHT = "point_light";
+    public static final String DIR_LIGHT = "dir_light";
+    public static final String SPOT_LIGHT = "spot_light";
     public static final String SNAP_DISTANCE = "snap_distance";
 
     /** Snap step used when a scene has no snap_distance object. */
@@ -43,6 +47,29 @@ public final class BuiltinArchetypes {
             .withDisplayName("Trigger")
             .withParam("size", ParamType.VEC3, Vec3.one()),
 
+        new ArchetypeDefinition(POINT_LIGHT)
+            .withDisplayName("Point Light")
+            .withParam("color",     ParamType.COLOR, Color.WHITE)
+            .withParam("intensity", ParamType.FLOAT, 1000.0f)
+            .withParam("range",     ParamType.FLOAT, 10.0f)
+            .withParam("shadows",   ParamType.BOOL,  false),
+
+        new ArchetypeDefinition(DIR_LIGHT)
+            .withDisplayName("Directional Light")
+            .withParam("color",     ParamType.COLOR, Color.WHITE)
+            .withParam("intensity", ParamType.FLOAT, 1.0f)
+            .withParam("shadows",   ParamType.BOOL,  false),
+
+        new ArchetypeDefinition(SPOT_LIGHT)
+            .withDisplayName("Spot Light")
+            .withParam("color",       ParamType.COLOR, Color.WHITE)
+            .withParam("intensity",   ParamType.FLOAT, 1000.0f)
+            .withParam("range",       ParamType.FLOAT, 10.0f)
+            .withParam("inner_angle", ParamType.FLOAT, 25.0f)
+            .withParam("outer_angle", ParamType.FLOAT, 35.0f)
+            .withParam("shadows",     ParamType.BOOL,  false),
+
+        // TODO: replace with "kebab-project.json" project settings
         // Placed in a level, its distance is the grid step for snapping in the viewport
         new ArchetypeDefinition(SNAP_DISTANCE)
             .withDisplayName("Snap Distance")

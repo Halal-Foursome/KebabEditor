@@ -7,12 +7,6 @@ import org.halalfoursome.kebabeditor.math.Vec3;
 import lombok.Getter;
 import lombok.Setter;
 
-/**
- * Free-flight perspective camera.
- *
- * Yaw rotates around +Y and pitch tilts up/down; yaw = 0, pitch = 0 looks down -Z,
- * matching the OpenGL view-space convention.
- */
 @Getter
 public class Camera {
 

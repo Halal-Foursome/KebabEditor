@@ -21,10 +21,6 @@ import org.halalfoursome.kebabeditor.scene.model.SceneNode;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 import org.halalfoursome.kebabeditor.utils.Params;
 
-/**
- * The scene's snapping step. It draws as a ruler exactly {@code distance} long
- * along the node's X axis, so the step can be compared with level geometry.
- */
 public class SnapDistanceBehavior implements ArchetypeBehavior {
 
     static final String DISTANCE = "distance";
@@ -42,7 +38,6 @@ public class SnapDistanceBehavior implements ArchetypeBehavior {
         new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 }
     );
 
-    /** The snap step a snap_distance instance asks for, or none when it is unusable. */
     public static Maybe<Float> distance(ArchetypeInstance archetype) {
         return Params.number(archetype, DISTANCE).filter(Params::positive);
     }

@@ -19,12 +19,7 @@ import org.halalfoursome.kebabeditor.scene.model.SceneNode;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
 /**
- * Finds what a ray hits first. Each candidate is tested in its own local space
- * (the ray is carried in by the inverse world matrix, which keeps the ray
- * parameter t unchanged), so rotated and non-uniformly sized objects are exact:
- * greybox boxes and spheres analytically; archetypes (model_ref, ...) by the
- * triangles of their drawables, or by their selection shape when they only draw
- * lines (colliders, triggers, the snap ruler).
+ * Finds an object a ray hits first. Each candidate is tested in its own local space
  */
 public final class Picker {
 
@@ -35,10 +30,6 @@ public final class Picker {
     private final Map<MeshData, float[]> positions = new WeakHashMap<>();
     private final Map<MeshData, int[]> indices = new WeakHashMap<>();
 
-    /**
-     * @param behaviors needed to pick archetypes; without it only greyboxes are pickable
-     * @param ground    also hit the y = 0 ground plane (from above or below)
-     */
     public Maybe<PickHit> pick(Scene scene, Maybe<BehaviorContext> behaviors, Ray ray, boolean ground) {
         Nearest nearest = new Nearest();
 
@@ -94,13 +85,10 @@ public final class Picker {
         pickLocal(node, drawable.world(), ray, nearest, local -> triangles(local, drawable.mesh()));
     }
 
-    // ---- Local-space machinery ----
-
-    /** A ray in an object's local space; t is the same as along the world ray. */
     private record LocalRay(Vec3 origin, Vec3 direction, Mat4 inverse) {}
 
     private interface LocalTest {
-        /** @return {t, nx, ny, nz} with a local-space normal, or none */
+
         Maybe<float[]> hit(LocalRay ray);
     }
 
@@ -211,7 +199,7 @@ public final class Picker {
         return Maybe.some(new float[] { t, p.getX(), p.getY(), p.getZ() });
     }
 
-    // Möller–Trumbore against every triangle, both faces.
+    // Moeller–Trumbore intersection algorithm against every triangle
     private Maybe<float[]> triangles(LocalRay ray, MeshData mesh) {
         float[] p = positions.computeIfAbsent(mesh, MeshData::positions);
         int[] idx = indices.computeIfAbsent(mesh, MeshData::indices);

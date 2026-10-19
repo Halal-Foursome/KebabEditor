@@ -15,11 +15,14 @@ import org.halalfoursome.kebabeditor.model.TextureSlot;
 
 import com.jogamp.opengl.GL3;
 
+import lombok.RequiredArgsConstructor;
+
 /**
  * The placement tool's feedback: a half-transparent ghost of the object about
  * to be spawned, the pointer ray leading to it, and, while it floats, a drop
  * line to the ground so its height is readable.
  */
+@RequiredArgsConstructor 
 public class PlacementRenderer implements RenderPass {
 
     private static final Color GHOST = new Color(150, 205, 255, 110);
@@ -30,16 +33,7 @@ public class PlacementRenderer implements RenderPass {
     // A segment from the origin to +X, stretched onto any two points by lineBetween().
     private static final MeshData UNIT_LINE = MeshData.lines(new float[] { 0, 0, 0, 1, 0, 0 }, new int[] { 0, 1 });
 
-    private final DrawableRenderer drawables;
-
-    public PlacementRenderer(DrawableRenderer drawables) {
-        this.drawables = drawables;
-    }
-
-    @Override
-    public void init(GL3 gl) {
-        // Uses the shared DrawableRenderer, which the viewport initializes.
-    }
+    private final DrawableRenderer drawableObjects;
 
     @Override
     public void render(GL3 gl, RenderContext context) {
@@ -64,8 +58,8 @@ public class PlacementRenderer implements RenderPass {
             lines.add(line(center, new Vec3(center.getX(), 0, center.getZ()), DROP_LINE, DrawMode.SOLID));
         }
 
-        drawables.draw(gl, context, ghost, false);
-        drawables.draw(gl, context, lines, false);
+        drawableObjects.draw(gl, context, ghost, false);
+        drawableObjects.draw(gl, context, lines, false);
     }
 
     private static Drawable line(Vec3 from, Vec3 to, Color color, DrawMode mode) {
@@ -86,6 +80,11 @@ public class PlacementRenderer implements RenderPass {
             up.getX(), up.getY(), up.getZ(), 0,
             from.getX(), from.getY(), from.getZ(), 1
         );
+    }
+
+    @Override
+    public void init(GL3 gl) {
+        // Uses the shared DrawableRenderer, which the viewport initializes.
     }
 
     @Override

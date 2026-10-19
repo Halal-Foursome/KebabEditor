@@ -17,7 +17,7 @@ import com.jogamp.opengl.GL3;
 
 /**
  * Draws {@link Drawable}s with the shared lit mesh shader. Not a pass itself:
- * scene passes collect drawables and hand them over, so GPU meshes are shared
+ * scene passes collect drawableObjects and hand them over, so GPU meshes are shared
  * between passes.
  *
  * Within one call, opaque solids draw first, then blended solids back to
@@ -35,12 +35,8 @@ public final class DrawableRenderer {
         shader = ShaderProgram.load(gl, "mesh");
     }
 
-    /**
-     * @param worldGrid overlay a world-aligned 1-unit grid on lit surfaces, which
-     *                  makes blockout dimensions readable at a glance
-     */
-    public void draw(GL3 gl, RenderContext context, List<Drawable> drawables, boolean worldGrid) {
-        if (drawables.isEmpty()) {
+    public void draw(GL3 gl, RenderContext context, List<Drawable> drawableObjects, boolean worldGrid) {
+        if (drawableObjects.isEmpty()) {
             return;
         }
 
@@ -48,7 +44,7 @@ public final class DrawableRenderer {
         List<Drawable> blended = new ArrayList<>();
         List<Drawable> overlay = new ArrayList<>();
 
-        for (Drawable drawable : drawables) {
+        for (Drawable drawable : drawableObjects) {
             if (drawable.mode() == DrawMode.OVERLAY) {
                 overlay.add(drawable);
             } else if (drawable.material().alpha() == AlphaMode.BLEND) {

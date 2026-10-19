@@ -15,32 +15,24 @@ import org.halalfoursome.kebabeditor.scene.model.Scene;
 
 import com.jogamp.opengl.GL3;
 
+import lombok.RequiredArgsConstructor;
+
 /**
  * Archetype instances that know how to draw themselves (model_ref, colliders,
- * triggers, snap_distance, ...): each one's {@code ArchetypeBehavior} supplies
- * the drawables, and its selection shape outlines it while selected.
+ * triggers etc.)
  *
- * Behavior problems (a broken model path, an invalid size) are logged once
- * when they appear rather than every frame.
+ * Behavior problems (a broken model path, an invalid size) are logged once.
  */
+@RequiredArgsConstructor 
 public class ArchetypeRenderer implements RenderPass {
 
     private static final int VALIDATE_EVERY_FRAMES = 60;
     private static final Material OUTLINE = Material.solid(Palette.SELECTION);
 
-    private final DrawableRenderer drawables;
+    private final DrawableRenderer drawableObjects;
     private final Set<String> reported = new HashSet<>();
     private Scene reportedFor;
     private int frame;
-
-    public ArchetypeRenderer(DrawableRenderer drawables) {
-        this.drawables = drawables;
-    }
-
-    @Override
-    public void init(GL3 gl) {
-        // Uses the shared DrawableRenderer, which the viewport initializes.
-    }
 
     @Override
     public void render(GL3 gl, RenderContext context) {
@@ -80,12 +72,17 @@ public class ArchetypeRenderer implements RenderPass {
             }
         });
 
-        drawables.draw(gl, context, objects, false);
-        drawables.draw(gl, context, outlines, false);
+        drawableObjects.draw(gl, context, objects, false);
+        drawableObjects.draw(gl, context, outlines, false);
     }
 
     @Override
     public void dispose(GL3 gl) {
         // GPU meshes are owned by the shared DrawableRenderer.
+    }
+
+    @Override
+    public void init(GL3 gl) {
+        // Uses the shared DrawableRenderer, which the viewport initializes.
     }
 }

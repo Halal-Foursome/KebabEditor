@@ -13,13 +13,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * Transform gizmo for the primary selected node, drawn after everything else.
- *
- * It clears depth first, so it is never hidden by scene geometry but its own
- * handles still occlude each other correctly. Its size is constant on screen.
- * Translate handles follow world axes; rotate and scale follow the node's
- * rotation, since that is the space those edits happen in. The handle under
- * the cursor (or being dragged) is highlighted.
+ * Transform gizmo for the primary selected node, 
+ * drawn after everything else.
  */
 public class GizmoRenderer implements RenderPass {
 

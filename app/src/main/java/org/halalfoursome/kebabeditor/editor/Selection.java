@@ -6,7 +6,6 @@ import java.util.List;
 import org.halalfoursome.kebabeditor.scene.model.SceneNode;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
-/** The nodes currently selected in the editor; the most recently selected one is primary. */
 public class Selection {
 
     private final List<SceneNode> nodes = new ArrayList<>();
@@ -17,7 +16,9 @@ public class Selection {
     }
 
     public Maybe<SceneNode> primary() {
-        return nodes.isEmpty() ? Maybe.none() : Maybe.some(nodes.getLast());
+        return nodes.isEmpty() 
+            ? Maybe.none() 
+            : Maybe.some(nodes.getLast());
     }
 
     public boolean contains(SceneNode node) {

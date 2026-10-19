@@ -10,11 +10,8 @@ import org.halalfoursome.kebabeditor.model.MeshData;
 import com.jogamp.opengl.GL3;
 
 /**
- * Ground grid on the XZ plane with the X (red) and Z (blue) axes.
- *
- * The grid mesh is finite but follows the camera in whole major-cell steps, so
- * lines stay anchored to world coordinates while it looks endless. Lines fade
- * out with distance from the camera.
+ * Ground grid on the XZ plane with
+ * the X (red) and Z (blue) axes.
  */
 public class GridRenderer implements RenderPass {
 

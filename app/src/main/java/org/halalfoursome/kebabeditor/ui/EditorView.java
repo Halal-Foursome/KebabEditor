@@ -69,7 +69,7 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
 
     private final Editor editor;
     private final Camera camera = new Camera();
-    private final DrawableRenderer drawables = new DrawableRenderer();
+    private final DrawableRenderer drawableObjects = new DrawableRenderer();
     private final GizmoRenderer gizmo = new GizmoRenderer();
     private final GizmoInteraction gizmoInteraction;
     private final Picker picker = new Picker();
@@ -94,10 +94,10 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
 
         // Order matters: opaque scene geometry, then the translucent grid and placement
         // ghost over it, then the gizmo, which clears depth to stay on top.
-        passes.add(new GreyboxRenderer(drawables));
-        passes.add(new ArchetypeRenderer(drawables));
+        passes.add(new GreyboxRenderer(drawableObjects));
+        passes.add(new ArchetypeRenderer(drawableObjects));
         passes.add(new GridRenderer());
-        passes.add(new PlacementRenderer(drawables));
+        passes.add(new PlacementRenderer(drawableObjects));
         passes.add(gizmo);
 
         placement = new PlacementTool(this, editor, picker);
@@ -160,7 +160,8 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
     /** What archetype behaviors need to draw and pick: the project's model resolver and scene file. */
     public Maybe<BehaviorContext> behaviorContext() {
         return editor.modelResolver().andThen(models ->
-            editor.currentProjectFile().map(file -> new BehaviorContext(models, file)));
+            editor.prefabResolver().andThen(prefabs ->
+                editor.currentProjectFile().map(file -> new BehaviorContext(models, prefabs, file))));
     }
 
     /**
@@ -369,7 +370,7 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
 
         failedPasses.clear();
         try {
-            drawables.init(gl);
+            drawableObjects.init(gl);
         } catch (RuntimeException e) {
             LogService.get().error("Viewport: mesh shader failed to initialize", e);
         }
@@ -416,7 +417,7 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
             }
         }
 
-        drawables.endFrame(gl);
+        drawableObjects.endFrame(gl);
     }
 
     @Override
@@ -436,7 +437,7 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
                 LogService.get().error("Failed to dispose " + pass.getClass().getSimpleName(), e);
             }
         }
-        drawables.dispose(gl);
+        drawableObjects.dispose(gl);
     }
 
     // A broken pass is disabled instead of logging the same error every frame.

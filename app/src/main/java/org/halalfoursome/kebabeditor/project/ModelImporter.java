@@ -15,12 +15,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
 
-/**
- * Brings a model file into the project, since models are only resolved inside
- * the project folder. A model already inside it is used where it is; anything
- * else is copied to {@code models/}. A .gltf goes into its own folder together
- * with the buffers and images it references, keeping their relative layout.
- */
 @RequiredArgsConstructor
 public class ModelImporter {
 
@@ -30,7 +24,6 @@ public class ModelImporter {
 
     private final ObjectMapper mapper;
 
-    /** @return the model's path inside the project */
     public Path importInto(Path projectRoot, Path model) throws IOException {
         Path root = projectRoot.toAbsolutePath().normalize();
         Path source = model.toAbsolutePath().normalize();

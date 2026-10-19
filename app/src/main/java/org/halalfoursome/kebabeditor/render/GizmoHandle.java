@@ -23,6 +23,18 @@ public enum GizmoHandle {
         return axis;
     }
 
+    public Axes movedAxes() {
+        return switch (this) {
+            case X -> new Axes(true, false, false);
+            case Y -> new Axes(false, true, false);
+            case Z -> new Axes(false, false, true);
+            case PLANE_X -> new Axes(false, true, true);
+            case PLANE_Y -> new Axes(true, false, true);
+            case PLANE_Z -> new Axes(true, true, false);
+            case CENTER -> new Axes(true, true, true);
+        };
+    }
+
     public boolean isPlane() {
         return this == PLANE_X || this == PLANE_Y || this == PLANE_Z;
     }
@@ -34,4 +46,6 @@ public enum GizmoHandle {
     public static GizmoHandle plane(int index) {
         return values()[3 + index];
     }
+
+    public record Axes(boolean x, boolean y, boolean z) {}
 }

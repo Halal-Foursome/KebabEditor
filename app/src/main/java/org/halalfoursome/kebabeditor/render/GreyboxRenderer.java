@@ -16,23 +16,12 @@ import org.halalfoursome.kebabeditor.scene.model.SceneNode;
 
 import com.jogamp.opengl.GL3;
 
-/**
- * Blockout primitives: every node with a {@link Greybox} draws as a lit solid
- * with a world-space unit grid and darker edges. Edges of selected nodes are
- * highlighted and drawn through other geometry.
- */
+import lombok.RequiredArgsConstructor;
+
+@RequiredArgsConstructor 
 public class GreyboxRenderer implements RenderPass {
 
-    private final DrawableRenderer drawables;
-
-    public GreyboxRenderer(DrawableRenderer drawables) {
-        this.drawables = drawables;
-    }
-
-    @Override
-    public void init(GL3 gl) {
-        // Uses the shared DrawableRenderer, which the viewport initializes.
-    }
+    private final DrawableRenderer drawableObjects;
 
     @Override
     public void render(GL3 gl, RenderContext context) {
@@ -47,8 +36,8 @@ public class GreyboxRenderer implements RenderPass {
             Greybox.of(node).ifSome(greybox -> collect(context, node, greybox, solids, edges))
         );
 
-        drawables.draw(gl, context, solids, true);
-        drawables.draw(gl, context, edges, false);
+        drawableObjects.draw(gl, context, solids, true);
+        drawableObjects.draw(gl, context, edges, false);
     }
 
     private static void collect(
@@ -73,6 +62,11 @@ public class GreyboxRenderer implements RenderPass {
     @Override
     public void dispose(GL3 gl) {
         // GPU meshes are owned by the shared DrawableRenderer.
+    }
+
+    @Override
+    public void init(GL3 gl) {
+        // Uses the shared DrawableRenderer, which the viewport initializes.
     }
 
     static MeshData solidMesh(GreyboxShape shape) {

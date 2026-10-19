@@ -23,6 +23,7 @@ import org.halalfoursome.kebabeditor.scene.model.GreyboxShape;
 import org.halalfoursome.kebabeditor.scene.model.Scene;
 import org.halalfoursome.kebabeditor.scene.model.SceneNode;
 import org.halalfoursome.kebabeditor.scene.resolve.ModelResolver;
+import org.halalfoursome.kebabeditor.scene.resolve.PrefabResolver;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
 public class Editor {
@@ -76,6 +77,10 @@ public class Editor {
         return projectManager.modelResolver();
     }
 
+    public Maybe<PrefabResolver> prefabResolver() {
+        return projectManager.prefabResolver();
+    }
+
     public boolean isBuiltinArchetype(String archetypeId) {
         return projectManager.isBuiltin(archetypeId);
     }
@@ -100,18 +105,11 @@ public class Editor {
         projectManager.addListener(listener);
     }
 
-    // ---- Scene editing ----
-
-    /**
-     * Adds a unit greybox primitive standing on {@code base} (the center of its
-     * bottom face) and selects it.
-     */
     public SceneNode spawnGreybox(GreyboxShape shape, Vec3 base) {
         float halfHeight = Greybox.unit(shape).size().getY() / 2f;
         return placeGreybox(shape, base.add(new Vec3(0, halfHeight, 0)));
     }
 
-    /** Adds a unit greybox primitive centered at {@code center} and selects it. */
     public SceneNode placeGreybox(GreyboxShape shape, Vec3 center) {
         SceneNode node = new SceneNode(shape.displayName());
         node.getTransform().setTranslation(center.copy());
@@ -122,12 +120,6 @@ public class Editor {
         return node;
     }
 
-    /**
-     * Adds a node with a {@code model_ref} archetype showing the given glTF/GLB
-     * file with its origin at {@code base}, and selects it. A model from outside
-     * the project is copied into the project first, since references only
-     * resolve inside it.
-     */
     public SceneNode importModel(Path modelFile, Vec3 base) throws IOException {
         Path sceneFile = projectManager.currentFile().expect("No project is open").toAbsolutePath();
         Path sceneDir = sceneFile.getParent();
@@ -148,8 +140,6 @@ public class Editor {
         return node;
     }
 
-    // ---- Snapping ----
-
     public boolean isSnapping() {
         return snapping;
     }
@@ -158,25 +148,18 @@ public class Editor {
         this.snapping = snapping;
     }
 
-    /** The grid step to snap to, or none while snapping is switched off. */
     public Maybe<Float> snapStep() {
-        return snapping ? Maybe.some(snapDistance()) : Maybe.none();
+        return snapping 
+            ? Maybe.some(snapDistance()) 
+            : Maybe.none();
     }
 
-    /**
-     * The grid step for snapping: the distance of the scene's first usable
-     * {@code snap_distance} object, or {@link BuiltinArchetypes#DEFAULT_SNAP_DISTANCE}.
-     */
     public float snapDistance() {
         return snapDistanceInstance()
             .andThen(SnapDistanceBehavior::distance)
             .unwrapOr(BuiltinArchetypes.DEFAULT_SNAP_DISTANCE);
     }
 
-    /**
-     * Sets the scene's snap step, adding a "Snap Distance" object at the origin
-     * when the scene has none yet. Non-positive values are rejected.
-     */
     public void setSnapDistance(float distance) {
         if (!(distance > 0) || !Float.isFinite(distance)) {
             throw new IllegalArgumentException("Snap distance must be a positive number, got " + distance);
@@ -201,8 +184,6 @@ public class Editor {
             .map(ArchetypeInstance.class::cast)
             .findFirst()));
     }
-
-    // ---- Helpers ----
 
     private ArchetypeInstance newInstance(String archetypeId) {
         ArchetypeCatalog catalog = projectManager.catalog().expect("No project is open");

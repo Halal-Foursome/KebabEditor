@@ -15,16 +15,6 @@ import org.halalfoursome.kebabeditor.utils.Maybe;
 
 /**
  * Dragging the gizmo's handles to move, rotate and scale the selected node.
- *
- * <ul>
- *   <li>Move: an axis slides along it, a plane handle within its plane, the
- *       center in the view plane. Positions snap to the grid on the dragged axes.</li>
- *   <li>Rotate: a ring turns around its axis, in 15 degree steps when snapping.</li>
- *   <li>Scale: a greybox changes its size along the axis (snapped to grid
- *       multiples); other nodes scale uniformly. Sizes never reach zero.</li>
- * </ul>
- *
- * Edits are made in world space and converted into the node's parent space.
  */
 public final class GizmoInteraction {
 
@@ -34,14 +24,12 @@ public final class GizmoInteraction {
 
         Ray rayAt(int x, int y);
 
-        /** Component pixel position of a world point, or none when it is behind the camera. */
         Maybe<Point2D.Float> project(Vec3 world);
     }
 
     private static final float GRAB_PIXELS = 9f;
     private static final float CENTER_GRAB_PIXELS = 12f;
     private static final int RING_SAMPLES = 64;
-    /** A ring seen nearly edge-on can't be turned by dragging, so it isn't offered. */
     private static final float MIN_RING_FACING = 0.15f;
     private static final float ROTATE_SNAP = (float) Math.toRadians(15);
     private static final float MIN_SCALE = 0.01f;
@@ -196,8 +184,6 @@ public final class GizmoInteraction {
         renderer.setHighlight(Maybe.none());
     }
 
-    // ---- Edits ----
-
     private void translate(Drag d, Ray ray, Camera camera) {
         GizmoFrame frame = d.frame();
         Vec3 target;
@@ -221,19 +207,11 @@ public final class GizmoInteraction {
         Maybe<Float> step = snapStep.get();
         if (step.isSome()) {
             float s = step.unwrap();
-            boolean[] snapAxis = switch (d.handle()) {
-                case X -> new boolean[] { true, false, false };
-                case Y -> new boolean[] { false, true, false };
-                case Z -> new boolean[] { false, false, true };
-                case PLANE_X -> new boolean[] { false, true, true };
-                case PLANE_Y -> new boolean[] { true, false, true };
-                case PLANE_Z -> new boolean[] { true, true, false };
-                case CENTER -> new boolean[] { true, true, true };
-            };
+            GizmoHandle.Axes moved = d.handle().movedAxes();
             target.set(
-                snapAxis[0] ? snap(target.getX(), s) : target.getX(),
-                snapAxis[1] ? snap(target.getY(), s) : target.getY(),
-                snapAxis[2] ? snap(target.getZ(), s) : target.getZ()
+                moved.x() ? snap(target.getX(), s) : target.getX(),
+                moved.y() ? snap(target.getY(), s) : target.getY(),
+                moved.z() ? snap(target.getZ(), s) : target.getZ()
             );
         }
 
@@ -288,8 +266,6 @@ public final class GizmoInteraction {
             d.node().getTransform().setScale(Math.max(d.startLocal().getScale() * factor, MIN_SCALE));
         }
     }
-
-    // ---- Hit testing ----
 
     /** The handle under the cursor: the center first, then plane handles, then the nearest axis. */
     public Maybe<GizmoHandle> handleAt(Viewport viewport, SceneNode node, int x, int y) {
@@ -390,8 +366,6 @@ public final class GizmoInteraction {
         }
         return Line2D.ptSegDist(pa.unwrap().x, pa.unwrap().y, pb.unwrap().x, pb.unwrap().y, mouse.x, mouse.y);
     }
-
-    // ---- Geometry ----
 
     private static Vec3 dragPlaneNormal(GizmoHandle handle, GizmoFrame frame, Camera camera) {
         return handle == GizmoHandle.CENTER ? camera.forward() : frame.axis(handle.axis());

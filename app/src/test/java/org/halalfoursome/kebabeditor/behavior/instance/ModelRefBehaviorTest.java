@@ -62,7 +62,11 @@ class ModelRefBehaviorTest {
             }
         };
 
-        return new BehaviorContext(new CachingModelResolver(extractor, project), scene);
+        return new BehaviorContext(
+            new CachingModelResolver(extractor, project),
+            BehaviorTestSupport.NO_PREFABS,
+            scene
+        );
     }
 
     private static ArchetypeInstance modelRef(String path) throws Exception {
@@ -76,10 +80,10 @@ class ModelRefBehaviorTest {
     void drawsEveryPartAtTheNodeComposedWithThePartTransform() throws Exception {
         SceneNode node = nodeAt(new Vec3(10, 0, 0), 1f);
 
-        List<Drawable> drawables = behavior.drawableObjects(node, modelRef("crate.model"), context());
+        List<Drawable> drawableObjects = behavior.drawableObjects(node, modelRef("crate.model"), context());
 
-        assertEquals(1, drawables.size());
-        Drawable drawable = drawables.get(0);
+        assertEquals(1, drawableObjects.size());
+        Drawable drawable = drawableObjects.get(0);
         assertSame(Meshes.CUBE_TRIANGLES, drawable.mesh());
         assertSame(CRATE_MATERIAL, drawable.material());
         assertEquals(DrawMode.SOLID, drawable.mode());
@@ -113,13 +117,13 @@ class ModelRefBehaviorTest {
 
     @Test
     void missingModelIsDrawnAsAMissingTextureCubeWithTheReason() throws Exception {
-        List<Drawable> drawables = behavior.drawableObjects(nodeAt(Vec3.zero(), 1f), modelRef("gone.model"), context());
+        List<Drawable> drawableObjects = behavior.drawableObjects(nodeAt(Vec3.zero(), 1f), modelRef("gone.model"), context());
 
-        assertEquals(1, drawables.size());
-        assertSame(Meshes.CUBE_TRIANGLES, drawables.get(0).mesh());
+        assertEquals(1, drawableObjects.size());
+        assertSame(Meshes.CUBE_TRIANGLES, drawableObjects.get(0).mesh());
         TextureSlot.Missing missing = assertInstanceOf(
             TextureSlot.Missing.class,
-            drawables.get(0).material().baseTexture()
+            drawableObjects.get(0).material().baseTexture()
         );
         assertTrue(missing.reason().contains("not found"), missing.reason());
     }

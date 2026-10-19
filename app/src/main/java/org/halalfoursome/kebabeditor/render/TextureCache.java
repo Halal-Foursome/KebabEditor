@@ -1,6 +1,7 @@
 package org.halalfoursome.kebabeditor.render;
 
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -35,6 +36,7 @@ final class TextureCache {
         return switch (slot) {
             case TextureSlot.None _ -> Maybe.none();
             case TextureSlot.Ref ref -> get(gl, ref.texture().path().toString(), () -> ImageIO.read(ref.texture().path().toFile()));
+            case TextureSlot.Embedded embedded -> get(gl, embedded.key(), () -> ImageIO.read(new ByteArrayInputStream(embedded.data())));
             case TextureSlot.Missing _ -> get(gl, MISSING_KEY, TextureCache::missingImage);
         };
     }
