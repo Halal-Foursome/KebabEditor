@@ -11,8 +11,10 @@ import org.halalfoursome.kebabeditor.scene.error.SceneException;
 import org.halalfoursome.kebabeditor.scene.io.SceneReader;
 import org.halalfoursome.kebabeditor.scene.model.Scene;
 import org.halalfoursome.kebabeditor.scene.resolve.CachingModelResolver;
+import org.halalfoursome.kebabeditor.scene.resolve.CachingPrefabResolver;
 import org.halalfoursome.kebabeditor.scene.resolve.ModelExtractor;
 import org.halalfoursome.kebabeditor.scene.resolve.ModelResolver;
+import org.halalfoursome.kebabeditor.scene.resolve.PrefabResolver;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -38,7 +40,9 @@ public class FileProjectLoader implements ProjectLoader {
         Path projectRoot = file.toAbsolutePath().getParent();
         ModelResolver modelResolver = new CachingModelResolver(modelExtractor, projectRoot);
 
-        return new ProjectRepository(file, scene, catalog, modelResolver);
+        PrefabResolver prefabResolver = new CachingPrefabResolver(sceneReader, catalog, projectRoot);
+
+        return new ProjectRepository(file, scene, catalog, modelResolver, prefabResolver);
     }
 
     // A missing registry is just an empty one; 

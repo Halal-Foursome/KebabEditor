@@ -62,7 +62,11 @@ class ModelRefBehaviorTest {
             }
         };
 
-        return new BehaviorContext(new CachingModelResolver(extractor, project), scene);
+        return new BehaviorContext(
+            new CachingModelResolver(extractor, project),
+            BehaviorTestSupport.NO_PREFABS,
+            scene
+        );
     }
 
     private static ArchetypeInstance modelRef(String path) throws Exception {
