@@ -11,6 +11,7 @@ public record ArchetypeDefinitionJson(
     String id,
     String displayName,
     @Nullable String icon,
+    boolean single,
     Map<String, ParamSpec> params
 ) {
     public static ArchetypeDefinitionJson from(ArchetypeDefinition def) {
@@ -22,7 +23,13 @@ public record ArchetypeDefinitionJson(
             icon = handle.path();
         }
 
-        return new ArchetypeDefinitionJson(def.getId(), def.getDisplayName(), icon, def.getParams());
+        return new ArchetypeDefinitionJson(
+            def.getId(), 
+            def.getDisplayName(), 
+            icon, 
+            def.isSingle(),
+            def.getParams()
+        );
     }
 
     public ArchetypeDefinition toDefinition() {
@@ -32,6 +39,7 @@ public record ArchetypeDefinitionJson(
             icon == null
                 ? Maybe.none()
                 : Maybe.some(new ArchetypeIcon.Handle(icon)),
+            single,
             params
         );
     }

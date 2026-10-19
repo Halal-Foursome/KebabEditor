@@ -12,7 +12,8 @@ import org.halalfoursome.kebabeditor.utils.Maybe;
 public sealed interface ArchetypeIcon 
     permits
         Handle,
-        Loaded
+        Loaded,
+        Bundled
 {
     record Handle(String path) implements ArchetypeIcon {
         public Maybe<Loaded> loaded() {
@@ -27,4 +28,6 @@ public sealed interface ArchetypeIcon
     }
 
     public record Loaded(BufferedImage icon) implements ArchetypeIcon {}
+
+    public record Bundled(String resource) implements ArchetypeIcon {}
 }

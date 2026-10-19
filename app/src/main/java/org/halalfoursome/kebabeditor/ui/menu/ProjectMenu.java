@@ -1,6 +1,5 @@
 package org.halalfoursome.kebabeditor.ui.menu;
 
-import java.util.Optional;
 
 import javax.swing.JFrame;
 
@@ -9,6 +8,7 @@ import org.halalfoursome.kebabeditor.ui.archetype.ArchetypeManagerDialog;
 import org.halalfoursome.kebabeditor.ui.menu.generic.Menu;
 import org.halalfoursome.kebabeditor.ui.menu.generic.MenuItem;
 import org.halalfoursome.kebabeditor.ui.menu.generic.SingleItem;
+import org.halalfoursome.kebabeditor.utils.Maybe;
 
 public class ProjectMenu extends Menu {
 
@@ -17,7 +17,7 @@ public class ProjectMenu extends Menu {
 
         SingleItem manageArchetypes = new SingleItem(
             "Manage archetypes", 
-            Optional.of("control shift A"), 
+            Maybe.some("control shift A"), 
             () -> new ArchetypeManagerDialog(frame, editor).setVisible(true)
         );
 

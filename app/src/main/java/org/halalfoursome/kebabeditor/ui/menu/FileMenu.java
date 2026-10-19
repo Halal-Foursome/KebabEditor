@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import javax.swing.JFrame;
 
@@ -21,6 +20,7 @@ import org.halalfoursome.kebabeditor.ui.project.CreateProjectDialog;
 import org.halalfoursome.kebabeditor.utils.ErrorDialogs;
 import org.halalfoursome.kebabeditor.utils.FileChooser;
 import org.halalfoursome.kebabeditor.utils.FileChooser.FileChooserMode;
+import org.halalfoursome.kebabeditor.utils.Maybe;
 
 public class FileMenu extends Menu {
 
@@ -32,14 +32,14 @@ public class FileMenu extends Menu {
         editor.addProjectListener(() -> updateRecent(openRecent, frame, editor));
 
         setItems(new MenuItem[] {
-            new SingleItem("Create new project...", Optional.of("control N"), () -> {
+            new SingleItem("Create new project...", Maybe.some("control N"), () -> {
                 CreateProjectDialog createProjectDialog = new CreateProjectDialog(frame, editor);
                 createProjectDialog.setVisible(true);
             }),
 
             new SeparatorItem(),
 
-            new SingleItem("Open project", Optional.of("control O"), () -> {
+            new SingleItem("Open project", Maybe.some("control O"), () -> {
                 FileChooser fileChooser = new FileChooser(FileChooserMode.FILES)
                     .addFilter("glTF scene", "gltf", "glb");
 
@@ -58,7 +58,7 @@ public class FileMenu extends Menu {
 
             new SeparatorItem(),
 
-            new SingleItem("Save", Optional.of("control S"), () -> {
+            new SingleItem("Save", Maybe.some("control S"), () -> {
                 if (editor.isProjectOpen()) {
                     try {
                         editor.saveProject();
@@ -72,7 +72,7 @@ public class FileMenu extends Menu {
 
             new SeparatorItem(),
 
-            new SingleItem("Exit", Optional.of("control Q"), () -> {
+            new SingleItem("Exit", Maybe.some("control Q"), () -> {
                 frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
             }),
         });
@@ -87,7 +87,7 @@ public class FileMenu extends Menu {
             Path path = paths.get(i);
             items.add(new SingleItem(
                 path.toString(),
-                i == 0 ? Optional.of("control shift R") : Optional.empty(),
+                i == 0 ? Maybe.some("control shift R") : Maybe.none(),
                 () -> {
                     try {
                         editor.openProject(path);
@@ -106,7 +106,7 @@ public class FileMenu extends Menu {
 
         if (!paths.isEmpty()) {
             items.add(new SeparatorItem());
-            items.add(new SingleItem("Clear recent projects", Optional.empty(), () -> {
+            items.add(new SingleItem("Clear recent projects", Maybe.none(), () -> {
                 recent.clear();
                 updateRecent(menu, frame, editor);
             }));

@@ -126,12 +126,41 @@ public class ArchetypeManagerDialog extends JDialog {
 
     private void removeArchetype(ArchetypeDefinition definition) {
         try {
-            editor.removeArchetype(definition);
+            int instances = editor.instanceCount(definition.getId());
+
+            if (instances > 0) {
+                if (!confirmDeleteWithInstances(definition, instances)) {
+                    return;
+                }
+                editor.removeArchetypeWithInstances(definition);
+            } else {
+                editor.removeArchetype(definition);
+            }
+
             reload();
             archetypeList.setSelectedValue(null, true);
         } catch (IOException e) {
             ErrorDialogs.show(this, "Cannot save archetypes", e);
         }
+    }
+
+    private boolean confirmDeleteWithInstances(ArchetypeDefinition definition, int instances) {
+        int objects = editor.nodesUsing(definition.getId()).size();
+        String[] options = { "Delete archetype and instances", "Cancel" };
+
+        int choice = JOptionPane.showOptionDialog(
+            this,
+            "'" + definition.getDisplayName() + "' is used by " + instances + " instance(s) on "
+                + objects + " object(s) in the open scene.\nDeleting it also removes those instances.",
+            "Delete archetype",
+            JOptionPane.DEFAULT_OPTION,
+            JOptionPane.WARNING_MESSAGE,
+            null,
+            options,
+            options[1]
+        );
+
+        return choice == 0;
     }
 
     private void editSelected() {

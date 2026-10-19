@@ -23,6 +23,7 @@ import org.halalfoursome.kebabeditor.logging.LogService;
 import org.halalfoursome.kebabeditor.ui.logs.LogsTab;
 import org.halalfoursome.kebabeditor.math.Vec3;
 import org.halalfoursome.kebabeditor.ui.menu.EditMenu;
+import org.halalfoursome.kebabeditor.ui.object.ObjectDialog;
 import org.halalfoursome.kebabeditor.ui.menu.FileMenu;
 import org.halalfoursome.kebabeditor.ui.menu.OptionsMenu;
 import org.halalfoursome.kebabeditor.ui.menu.ProjectMenu;
@@ -79,6 +80,7 @@ public class MainWindow {
         try {
             editorView = new EditorView(editor);
             editorView.setNavigationMode(new FreeFlightNavigation());
+            editorView.addNodeActivatedListener(node -> new ObjectDialog(frame, editor, node).setVisible(true));
             return editorView;
         } catch (GLException e) {
             LogService.get().error("OpenGL 3.x is not available, the 3D viewport is disabled", e);
@@ -161,7 +163,7 @@ public class MainWindow {
         menuBar.addMenu(new FileMenu(frame, editor));
         menuBar.addMenu(new ProjectMenu(frame, editor));
         menuBar.addMenu(new EditMenu(frame, editor, this::spawnPoint, Maybe.ofNullable(editorView)));
-        menuBar.addMenu(new ViewMenu(frame, editor, Maybe.ofNullable(editorView).map(EditorView::getPlacement)));
+        menuBar.addMenu(new ViewMenu(frame, editor, Maybe.ofNullable(editorView)));
         menuBar.addMenu(new OptionsMenu(frame, editor));
         menuBar.addMenu(new Menu("Help"));
 

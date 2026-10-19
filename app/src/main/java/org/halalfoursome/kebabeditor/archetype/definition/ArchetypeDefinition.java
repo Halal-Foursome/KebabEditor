@@ -26,6 +26,7 @@ public class ArchetypeDefinition {
     private final String id;
     private String displayName = "<unnamed>";
     private Maybe<ArchetypeIcon> icon = Maybe.none();
+    private boolean single = false;
     private Map<String, ParamSpec> params = new LinkedHashMap<>();
 
     public ArchetypeDefinition duplicateAs(String newId) {
@@ -33,6 +34,7 @@ public class ArchetypeDefinition {
             newId,
             this.displayName,
             this.icon,
+            this.single,
             new LinkedHashMap<>(this.params)
         );
     }
@@ -44,6 +46,11 @@ public class ArchetypeDefinition {
 
     public ArchetypeDefinition withIcon(ArchetypeIcon icon) {
         this.icon = Maybe.some(icon);
+        return this;
+    }
+
+    public ArchetypeDefinition withSingle() {
+        this.single = true;
         return this;
     }
 

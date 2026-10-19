@@ -3,11 +3,15 @@ package org.halalfoursome.kebabeditor.ui.archetype;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.util.List;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 import javax.swing.JButton;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JCheckBox;
 import javax.swing.JColorChooser;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -18,25 +22,36 @@ import javax.swing.SwingUtilities;
 
 import org.halalfoursome.kebabeditor.archetype.ParamType;
 import org.halalfoursome.kebabeditor.math.Vec3;
+import org.halalfoursome.kebabeditor.scene.model.SceneNode;
 import org.halalfoursome.kebabeditor.ui.validation.FieldValidator;
 import org.halalfoursome.kebabeditor.ui.validation.ValidationGroup;
 import org.halalfoursome.kebabeditor.utils.KebabStyle;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
-public final class ParamDefaultEditor extends JPanel {
+public final class ParamValueEditor extends JPanel {
 
     private static final int WIDTH = 170;
 
     private final KebabStyle style;
     private final ValidationGroup validation;
+    private final Maybe<Supplier<List<SceneNode>>> nodes;
 
     private Supplier<Object> reader = () -> Maybe.none();
     private FieldValidator validator;
 
-    public ParamDefaultEditor(KebabStyle style, ValidationGroup validation) {
+    public ParamValueEditor(KebabStyle style, ValidationGroup validation) {
+        this(style, validation, Maybe.none());
+    }
+
+    public ParamValueEditor(KebabStyle style, ValidationGroup validation, Supplier<List<SceneNode>> nodes) {
+        this(style, validation, Maybe.some(nodes));
+    }
+
+    private ParamValueEditor(KebabStyle style, ValidationGroup validation, Maybe<Supplier<List<SceneNode>>> nodes) {
         super(new BorderLayout());
         this.style = style;
         this.validation = validation;
+        this.nodes = nodes;
 
         setPreferredSize(new Dimension(WIDTH, 28));
     }
@@ -51,7 +66,7 @@ public final class ParamDefaultEditor extends JPanel {
             case BOOL -> boolEditor(value instanceof Boolean b && b);
             case STRING, REL_PATH -> textEditor(value instanceof String s ? s : "");
             case VEC3 -> vec3Editor(value instanceof Vec3 v ? v : Vec3.zero());
-            case NODE_REF -> noDefault();
+            case NODE_REF -> nodes.isSome() ? nodeEditor(nodes.unwrap().get(), value) : noDefault();
             case COLOR -> colorEditor(value instanceof Color c ? c : Color.BLACK);
         };
 
@@ -126,7 +141,7 @@ public final class ParamDefaultEditor extends JPanel {
         button.addActionListener(e -> {
             Color chosen = JColorChooser.showDialog(
                 SwingUtilities.getWindowAncestor(button),
-                "Default colour",
+                "Choose colour",
                 current[0]
             );
 
@@ -143,6 +158,52 @@ public final class ParamDefaultEditor extends JPanel {
 
     private static boolean isLight(Color color) {
         return 0.299 * color.getRed() + 0.587 * color.getGreen() + 0.114 * color.getBlue() > 140;
+    }
+
+    private record NodeChoice(Maybe<String> id, String label) {
+
+        @Override
+        public String toString() {
+            return label;
+        }
+    }
+
+    private JComponent nodeEditor(List<SceneNode> sceneNodes, Object value) {
+        Maybe<String> current = value instanceof Maybe<?> maybe && maybe.isSome()
+            ? Maybe.some(String.valueOf(maybe.unwrap()))
+            : Maybe.none();
+
+        NodeChoice none = new NodeChoice(Maybe.none(), "(none)");
+        DefaultComboBoxModel<NodeChoice> model = new DefaultComboBoxModel<>();
+        model.addElement(none);
+        NodeChoice selected = none;
+
+        for (SceneNode node : sceneNodes) {
+            String id = node.getId().value().toString();
+            NodeChoice choice = new NodeChoice(Maybe.some(id), nodeLabel(node, id));
+            model.addElement(choice);
+
+            if (current.isSomeAnd(id::equals)) {
+                selected = choice;
+            }
+        }
+
+        if (selected == none && current.isSome()) {
+            selected = new NodeChoice(current, "(missing) " + current.unwrap());
+            model.addElement(selected);
+        }
+
+        JComboBox<NodeChoice> box = new JComboBox<>(model);
+        box.setSelectedItem(selected);
+        reader = () -> ((NodeChoice) box.getSelectedItem()).id();
+
+        return box;
+    }
+
+    private static String nodeLabel(SceneNode node, String id) {
+        String name = Objects.toString(node.getName(), "");
+
+        return (name.isBlank() ? "(unnamed)" : name) + " (" + id.substring(0, 8) + ")";
     }
 
     private JComponent noDefault() {

@@ -1,6 +1,5 @@
 package org.halalfoursome.kebabeditor.ui.menu;
 
-import java.util.Optional;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JFrame;
@@ -8,6 +7,7 @@ import javax.swing.JOptionPane;
 
 import org.halalfoursome.kebabeditor.editor.Editor;
 import org.halalfoursome.kebabeditor.scene.model.GreyboxShape;
+import org.halalfoursome.kebabeditor.ui.EditorView;
 import org.halalfoursome.kebabeditor.ui.menu.generic.CheckItem;
 import org.halalfoursome.kebabeditor.ui.menu.generic.Menu;
 import org.halalfoursome.kebabeditor.ui.menu.generic.MenuItem;
@@ -20,16 +20,27 @@ import org.halalfoursome.kebabeditor.utils.Maybe;
 public class ViewMenu extends Menu {
 
     /**
-     * @param placement the viewport's placement tool; none when the viewport is unavailable
+     * @param view the viewport; none when it is unavailable
      */
-    public ViewMenu(JFrame frame, Editor editor, Maybe<PlacementTool> placement) {
+    public ViewMenu(JFrame frame, Editor editor, Maybe<EditorView> view) {
         super("View");
 
         setItems(new MenuItem[] {
-            blockoutMenu(frame, editor, placement),
+            blockoutMenu(frame, editor, view.map(EditorView::getPlacement)),
 
             new SeparatorItem(),
+
+            showIconsItem(view),
         });
+    }
+
+    private static CheckItem showIconsItem(Maybe<EditorView> view) {
+        CheckItem showIcons = new CheckItem("Show icons", Maybe.none(), on -> view.ifSome(v -> v.setShowIcons(on)));
+
+        showIcons.setSelected(view.map(EditorView::isShowIcons).unwrapOr(false));
+        showIcons.component().setEnabled(view.isSome());
+
+        return showIcons;
     }
 
     private static Menu blockoutMenu(JFrame frame, Editor editor, Maybe<PlacementTool> placement) {
@@ -41,7 +52,7 @@ public class ViewMenu extends Menu {
 
         PlacementTool tool = placement.unwrap();
 
-        CheckItem placementRay = new CheckItem("Placement ray", Optional.of("control shift P"), on -> {
+        CheckItem placementRay = new CheckItem("Placement ray", Maybe.some("control shift P"), on -> {
             if (on && !ProjectRequired.check(frame, editor)) {
                 on = false;
             }
@@ -67,10 +78,10 @@ public class ViewMenu extends Menu {
             }
         });
 
-        CheckItem snapToGrid = new CheckItem("Snap to grid", Optional.of("control shift G"), editor::setSnapping);
+        CheckItem snapToGrid = new CheckItem("Snap to grid", Maybe.some("control shift G"), editor::setSnapping);
         snapToGrid.setSelected(editor.isSnapping());
 
-        SingleItem snapDistance = new SingleItem("Snap distance...", Optional.empty(),
+        SingleItem snapDistance = new SingleItem("Snap distance...", Maybe.none(),
             ProjectRequired.guard(frame, editor, () -> askSnapDistance(frame, editor)));
 
         blockout.setItems(new MenuItem[] {

@@ -40,6 +40,8 @@ public class EditArchetypeDialog extends AbstractArchetypeDialog {
         addLabeled(form, constraints, "Display name", displayNameField);
 
         addLabeled(form, constraints, "Icon", iconPicker);
+        singleBox.setSelected(definition.isSingle());
+        addLabeled(form, constraints, "Single", singleBox);
 
         // the parameter list takes all remaining space
         constraints.weighty = 1.0;
@@ -51,6 +53,7 @@ public class EditArchetypeDialog extends AbstractArchetypeDialog {
     protected void onConfirm() {
         definition.setDisplayName(displayNameField.getText().trim());
         definition.setIcon(iconPicker.selectedIcon());
+        definition.setSingle(singleBox.isSelected());
         definition.setParams(paramList.params());
         callback.run();
     }

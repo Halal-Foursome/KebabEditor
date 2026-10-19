@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.halalfoursome.kebabeditor.archetype.ArchetypeIcon;
 import org.halalfoursome.kebabeditor.archetype.ParamType;
 import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeDefinition;
 import org.halalfoursome.kebabeditor.math.Vec3;
@@ -25,22 +26,25 @@ public final class BuiltinArchetypes {
     /** Snap step used when a scene has no snap_distance object. */
     public static final float DEFAULT_SNAP_DISTANCE = 0.5f;
 
-    // TODO: add icons for builtin archetypes
     private static final Map<String, ArchetypeDefinition> ALL = index(
         new ArchetypeDefinition(PREFAB_REF)
             .withDisplayName("Prefab Reference")
+            .withSingle()
             .withParam("path", ParamType.REL_PATH),
 
         new ArchetypeDefinition(MODEL_REF)
             .withDisplayName("Model Reference")
+            .withSingle()
             .withParam("path", ParamType.REL_PATH),
 
         new ArchetypeDefinition(COLLIDER_BOX)
             .withDisplayName("Box Collider")
+            .withIcon(new ArchetypeIcon.Bundled("archetypes/cube.svg"))
             .withParam("size", ParamType.VEC3, Vec3.one()),
 
         new ArchetypeDefinition(COLLIDER_SPHERE)
             .withDisplayName("Sphere Collider")
+            .withIcon(new ArchetypeIcon.Bundled("archetypes/sphere.svg"))
             .withParam("radius", ParamType.FLOAT, 0.5f),
 
         new ArchetypeDefinition(TRIGGER)
@@ -49,6 +53,8 @@ public final class BuiltinArchetypes {
 
         new ArchetypeDefinition(POINT_LIGHT)
             .withDisplayName("Point Light")
+            .withIcon(new ArchetypeIcon.Bundled("archetypes/light.svg"))
+            .withSingle()
             .withParam("color",     ParamType.COLOR, Color.WHITE)
             .withParam("intensity", ParamType.FLOAT, 1000.0f)
             .withParam("range",     ParamType.FLOAT, 10.0f)
@@ -56,12 +62,16 @@ public final class BuiltinArchetypes {
 
         new ArchetypeDefinition(DIR_LIGHT)
             .withDisplayName("Directional Light")
+            .withIcon(new ArchetypeIcon.Bundled("archetypes/sun.svg"))
+            .withSingle()
             .withParam("color",     ParamType.COLOR, Color.WHITE)
             .withParam("intensity", ParamType.FLOAT, 1.0f)
             .withParam("shadows",   ParamType.BOOL,  false),
 
         new ArchetypeDefinition(SPOT_LIGHT)
             .withDisplayName("Spot Light")
+            .withIcon(new ArchetypeIcon.Bundled("archetypes/spotlight.svg"))
+            .withSingle()
             .withParam("color",       ParamType.COLOR, Color.WHITE)
             .withParam("intensity",   ParamType.FLOAT, 1000.0f)
             .withParam("range",       ParamType.FLOAT, 10.0f)
@@ -73,6 +83,7 @@ public final class BuiltinArchetypes {
         // Placed in a level, its distance is the grid step for snapping in the viewport
         new ArchetypeDefinition(SNAP_DISTANCE)
             .withDisplayName("Snap Distance")
+            .withSingle()
             .withParam("distance", ParamType.FLOAT, DEFAULT_SNAP_DISTANCE)
     );
 

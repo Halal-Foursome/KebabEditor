@@ -7,6 +7,7 @@ import org.halalfoursome.kebabeditor.archetype.ArchetypeCatalog;
 import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeDefinition;
 import org.halalfoursome.kebabeditor.archetype.error.UnknownParamException;
 import org.halalfoursome.kebabeditor.error.KebabException;
+import org.halalfoursome.kebabeditor.logging.LogService;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -37,7 +38,7 @@ public record ArchetypeInstanceJson(
     public NodeArchetype toInstance(ArchetypeCatalog catalog) {        
         switch (catalog.find(id)) {
             case Maybe.None<ArchetypeDefinition> _: {
-                System.err.println("Unknown archetype `" + id + "`, keeping it unresolved");
+                LogService.get().warn("Unknown archetype `" + id + "`, keeping it unresolved");
                 return unresolved();
             }
 
@@ -54,7 +55,7 @@ public record ArchetypeInstanceJson(
                         }
                     }
                 } catch (KebabException e) {
-                    System.err.println("Archetype `" + id + "` is unresolved: " + e.getMessage());
+                    LogService.get().warn("Archetype `" + id + "` is unresolved: " + e.getMessage());
                     return unresolved();
                 }
 

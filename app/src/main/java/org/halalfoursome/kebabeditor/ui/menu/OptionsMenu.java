@@ -1,6 +1,5 @@
 package org.halalfoursome.kebabeditor.ui.menu;
 
-import java.util.Optional;
 
 import javax.swing.JFrame;
 
@@ -10,6 +9,7 @@ import org.halalfoursome.kebabeditor.ui.menu.generic.MenuItem;
 import org.halalfoursome.kebabeditor.ui.menu.generic.SeparatorItem;
 import org.halalfoursome.kebabeditor.ui.menu.generic.SingleItem;
 import org.halalfoursome.kebabeditor.ui.options.OptionsDialog;
+import org.halalfoursome.kebabeditor.utils.Maybe;
 
 public class OptionsMenu extends Menu {
 
@@ -17,7 +17,7 @@ public class OptionsMenu extends Menu {
         super("Options");
 
         setItems(new MenuItem[] {
-            new SingleItem("Blockout view options", Optional.of("control O B"), () -> {
+            new SingleItem("Blockout view options", Maybe.some("control O B"), () -> {
                 OptionsDialog optionsDialog = new OptionsDialog(frame);
                 optionsDialog.setVisible(true);
             }),

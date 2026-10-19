@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
@@ -26,7 +27,10 @@ import org.halalfoursome.kebabeditor.render.Camera;
 import org.halalfoursome.kebabeditor.render.DrawableRenderer;
 import org.halalfoursome.kebabeditor.render.GizmoMode;
 import org.halalfoursome.kebabeditor.render.GizmoRenderer;
+import org.halalfoursome.kebabeditor.render.IconLayout;
 import org.halalfoursome.kebabeditor.render.GreyboxRenderer;
+import org.halalfoursome.kebabeditor.render.ArchetypeIconRenderer;
+import org.halalfoursome.kebabeditor.render.ArchetypeIcons;
 import org.halalfoursome.kebabeditor.render.ArchetypeRenderer;
 import org.halalfoursome.kebabeditor.render.GizmoInteraction;
 import org.halalfoursome.kebabeditor.render.PickHit;
@@ -35,6 +39,7 @@ import org.halalfoursome.kebabeditor.render.PlacementRenderer;
 import org.halalfoursome.kebabeditor.render.GridRenderer;
 import org.halalfoursome.kebabeditor.render.RenderContext;
 import org.halalfoursome.kebabeditor.render.RenderPass;
+import org.halalfoursome.kebabeditor.scene.model.Scene;
 import org.halalfoursome.kebabeditor.scene.model.SceneNode;
 import org.halalfoursome.kebabeditor.ui.navigation.NavigationMode;
 import org.halalfoursome.kebabeditor.ui.placement.PlacementTool;
@@ -71,6 +76,8 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
     private final Camera camera = new Camera();
     private final DrawableRenderer drawableObjects = new DrawableRenderer();
     private final GizmoRenderer gizmo = new GizmoRenderer();
+    private final ArchetypeIcons icons = new ArchetypeIcons();
+    private volatile boolean showIcons = true;
     private final GizmoInteraction gizmoInteraction;
     private final Picker picker = new Picker();
     private final PlacementTool placement;
@@ -83,6 +90,8 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
     private long lastTime;
     private boolean glReady;
     private Maybe<Point> pressedAt = Maybe.none();
+    private Maybe<Point> gizmoPressedAt = Maybe.none();
+    private final List<Consumer<SceneNode>> nodeActivatedListeners = new ArrayList<>();
 
     public EditorView(Editor editor) {
         super(capabilities());
@@ -97,6 +106,7 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
         passes.add(new GreyboxRenderer(drawableObjects));
         passes.add(new ArchetypeRenderer(drawableObjects));
         passes.add(new GridRenderer());
+        passes.add(new ArchetypeIconRenderer(drawableObjects, icons, this::isShowIcons));
         passes.add(new PlacementRenderer(drawableObjects));
         passes.add(gizmo);
 
@@ -211,6 +221,7 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
                 if (!placement.isActive()
                     && gizmoInteraction.press(EditorView.this, editor.selection().primary(), e.getX(), e.getY())) {
                     requestFocusInWindow();
+                    gizmoPressedAt = Maybe.some(e.getPoint());
                     e.consume();
                     return;
                 }
@@ -220,13 +231,19 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
             @Override
             public void mouseReleased(MouseEvent e) {
                 if (gizmoInteraction.release()) {
+                    boolean doubleClick = e.getClickCount() >= 2
+                        && gizmoPressedAt.isSomeAnd(p -> p.distance(e.getPoint()) <= CLICK_SLOP_PIXELS);
+                    gizmoPressedAt = Maybe.none();
+                    if (doubleClick) {
+                        editor.selection().primary().ifSome(EditorView.this::activate);
+                    }
                     e.consume();
                     return;
                 }
                 boolean click = pressedAt.isSomeAnd(p -> p.distance(e.getPoint()) <= CLICK_SLOP_PIXELS);
                 pressedAt = Maybe.none();
                 if (click && SwingUtilities.isLeftMouseButton(e)) {
-                    clicked(e.getX(), e.getY());
+                    clicked(e.getX(), e.getY(), e.getClickCount());
                 }
             }
 
@@ -306,7 +323,7 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
         });
     }
 
-    private void clicked(int x, int y) {
+    private void clicked(int x, int y, int clickCount) {
         if (placement.isActive()) {
             placement.place();
             return;
@@ -316,10 +333,41 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
             return;
         }
 
-        Maybe<SceneNode> node = picker.pick(editor.scene().unwrap(), behaviorContext(), rayAt(x, y), false)
-            .andThen(PickHit::node);
+        Scene scene = editor.scene().unwrap();
+        Maybe<SceneNode> node = iconAt(scene, x, y)
+            .orElse(() -> picker.pick(scene, behaviorContext(), rayAt(x, y), false).andThen(PickHit::node));
 
-        node.ifSomeOrElse(editor.selection()::select, editor.selection()::clear);
+        node.ifSomeOrElse(hit -> {
+            editor.selection().select(hit);
+            if (clickCount >= 2) {
+                activate(hit);
+            }
+        }, editor.selection()::clear);
+    }
+
+    private Maybe<SceneNode> iconAt(Scene scene, int x, int y) {
+        if (!showIcons) {
+            return Maybe.none();
+        }
+
+        return IconLayout.hit(IconLayout.of(scene, camera, getWidth(), getHeight(), icons), x, y)
+            .map(IconLayout.Placement::node);
+    }
+
+    public boolean isShowIcons() {
+        return showIcons;
+    }
+
+    public void setShowIcons(boolean showIcons) {
+        this.showIcons = showIcons;
+    }
+
+    private void activate(SceneNode node) {
+        SwingUtilities.invokeLater(() -> nodeActivatedListeners.forEach(listener -> listener.accept(node)));
+    }
+
+    public void addNodeActivatedListener(Consumer<SceneNode> listener) {
+        nodeActivatedListeners.add(listener);
     }
 
     public GizmoMode getGizmoMode() {
