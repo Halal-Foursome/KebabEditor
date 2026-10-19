@@ -12,6 +12,7 @@ import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeRegistry;
 import org.halalfoursome.kebabeditor.scene.error.SceneException;
 import org.halalfoursome.kebabeditor.scene.error.SceneFormatException;
 import org.halalfoursome.kebabeditor.scene.resolve.ModelResolver;
+import org.halalfoursome.kebabeditor.scene.resolve.PrefabResolver;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
 import lombok.RequiredArgsConstructor;
@@ -68,6 +69,10 @@ public class ProjectManager {
         return repository.map(ProjectRepository::modelResolver);
     }
 
+    public Maybe<PrefabResolver> prefabResolver() {
+        return repository.map(ProjectRepository::prefabResolver);
+    }
+
     public boolean isBuiltin(String archetypeId) {
         return repository
             .map(r -> r.archetypeCatalog().isBuiltin(archetypeId))
@@ -97,6 +102,7 @@ public class ProjectManager {
             throw e;
         }
 
+        current.prefabResolver().invalidateAll();
         notifyListeners();
     }
 
@@ -123,6 +129,7 @@ public class ProjectManager {
             throw e;
         }
 
+        current.prefabResolver().invalidateAll();
         notifyListeners();
     }
 
@@ -133,6 +140,7 @@ public class ProjectManager {
 
         ProjectRepository current = repository.unwrap();
         writer.saveArchetypes(current.filePath(), current.archetypeCatalog().getRegistry());
+        current.prefabResolver().invalidateAll();
     }
 
     public void save() throws SceneFormatException, IOException {

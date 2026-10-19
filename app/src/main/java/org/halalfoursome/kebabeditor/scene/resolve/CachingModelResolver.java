@@ -17,8 +17,8 @@ import org.halalfoursome.kebabeditor.scene.error.ModelLoadException;
 import org.halalfoursome.kebabeditor.scene.resolve.ModelResult.BrokenReference;
 import org.halalfoursome.kebabeditor.scene.resolve.ModelResult.BrokenReference.Reason;
 import org.halalfoursome.kebabeditor.scene.resolve.ModelResult.ResolvedModel;
-import org.halalfoursome.kebabeditor.utils.AssetPaths;
-import org.halalfoursome.kebabeditor.utils.Maybe;
+import org.halalfoursome.kebabeditor.scene.resolve.ReferenceLookup.Failed;
+import org.halalfoursome.kebabeditor.scene.resolve.ReferenceLookup.Found;
 
 public final class CachingModelResolver implements ModelResolver {
 
@@ -39,26 +39,13 @@ public final class CachingModelResolver implements ModelResolver {
 
     @Override
     public synchronized ModelResult resolve(Path scene, String relPath) {
-        Path directory = scene.toAbsolutePath().normalize().getParent();
+        Path file;
 
-        if (relPath.isBlank()) {
-            return new BrokenReference(directory, Reason.MISSING, "No model path is set");
-        }
-
-        Maybe<Path> inside = AssetPaths.resolveInside(directory, assetRoot, relPath);
-
-        if (inside.isNone()) {
-            return new BrokenReference(
-                directory.resolve(relPath).normalize(),
-                Reason.UNREADABLE,
-                "'" + relPath + "' is outside the project or not a file path"
-            );
-        }
-
-        Path file = inside.unwrap();
-
-        if (!Files.isRegularFile(file)) {
-            return new BrokenReference(file, Reason.MISSING, "File not found: " + file);
+        switch (ReferenceLookup.locate(scene, relPath, assetRoot, "model")) {
+            case Failed failed -> {
+                return new BrokenReference(failed.path(), failed.reason(), failed.detail());
+            }
+            case Found found -> file = found.file();
         }
 
         if (!resolving.isEmpty()) {

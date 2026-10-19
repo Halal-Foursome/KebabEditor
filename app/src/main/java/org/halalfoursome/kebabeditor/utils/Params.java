@@ -1,5 +1,7 @@
 package org.halalfoursome.kebabeditor.utils;
 
+import java.awt.Color;
+
 import org.halalfoursome.kebabeditor.archetype.error.UnknownParamException;
 import org.halalfoursome.kebabeditor.archetype.instance.ArchetypeInstance;
 import org.halalfoursome.kebabeditor.math.Vec3;
@@ -19,6 +21,14 @@ public final class Params {
     public static Maybe<Float> number(ArchetypeInstance archetype, String name) {
         try {
             return archetype.get(name) instanceof Float value ? Maybe.some(value) : Maybe.none();
+        } catch (UnknownParamException e) {
+            return Maybe.none();
+        }
+    }
+
+    public static Maybe<Color> color(ArchetypeInstance archetype, String name) {
+        try {
+            return archetype.get(name) instanceof Color value ? Maybe.some(value) : Maybe.none();
         } catch (UnknownParamException e) {
             return Maybe.none();
         }
