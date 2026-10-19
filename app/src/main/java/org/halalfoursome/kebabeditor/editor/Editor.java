@@ -2,11 +2,14 @@ package org.halalfoursome.kebabeditor.editor;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.halalfoursome.kebabeditor.archetype.ArchetypeCatalog;
+import org.halalfoursome.kebabeditor.archetype.ParamType;
 import org.halalfoursome.kebabeditor.archetype.builtin.BuiltinArchetypes;
 import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeDefinition;
 import org.halalfoursome.kebabeditor.archetype.error.InvalidParamType;
@@ -179,6 +182,111 @@ public class Editor {
 
         node.addArchetype(instance);
         LogService.get().info("Added " + definition.getId() + " to " + node.getName());
+    }
+
+    public void renameNode(SceneNode node, String name) {
+        String trimmed = name.trim();
+
+        if (trimmed.isEmpty()) {
+            throw new IllegalArgumentException("An object needs a name");
+        }
+
+        String previous = Objects.toString(node.getName(), "");
+        node.setName(trimmed);
+        LogService.get().info("Renamed '" + previous + "' to '" + trimmed + "'");
+    }
+
+    public Deletion planDeletion(List<SceneNode> selected) {
+        Set<SceneNode> chosen = Set.copyOf(selected);
+        List<SceneNode> roots = selected.stream()
+            .filter(node -> !hasChosenAncestor(node, chosen))
+            .toList();
+
+        List<SceneNode> removed = new ArrayList<>();
+        roots.forEach(root -> collect(root, removed));
+        Set<String> removedIds = removed.stream()
+            .map(node -> node.getId().value().toString())
+            .collect(Collectors.toSet());
+        Set<SceneNode> removedNodes = Set.copyOf(removed);
+
+        List<Deletion.NodeReference> references = new ArrayList<>();
+
+        for (SceneNode node : sceneNodes()) {
+            if (removedNodes.contains(node)) {
+                continue;
+            }
+
+            for (NodeArchetype archetype : node.getArchetypes()) {
+                if (archetype instanceof ArchetypeInstance instance) {
+                    collectReferences(node, instance, removedIds, references);
+                }
+            }
+        }
+
+        return new Deletion(roots, removed.size(), references);
+    }
+
+    public void delete(Deletion deletion) {
+        Scene scene = projectManager.scene().expect("No project is open");
+
+        for (Deletion.NodeReference reference : deletion.references()) {
+            setParam(reference.instance(), reference.param(), Maybe.none());
+        }
+
+        for (SceneNode root : deletion.roots()) {
+            try {
+                scene.remove(root);
+            } catch (SceneException e) {
+                throw new IllegalStateException("Cannot remove '" + root.getName() + "' from the scene", e);
+            }
+        }
+
+        selection.clear();
+        LogService.get().info(
+            "Deleted " + deletion.nodeCount() + " object(s), cleared " + deletion.references().size() + " reference(s)"
+        );
+    }
+
+    private static boolean hasChosenAncestor(SceneNode node, Set<SceneNode> chosen) {
+        Maybe<SceneNode> parent = node.getParent();
+
+        while (parent.isSome()) {
+            if (chosen.contains(parent.unwrap())) {
+                return true;
+            }
+            parent = parent.unwrap().getParent();
+        }
+
+        return false;
+    }
+
+    private static void collect(SceneNode node, List<SceneNode> into) {
+        into.add(node);
+        node.getChildren().forEach(child -> collect(child, into));
+    }
+
+    private static void collectReferences(
+        SceneNode owner,
+        ArchetypeInstance instance,
+        Set<String> removedIds,
+        List<Deletion.NodeReference> into
+    ) {
+        for (var entry : instance.getDefinition().getParams().entrySet()) {
+            if (entry.getValue().type() != ParamType.NODE_REF) {
+                continue;
+            }
+
+            try {
+                if (instance.get(entry.getKey()) instanceof Maybe<?> target
+                    && target.isSome()
+                    && removedIds.contains(String.valueOf(target.unwrap()))
+                ) {
+                    into.add(new Deletion.NodeReference(owner, instance, entry.getKey()));
+                }
+            } catch (UnknownParamException e) {
+                throw new IllegalStateException("Param vanished from its own definition", e);
+            }
+        }
     }
 
     public void detachArchetype(SceneNode node, NodeArchetype archetype) {

@@ -8,6 +8,7 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
 import org.halalfoursome.kebabeditor.archetype.builtin.BuiltinArchetypes;
+import org.halalfoursome.kebabeditor.editor.Deletion;
 import org.halalfoursome.kebabeditor.editor.Editor;
 import org.halalfoursome.kebabeditor.math.Vec3;
 import org.halalfoursome.kebabeditor.render.GizmoMode;
@@ -79,6 +80,9 @@ public class EditMenu extends Menu {
                 )
             ));
 
+        SingleItem deleteObject = new SingleItem("Delete selected object", Maybe.some("DELETE"),
+            ProjectRequired.guard(frame, editor, () -> deleteSelected(frame, editor)));
+
         ButtonGroup tools = new ButtonGroup();
 
         setItems(new MenuItem[] {
@@ -93,11 +97,50 @@ public class EditMenu extends Menu {
             importModel,
             new SeparatorItem(),
             editObject,
+            deleteObject,
             new SeparatorItem(),
             toolItem(view, "Move tool  (1)", "1", GizmoMode.TRANSLATE, tools),
             toolItem(view, "Rotate tool  (2)", "2", GizmoMode.ROTATE, tools),
             toolItem(view, "Scale tool  (3)", "3", GizmoMode.SCALE, tools),
         });
+    }
+
+    private static void deleteSelected(JFrame frame, Editor editor) {
+        if (editor.selection().nodes().isEmpty()) {
+            return;
+        }
+
+        Deletion deletion = editor.planDeletion(editor.selection().nodes());
+
+        if (!deletion.needsConfirmation() || confirmDeletion(frame, deletion)) {
+            editor.delete(deletion);
+        }
+    }
+
+    private static boolean confirmDeletion(JFrame frame, Deletion deletion) {
+        StringBuilder message = new StringBuilder();
+
+        if (deletion.childCount() > 0) {
+            message.append("This also deletes ").append(deletion.childCount()).append(" child object(s).\n");
+        }
+        if (!deletion.references().isEmpty()) {
+            message.append(deletion.references().size())
+                .append(" reference(s) in other objects point to what is being deleted and will be cleared.");
+        }
+
+        String[] options = { "Delete", "Cancel" };
+        int choice = JOptionPane.showOptionDialog(
+            frame,
+            message.toString().strip(),
+            "Delete object",
+            JOptionPane.DEFAULT_OPTION,
+            JOptionPane.WARNING_MESSAGE,
+            null,
+            options,
+            options[1]
+        );
+
+        return choice == 0;
     }
 
     private static SingleItem lightItem(JFrame frame, Editor editor, Supplier<Vec3> spawnPoint, String label, String archetypeId) {

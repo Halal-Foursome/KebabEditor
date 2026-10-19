@@ -6,9 +6,13 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.Objects;
 
 import javax.swing.BorderFactory;
@@ -49,6 +53,8 @@ public class ObjectDialog extends JDialog {
     private final JButton addButton = new JButton("Add...");
     private final JButton editButton = new JButton("Edit...");
     private final JButton removeButton = new JButton("Remove");
+    private final JTextField nameField = new JTextField(24);
+    private boolean discardName;
 
     public ObjectDialog(JFrame owner, Editor editor, SceneNode node) {
         super(owner, "Object", true);
@@ -67,8 +73,18 @@ public class ObjectDialog extends JDialog {
         add(content, BorderLayout.CENTER);
         add(buildFooter(), BorderLayout.SOUTH);
 
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                commitName();
+            }
+        });
+
         getRootPane().registerKeyboardAction(
-            e -> dispose(),
+            e -> {
+                discardName = true;
+                dispose();
+            },
             KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
             JComponent.WHEN_IN_FOCUSED_WINDOW
         );
@@ -85,9 +101,15 @@ public class ObjectDialog extends JDialog {
         nameLabel.setFont(style.uiFont());
         row.add(nameLabel, BorderLayout.WEST);
 
-        JTextField nameField = new JTextField(Objects.toString(node.getName(), ""), 24);
+        nameField.setText(Objects.toString(node.getName(), ""));
         nameField.setFont(style.uiFont());
-        nameField.setEditable(false);
+        nameField.addActionListener(e -> commitName());
+        nameField.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusLost(FocusEvent e) {
+                commitName();
+            }
+        });
         row.add(nameField, BorderLayout.CENTER);
 
         return row;
@@ -158,12 +180,31 @@ public class ObjectDialog extends JDialog {
     private JPanel buildFooter() {
         JButton closeButton = new JButton("Close");
         closeButton.setFont(style.uiFont());
-        closeButton.addActionListener(e -> dispose());
+        closeButton.addActionListener(e -> {
+            commitName();
+            dispose();
+        });
 
         JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 8));
         footer.add(closeButton);
 
         return footer;
+    }
+
+    private void commitName() {
+        if (discardName) {
+            return;
+        }
+
+        String current = Objects.toString(node.getName(), "");
+        String text = nameField.getText().trim();
+
+        if (text.isEmpty() || text.equals(current)) {
+            nameField.setText(current);
+            return;
+        }
+
+        editor.renameNode(node, text);
     }
 
     private void addArchetype() {
