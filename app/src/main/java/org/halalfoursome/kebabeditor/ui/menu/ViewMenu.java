@@ -1,6 +1,5 @@
 package org.halalfoursome.kebabeditor.ui.menu;
 
-import java.util.Optional;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JFrame;
@@ -41,7 +40,7 @@ public class ViewMenu extends Menu {
 
         PlacementTool tool = placement.unwrap();
 
-        CheckItem placementRay = new CheckItem("Placement ray", Optional.of("control shift P"), on -> {
+        CheckItem placementRay = new CheckItem("Placement ray", Maybe.some("control shift P"), on -> {
             if (on && !ProjectRequired.check(frame, editor)) {
                 on = false;
             }
@@ -67,10 +66,10 @@ public class ViewMenu extends Menu {
             }
         });
 
-        CheckItem snapToGrid = new CheckItem("Snap to grid", Optional.of("control shift G"), editor::setSnapping);
+        CheckItem snapToGrid = new CheckItem("Snap to grid", Maybe.some("control shift G"), editor::setSnapping);
         snapToGrid.setSelected(editor.isSnapping());
 
-        SingleItem snapDistance = new SingleItem("Snap distance...", Optional.empty(),
+        SingleItem snapDistance = new SingleItem("Snap distance...", Maybe.none(),
             ProjectRequired.guard(frame, editor, () -> askSnapDistance(frame, editor)));
 
         blockout.setItems(new MenuItem[] {

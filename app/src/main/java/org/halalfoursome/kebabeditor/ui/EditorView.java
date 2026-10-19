@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
@@ -83,6 +84,8 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
     private long lastTime;
     private boolean glReady;
     private Maybe<Point> pressedAt = Maybe.none();
+    private Maybe<Point> gizmoPressedAt = Maybe.none();
+    private final List<Consumer<SceneNode>> nodeActivatedListeners = new ArrayList<>();
 
     public EditorView(Editor editor) {
         super(capabilities());
@@ -211,6 +214,7 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
                 if (!placement.isActive()
                     && gizmoInteraction.press(EditorView.this, editor.selection().primary(), e.getX(), e.getY())) {
                     requestFocusInWindow();
+                    gizmoPressedAt = Maybe.some(e.getPoint());
                     e.consume();
                     return;
                 }
@@ -220,13 +224,19 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
             @Override
             public void mouseReleased(MouseEvent e) {
                 if (gizmoInteraction.release()) {
+                    boolean doubleClick = e.getClickCount() >= 2
+                        && gizmoPressedAt.isSomeAnd(p -> p.distance(e.getPoint()) <= CLICK_SLOP_PIXELS);
+                    gizmoPressedAt = Maybe.none();
+                    if (doubleClick) {
+                        editor.selection().primary().ifSome(EditorView.this::activate);
+                    }
                     e.consume();
                     return;
                 }
                 boolean click = pressedAt.isSomeAnd(p -> p.distance(e.getPoint()) <= CLICK_SLOP_PIXELS);
                 pressedAt = Maybe.none();
                 if (click && SwingUtilities.isLeftMouseButton(e)) {
-                    clicked(e.getX(), e.getY());
+                    clicked(e.getX(), e.getY(), e.getClickCount());
                 }
             }
 
@@ -306,7 +316,7 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
         });
     }
 
-    private void clicked(int x, int y) {
+    private void clicked(int x, int y, int clickCount) {
         if (placement.isActive()) {
             placement.place();
             return;
@@ -319,7 +329,20 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
         Maybe<SceneNode> node = picker.pick(editor.scene().unwrap(), behaviorContext(), rayAt(x, y), false)
             .andThen(PickHit::node);
 
-        node.ifSomeOrElse(editor.selection()::select, editor.selection()::clear);
+        node.ifSomeOrElse(hit -> {
+            editor.selection().select(hit);
+            if (clickCount >= 2) {
+                activate(hit);
+            }
+        }, editor.selection()::clear);
+    }
+
+    private void activate(SceneNode node) {
+        SwingUtilities.invokeLater(() -> nodeActivatedListeners.forEach(listener -> listener.accept(node)));
+    }
+
+    public void addNodeActivatedListener(Consumer<SceneNode> listener) {
+        nodeActivatedListeners.add(listener);
     }
 
     public GizmoMode getGizmoMode() {

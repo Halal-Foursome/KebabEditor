@@ -8,7 +8,6 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Optional;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -30,6 +29,7 @@ import org.halalfoursome.kebabeditor.utils.ErrorDialogs;
 import org.halalfoursome.kebabeditor.utils.FileChooser;
 import org.halalfoursome.kebabeditor.utils.FileChooser.FileChooserMode;
 import org.halalfoursome.kebabeditor.utils.KebabStyle;
+import org.halalfoursome.kebabeditor.utils.Maybe;
 
 public class CreateProjectDialog extends JDialog {
 
@@ -103,7 +103,7 @@ public class CreateProjectDialog extends JDialog {
         sidebar.add(new JSeparator(SwingConstants.HORIZONTAL), constraints);
 
         constraints.gridy = 2;
-        sidebar.add(labeledRow(style, "Template", Optional.empty(), templateField), constraints);
+        sidebar.add(labeledRow(style, "Template", Maybe.none(), templateField), constraints);
 
         constraints.gridy = 3;
         constraints.weighty = 1.0;
@@ -121,10 +121,10 @@ public class CreateProjectDialog extends JDialog {
         constraints.insets = new Insets(54, 16, 8, 16);
 
         constraints.gridy = 0;
-        content.add(labeledRow(style, "Location", Optional.empty(), buildLocationRow(owner)), constraints);
+        content.add(labeledRow(style, "Location", Maybe.none(), buildLocationRow(owner)), constraints);
 
         constraints.gridy = 1;
-        content.add(labeledRow(style, "Level name", Optional.of(".gltf"), nameField), constraints);
+        content.add(labeledRow(style, "Level name", Maybe.some(".gltf"), nameField), constraints);
 
         constraints.gridy = 2;
         constraints.weighty = 1.0;
@@ -193,7 +193,7 @@ public class CreateProjectDialog extends JDialog {
         return footer;
     }
 
-    private JPanel labeledRow(KebabStyle style, String label, Optional<String> suffix, JComponent field) {
+    private JPanel labeledRow(KebabStyle style, String label, Maybe<String> suffix, JComponent field) {
         field.setFont(style.uiFont());
 
         JPanel row = new JPanel(new BorderLayout(0, 6));
@@ -204,11 +204,11 @@ public class CreateProjectDialog extends JDialog {
         row.add(text, BorderLayout.NORTH);
         row.add(field, BorderLayout.CENTER);
 
-        if (suffix.isPresent()) {
-            JLabel suffixLabel = new JLabel(suffix.get());
+        suffix.ifSome(suffixText -> {
+            JLabel suffixLabel = new JLabel(suffixText);
             suffixLabel.setFont(style.uiFont());
             row.add(suffixLabel, BorderLayout.EAST);
-        }
+        });
 
         return row;
     }

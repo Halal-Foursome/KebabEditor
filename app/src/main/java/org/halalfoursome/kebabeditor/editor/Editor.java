@@ -120,6 +120,26 @@ public class Editor {
         return node;
     }
 
+    public SceneNode spawnEmpty(Vec3 base) {
+        SceneNode node = new SceneNode("Empty");
+        node.getTransform().setTranslation(base.copy());
+
+        addToScene(node);
+        LogService.get().info("Spawned empty at " + base);
+        return node;
+    }
+
+    public SceneNode spawnArchetype(String archetypeId, Vec3 base) {
+        ArchetypeInstance instance = newInstance(archetypeId);
+        SceneNode node = new SceneNode(instance.getDefinition().getDisplayName());
+        node.getTransform().setTranslation(base.copy());
+        node.addArchetype(instance);
+
+        addToScene(node);
+        LogService.get().info("Spawned " + archetypeId + " at " + base);
+        return node;
+    }
+
     public SceneNode importModel(Path modelFile, Vec3 base) throws IOException {
         Path sceneFile = projectManager.currentFile().expect("No project is open").toAbsolutePath();
         Path sceneDir = sceneFile.getParent();
@@ -178,11 +198,14 @@ public class Editor {
     }
 
     private Maybe<ArchetypeInstance> snapDistanceInstance() {
-        return projectManager.scene().andThen(scene -> Maybe.fromOptional(scene.traverse()
-            .flatMap(node -> node.getArchetypes().stream())
-            .filter(a -> a instanceof ArchetypeInstance i && i.archetypeId().equals(BuiltinArchetypes.SNAP_DISTANCE))
-            .map(ArchetypeInstance.class::cast)
-            .findFirst()));
+        return projectManager.scene()
+            .andThen(scene -> Maybe.fromOptional(
+                scene.traverse()
+                    .flatMap(node -> node.getArchetypes().stream())
+                    .filter(a -> a instanceof ArchetypeInstance i && i.archetypeId().equals(BuiltinArchetypes.SNAP_DISTANCE))
+                    .map(ArchetypeInstance.class::cast)
+                    .findFirst()
+            ));
     }
 
     private ArchetypeInstance newInstance(String archetypeId) {
