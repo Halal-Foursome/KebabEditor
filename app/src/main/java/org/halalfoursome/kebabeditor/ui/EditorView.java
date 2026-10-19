@@ -27,7 +27,10 @@ import org.halalfoursome.kebabeditor.render.Camera;
 import org.halalfoursome.kebabeditor.render.DrawableRenderer;
 import org.halalfoursome.kebabeditor.render.GizmoMode;
 import org.halalfoursome.kebabeditor.render.GizmoRenderer;
+import org.halalfoursome.kebabeditor.render.IconLayout;
 import org.halalfoursome.kebabeditor.render.GreyboxRenderer;
+import org.halalfoursome.kebabeditor.render.ArchetypeIconRenderer;
+import org.halalfoursome.kebabeditor.render.ArchetypeIcons;
 import org.halalfoursome.kebabeditor.render.ArchetypeRenderer;
 import org.halalfoursome.kebabeditor.render.GizmoInteraction;
 import org.halalfoursome.kebabeditor.render.PickHit;
@@ -36,6 +39,7 @@ import org.halalfoursome.kebabeditor.render.PlacementRenderer;
 import org.halalfoursome.kebabeditor.render.GridRenderer;
 import org.halalfoursome.kebabeditor.render.RenderContext;
 import org.halalfoursome.kebabeditor.render.RenderPass;
+import org.halalfoursome.kebabeditor.scene.model.Scene;
 import org.halalfoursome.kebabeditor.scene.model.SceneNode;
 import org.halalfoursome.kebabeditor.ui.navigation.NavigationMode;
 import org.halalfoursome.kebabeditor.ui.placement.PlacementTool;
@@ -72,6 +76,8 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
     private final Camera camera = new Camera();
     private final DrawableRenderer drawableObjects = new DrawableRenderer();
     private final GizmoRenderer gizmo = new GizmoRenderer();
+    private final ArchetypeIcons icons = new ArchetypeIcons();
+    private volatile boolean showIcons = true;
     private final GizmoInteraction gizmoInteraction;
     private final Picker picker = new Picker();
     private final PlacementTool placement;
@@ -100,6 +106,7 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
         passes.add(new GreyboxRenderer(drawableObjects));
         passes.add(new ArchetypeRenderer(drawableObjects));
         passes.add(new GridRenderer());
+        passes.add(new ArchetypeIconRenderer(drawableObjects, icons, this::isShowIcons));
         passes.add(new PlacementRenderer(drawableObjects));
         passes.add(gizmo);
 
@@ -326,8 +333,9 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
             return;
         }
 
-        Maybe<SceneNode> node = picker.pick(editor.scene().unwrap(), behaviorContext(), rayAt(x, y), false)
-            .andThen(PickHit::node);
+        Scene scene = editor.scene().unwrap();
+        Maybe<SceneNode> node = iconAt(scene, x, y)
+            .orElse(() -> picker.pick(scene, behaviorContext(), rayAt(x, y), false).andThen(PickHit::node));
 
         node.ifSomeOrElse(hit -> {
             editor.selection().select(hit);
@@ -335,6 +343,23 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
                 activate(hit);
             }
         }, editor.selection()::clear);
+    }
+
+    private Maybe<SceneNode> iconAt(Scene scene, int x, int y) {
+        if (!showIcons) {
+            return Maybe.none();
+        }
+
+        return IconLayout.hit(IconLayout.of(scene, camera, getWidth(), getHeight(), icons), x, y)
+            .map(IconLayout.Placement::node);
+    }
+
+    public boolean isShowIcons() {
+        return showIcons;
+    }
+
+    public void setShowIcons(boolean showIcons) {
+        this.showIcons = showIcons;
     }
 
     private void activate(SceneNode node) {

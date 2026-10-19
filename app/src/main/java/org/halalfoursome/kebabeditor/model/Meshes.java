@@ -11,6 +11,7 @@ public final class Meshes {
     public static final MeshData CUBE_LINES = cubeLines();
     public static final MeshData SPHERE_TRIANGLES = sphereTriangles(DEFAULT_RINGS, DEFAULT_SEGMENTS);
     public static final MeshData SPHERE_LINES = sphereLines(DEFAULT_SEGMENTS);
+    public static final MeshData QUAD = quad();
     public static final MeshData ARROW_LINES = arrowLines();
     public static final MeshData CONE_LINES = coneLines(DEFAULT_CONE_SEGMENTS);
 
@@ -177,6 +178,24 @@ public final class Meshes {
         }
 
         return MeshData.lines(positions, indices);
+    }
+
+    public static MeshData quad() {
+        float[] positions = {
+            -0.5f, -0.5f, 0,
+            0.5f, -0.5f, 0,
+            0.5f, 0.5f, 0,
+            -0.5f, 0.5f, 0,
+        };
+        float[] uvs = {
+            0, 1,
+            1, 1,
+            1, 0,
+            0, 0,
+        };
+        int[] indices = { 0, 1, 2, 0, 2, 3 };
+
+        return MeshData.triangles(positions, new float[0], uvs, indices);
     }
 
     public static MeshData arrowLines() {

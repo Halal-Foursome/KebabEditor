@@ -163,7 +163,7 @@ public class MainWindow {
         menuBar.addMenu(new FileMenu(frame, editor));
         menuBar.addMenu(new ProjectMenu(frame, editor));
         menuBar.addMenu(new EditMenu(frame, editor, this::spawnPoint, Maybe.ofNullable(editorView)));
-        menuBar.addMenu(new ViewMenu(frame, editor, Maybe.ofNullable(editorView).map(EditorView::getPlacement)));
+        menuBar.addMenu(new ViewMenu(frame, editor, Maybe.ofNullable(editorView)));
         menuBar.addMenu(new OptionsMenu(frame, editor));
         menuBar.addMenu(new Menu("Help"));
 
