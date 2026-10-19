@@ -311,10 +311,13 @@ class GltfMeshExtractorTest {
     }
 
     @Test
-    void embeddedImageIsMissingNotSilentlyDropped() throws Exception {
-        TextureSlot.Missing missing = assertMissing(textureFor("data:image/png;base64,AAAA"));
+    void embeddedImageDataUriIsKeptAsEmbeddedBytes() throws Exception {
+        TextureSlot.Embedded embedded = assertInstanceOf(
+            TextureSlot.Embedded.class,
+            textureFor("data:image/png;base64,AAAA")
+        );
 
-        assertTrue(missing.reason().contains("embedded"), missing.reason());
+        assertEquals(3, embedded.data().length);
     }
 
     @Test

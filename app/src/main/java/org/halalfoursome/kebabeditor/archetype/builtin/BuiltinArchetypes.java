@@ -20,6 +20,10 @@ public final class BuiltinArchetypes {
     public static final String POINT_LIGHT = "point_light";
     public static final String DIR_LIGHT = "dir_light";
     public static final String SPOT_LIGHT = "spot_light";
+    public static final String SNAP_DISTANCE = "snap_distance";
+
+    /** Snap step used when a scene has no snap_distance object. */
+    public static final float DEFAULT_SNAP_DISTANCE = 0.5f;
 
     // TODO: add icons for builtin archetypes
     private static final Map<String, ArchetypeDefinition> ALL = index(
@@ -63,7 +67,13 @@ public final class BuiltinArchetypes {
             .withParam("range",       ParamType.FLOAT, 10.0f)
             .withParam("inner_angle", ParamType.FLOAT, 25.0f)
             .withParam("outer_angle", ParamType.FLOAT, 35.0f)
-            .withParam("shadows",     ParamType.BOOL,  false)
+            .withParam("shadows",     ParamType.BOOL,  false),
+
+        // TODO: replace with "kebab-project.json" project settings
+        // Placed in a level, its distance is the grid step for snapping in the viewport
+        new ArchetypeDefinition(SNAP_DISTANCE)
+            .withDisplayName("Snap Distance")
+            .withParam("distance", ParamType.FLOAT, DEFAULT_SNAP_DISTANCE)
     );
 
     private BuiltinArchetypes() {}

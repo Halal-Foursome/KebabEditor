@@ -27,6 +27,8 @@ dependencies {
     testAnnotationProcessor("org.projectlombok:lombok:1.18.48")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.20.0")
     implementation(libs.guava)
+    implementation("org.jogamp.jogl:jogl-all-main:2.6.0")
+    implementation("org.jogamp.gluegen:gluegen-rt-main:2.6.0")
 }
 
 // Apply a specific Java toolchain to ease working on different environments.
@@ -39,6 +41,14 @@ java {
 application {
     // Define the main class for the application.
     mainClass = "org.halalfoursome.kebabeditor.KebabApplication"
+
+    // JOGL loads native libraries and reaches into AWT internals for its GL surfaces.
+    applicationDefaultJvmArgs = listOf(
+        "--enable-native-access=ALL-UNNAMED",
+        "--add-exports=java.base/java.lang=ALL-UNNAMED",
+        "--add-exports=java.desktop/sun.awt=ALL-UNNAMED",
+        "--add-exports=java.desktop/sun.java2d=ALL-UNNAMED"
+    )
 }
 
 tasks.named<Test>("test") {

@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
@@ -128,6 +129,24 @@ public final class GltfAccessors {
         );
     }
 
+    byte[] viewBytes(int viewIndex) throws ModelLoadException {
+        JsonNode view = document.json().path("bufferViews").get(viewIndex);
+
+        if (view == null) {
+            throw new ModelLoadException("bufferView " + viewIndex + " does not exist");
+        }
+
+        byte[] bytes = buffer(view.path("buffer").asInt(-1));
+        int offset = view.path("byteOffset").asInt(0);
+        int length = view.path("byteLength").asInt(-1);
+
+        if (offset < 0 || length < 0 || (long) offset + length > bytes.length) {
+            throw new ModelLoadException("bufferView " + viewIndex + " reads past the end of its buffer");
+        }
+
+        return Arrays.copyOfRange(bytes, offset, offset + length);
+    }
+
     private byte[] buffer(int index) throws ModelLoadException {
         byte[] cached = buffers.get(index);
 
@@ -173,7 +192,7 @@ public final class GltfAccessors {
         }
     }
 
-    private static byte[] decodeDataUri(String uri) throws ModelLoadException {
+    static byte[] decodeDataUri(String uri) throws ModelLoadException {
         int comma = uri.indexOf(',');
 
         if (comma < 0 || !uri.substring(0, comma).endsWith(BASE64_MARKER)) {

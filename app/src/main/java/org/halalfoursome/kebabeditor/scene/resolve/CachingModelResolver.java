@@ -8,11 +8,14 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.halalfoursome.kebabeditor.logging.LogService;
 import org.halalfoursome.kebabeditor.model.ModelPart;
+import org.halalfoursome.kebabeditor.model.TextureSlot;
 import org.halalfoursome.kebabeditor.scene.error.ModelLoadException;
 import org.halalfoursome.kebabeditor.scene.resolve.ModelResult.BrokenReference;
 import org.halalfoursome.kebabeditor.scene.resolve.ModelResult.BrokenReference.Reason;
@@ -89,6 +92,7 @@ public final class CachingModelResolver implements ModelResolver {
         try {
             List<ModelPart> parts = extractor.extract(file, assetRoot);
             ResolvedModel model = ResolvedModel.of(file, parts);
+            logMissingTextures(file, parts);
             cache.put(file, new CacheEntry(model, modified));
 
             return model;
@@ -98,6 +102,20 @@ public final class CachingModelResolver implements ModelResolver {
             return new BrokenReference(file, Reason.UNREADABLE, e.getMessage());
         } finally {
             resolving.pop();
+        }
+    }
+
+    private static void logMissingTextures(Path file, List<ModelPart> parts) {
+        Set<String> reasons = new LinkedHashSet<>();
+
+        for (ModelPart part : parts) {
+            if (part.material().baseTexture() instanceof TextureSlot.Missing missing) {
+                reasons.add(missing.reason());
+            }
+        }
+
+        for (String reason : reasons) {
+            LogService.get().warn(file.getFileName() + ": texture not shown (" + reason + ")");
         }
     }
 
