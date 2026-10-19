@@ -6,6 +6,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.halalfoursome.kebabeditor.logging.LogService;
+
 public class FileRecentProjects implements RecentProjects {
 
     public static final String CONFIG_FOLDER = "kebabeditor";
@@ -60,7 +62,7 @@ public class FileRecentProjects implements RecentProjects {
                 }
             }
         } catch (IOException e) {
-            System.err.println("Cannot read " + configPath + ": " + e);
+            LogService.get().error("Cannot read " + configPath, e);
         }
     }
 
@@ -69,7 +71,7 @@ public class FileRecentProjects implements RecentProjects {
             Files.createDirectories(configPath.getParent());
             Files.write(configPath, paths.stream().map(Path::toString).toList());
         } catch (IOException e) {
-            System.err.println("Cannot save " + configPath + ": " + e);
+            LogService.get().error("Cannot save " + configPath, e);
         }
     }
 

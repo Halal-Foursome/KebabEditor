@@ -3,6 +3,8 @@ package org.halalfoursome.kebabeditor.editor;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.halalfoursome.kebabeditor.archetype.ArchetypeCatalog;
 import org.halalfoursome.kebabeditor.archetype.builtin.BuiltinArchetypes;
@@ -10,6 +12,7 @@ import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeDefinition;
 import org.halalfoursome.kebabeditor.archetype.error.InvalidParamType;
 import org.halalfoursome.kebabeditor.archetype.error.UnknownParamException;
 import org.halalfoursome.kebabeditor.archetype.instance.ArchetypeInstance;
+import org.halalfoursome.kebabeditor.archetype.instance.NodeArchetype;
 import org.halalfoursome.kebabeditor.behavior.instance.SnapDistanceBehavior;
 import org.halalfoursome.kebabeditor.logging.LogService;
 import org.halalfoursome.kebabeditor.math.Vec3;
@@ -93,6 +96,35 @@ public class Editor {
         projectManager.removeArchetype(definition);
     }
 
+    public List<SceneNode> nodesUsing(String archetypeId) {
+        return sceneNodes().stream()
+            .filter(node -> node.getArchetypes().stream().anyMatch(a -> a.archetypeId().equals(archetypeId)))
+            .toList();
+    }
+
+    public int instanceCount(String archetypeId) {
+        return (int) sceneNodes().stream()
+            .flatMap(node -> node.getArchetypes().stream())
+            .filter(archetype -> archetype.archetypeId().equals(archetypeId))
+            .count();
+    }
+
+    public void removeArchetypeWithInstances(ArchetypeDefinition definition) throws IOException {
+        List<SceneNode> users = nodesUsing(definition.getId());
+
+        projectManager.removeArchetype(definition);
+
+        for (SceneNode node : users) {
+            for (NodeArchetype archetype : List.copyOf(node.getArchetypes())) {
+                if (archetype.archetypeId().equals(definition.getId())) {
+                    node.removeArchetype(archetype);
+                }
+            }
+        }
+
+        LogService.get().info("Removed archetype " + definition.getId() + " and its instances from " + users.size() + " objects");
+    }
+
     public void saveArchetypes() throws IOException {
         projectManager.saveArchetypes();
     }
@@ -118,6 +150,40 @@ public class Editor {
         addToScene(node);
         LogService.get().info("Spawned greybox " + shape.jsonName() + " at " + center);
         return node;
+    }
+
+    public List<SceneNode> sceneNodes() {
+        return projectManager.scene()
+            .map(scene -> scene.traverse().toList())
+            .unwrapOr(List.of());
+    }
+
+    public List<ArchetypeDefinition> availableArchetypes(SceneNode node) {
+        Set<String> present = node.getArchetypes().stream()
+            .map(NodeArchetype::archetypeId)
+            .collect(Collectors.toSet());
+
+        return archetypes().stream()
+            .filter(definition -> !definition.isSingle() || !present.contains(definition.getId()))
+            .toList();
+    }
+
+    public void attachArchetype(SceneNode node, ArchetypeInstance instance) {
+        ArchetypeDefinition definition = instance.getDefinition();
+
+        if (definition.isSingle() && node.getArchetypes().stream().anyMatch(a -> a.archetypeId().equals(definition.getId()))) {
+            throw new IllegalArgumentException(
+                "'" + definition.getDisplayName() + "' can only be added once to an object"
+            );
+        }
+
+        node.addArchetype(instance);
+        LogService.get().info("Added " + definition.getId() + " to " + node.getName());
+    }
+
+    public void detachArchetype(SceneNode node, NodeArchetype archetype) {
+        node.removeArchetype(archetype);
+        LogService.get().info("Removed " + archetype.archetypeId() + " from " + node.getName());
     }
 
     public SceneNode spawnEmpty(Vec3 base) {

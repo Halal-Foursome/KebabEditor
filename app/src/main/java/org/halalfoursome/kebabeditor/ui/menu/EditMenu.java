@@ -5,6 +5,7 @@ import java.util.function.Supplier;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 
 import org.halalfoursome.kebabeditor.archetype.builtin.BuiltinArchetypes;
 import org.halalfoursome.kebabeditor.editor.Editor;
@@ -17,6 +18,7 @@ import org.halalfoursome.kebabeditor.ui.menu.generic.MenuItem;
 import org.halalfoursome.kebabeditor.ui.menu.generic.RadioItem;
 import org.halalfoursome.kebabeditor.ui.menu.generic.SeparatorItem;
 import org.halalfoursome.kebabeditor.ui.menu.generic.SingleItem;
+import org.halalfoursome.kebabeditor.ui.object.ObjectDialog;
 import org.halalfoursome.kebabeditor.utils.ErrorDialogs;
 import org.halalfoursome.kebabeditor.utils.FileChooser;
 import org.halalfoursome.kebabeditor.utils.FileChooser.FileChooserMode;
@@ -64,6 +66,19 @@ public class EditMenu extends Menu {
                     })
             ));
 
+        SingleItem editObject = new SingleItem("Edit selected object...", Maybe.some("control E"),
+            ProjectRequired.guard(frame, editor, () ->
+                editor.selection().primary().ifSomeOrElse(
+                    node -> new ObjectDialog(frame, editor, node).setVisible(true),
+                    () -> JOptionPane.showMessageDialog(
+                        frame,
+                        "Select an object first.",
+                        "Edit object",
+                        JOptionPane.INFORMATION_MESSAGE
+                    )
+                )
+            ));
+
         ButtonGroup tools = new ButtonGroup();
 
         setItems(new MenuItem[] {
@@ -76,6 +91,8 @@ public class EditMenu extends Menu {
             spawnSpotLight,
             new SeparatorItem(),
             importModel,
+            new SeparatorItem(),
+            editObject,
             new SeparatorItem(),
             toolItem(view, "Move tool  (1)", "1", GizmoMode.TRANSLATE, tools),
             toolItem(view, "Rotate tool  (2)", "2", GizmoMode.ROTATE, tools),

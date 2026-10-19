@@ -80,7 +80,7 @@ public class MainWindow {
         try {
             editorView = new EditorView(editor);
             editorView.setNavigationMode(new FreeFlightNavigation());
-            editorView.addNodeActivatedListener(node -> new ObjectDialog(frame, node).setVisible(true));
+            editorView.addNodeActivatedListener(node -> new ObjectDialog(frame, editor, node).setVisible(true));
             return editorView;
         } catch (GLException e) {
             LogService.get().error("OpenGL 3.x is not available, the 3D viewport is disabled", e);

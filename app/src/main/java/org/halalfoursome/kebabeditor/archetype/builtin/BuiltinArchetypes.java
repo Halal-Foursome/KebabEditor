@@ -29,11 +29,13 @@ public final class BuiltinArchetypes {
     private static final Map<String, ArchetypeDefinition> ALL = index(
         new ArchetypeDefinition(PREFAB_REF)
             .withDisplayName("Prefab Reference")
-            .withParam("path", ParamType.REL_PATH),
+            .withParam("path", ParamType.REL_PATH)
+            .withSingle(),
 
         new ArchetypeDefinition(MODEL_REF)
             .withDisplayName("Model Reference")
-            .withParam("path", ParamType.REL_PATH),
+            .withParam("path", ParamType.REL_PATH)
+            .withSingle(),
 
         new ArchetypeDefinition(COLLIDER_BOX)
             .withDisplayName("Box Collider")
@@ -52,13 +54,15 @@ public final class BuiltinArchetypes {
             .withParam("color",     ParamType.COLOR, Color.WHITE)
             .withParam("intensity", ParamType.FLOAT, 1000.0f)
             .withParam("range",     ParamType.FLOAT, 10.0f)
-            .withParam("shadows",   ParamType.BOOL,  false),
+            .withParam("shadows",   ParamType.BOOL,  false)
+            .withSingle(),
 
         new ArchetypeDefinition(DIR_LIGHT)
             .withDisplayName("Directional Light")
             .withParam("color",     ParamType.COLOR, Color.WHITE)
             .withParam("intensity", ParamType.FLOAT, 1.0f)
-            .withParam("shadows",   ParamType.BOOL,  false),
+            .withParam("shadows",   ParamType.BOOL,  false)
+            .withSingle(),
 
         new ArchetypeDefinition(SPOT_LIGHT)
             .withDisplayName("Spot Light")
@@ -67,13 +71,15 @@ public final class BuiltinArchetypes {
             .withParam("range",       ParamType.FLOAT, 10.0f)
             .withParam("inner_angle", ParamType.FLOAT, 25.0f)
             .withParam("outer_angle", ParamType.FLOAT, 35.0f)
-            .withParam("shadows",     ParamType.BOOL,  false),
+            .withParam("shadows",     ParamType.BOOL,  false)
+            .withSingle(),
 
         // TODO: replace with "kebab-project.json" project settings
         // Placed in a level, its distance is the grid step for snapping in the viewport
         new ArchetypeDefinition(SNAP_DISTANCE)
             .withDisplayName("Snap Distance")
             .withParam("distance", ParamType.FLOAT, DEFAULT_SNAP_DISTANCE)
+            .withSingle()
     );
 
     private BuiltinArchetypes() {}

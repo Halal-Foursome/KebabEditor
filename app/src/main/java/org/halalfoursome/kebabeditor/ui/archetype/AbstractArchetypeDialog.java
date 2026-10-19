@@ -23,6 +23,7 @@ public abstract class AbstractArchetypeDialog extends JDialog {
 
     protected final ValidationGroup validation = new ValidationGroup();
     protected final KebabStyle style = KebabStyle.getCurrent();
+    protected final JCheckBox singleBox = new JCheckBox("Only one per object");
 
     private final String confirmText;
     private JButton confirmButton;
@@ -41,6 +42,11 @@ public abstract class AbstractArchetypeDialog extends JDialog {
             }
         });
         validation.addListener(this::updateConfirmEnabled);
+
+        singleBox.setFont(style.uiFont());
+        singleBox.setToolTipText(
+            "<html>When on, an object can hold only one instance of this archetype. </html>"
+        );
 
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setLayout(new BorderLayout());

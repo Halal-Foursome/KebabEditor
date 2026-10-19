@@ -55,7 +55,7 @@ class GltfSceneIoTest {
         params.put("target", ParamSpec.of(ParamType.NODE_REF));
 
         ArchetypeRegistry registry = new ArchetypeRegistry();
-        registry.add(new ArchetypeDefinition("tag", "Tag", Maybe.none(), params));
+        registry.add(new ArchetypeDefinition("tag", "Tag", Maybe.none(), false, params));
         return new ArchetypeCatalog(registry);
     }
 

@@ -25,7 +25,7 @@ public class ParamRowPanel extends JPanel {
 
     private final JTextField nameField = new JTextField();
     private final JComboBox<ParamType> typeBox = new JComboBox<>(ParamType.values());
-    private final ParamDefaultEditor defaultEditor;
+    private final ParamValueEditor defaultEditor;
 
     public ParamRowPanel(
         KebabStyle style,
@@ -67,7 +67,7 @@ public class ParamRowPanel extends JPanel {
         c.weightx = 0;
         add(typeBox, c);
 
-        defaultEditor = new ParamDefaultEditor(style, validation);
+        defaultEditor = new ParamValueEditor(style, validation);
         defaultEditor.showFor(type(), type().defaultValue());
         typeBox.addActionListener(e -> defaultEditor.showFor(type(), type().defaultValue()));
         add(defaultEditor, c);
