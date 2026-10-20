@@ -35,11 +35,14 @@ On save, the instances are written into the standard glTF `extras` field, so a l
 **Projects**
 - Create, open and save projects; recent projects menu
 - Atomic saving, so a failed write cannot corrupt a level
+- Asset Explorer beside Logs: lazy directory tree, sorted file browser, refresh, and theme-aware Lucide icons
+- Double-click models for a read-only preview; registered scenes for an independent editable scene window
+- Optional `kebab-project.json` scopes assets and registers scenes, while legacy scene-file projects still open
 - A Logs panel for warnings and errors
 
 ### Planned
 
-Playtest mode with simple AABB physics, an Inspector panel, an Asset Explorer, a `kebab-project.json` project settings file, and undo / redo.
+Playtest mode with simple AABB physics, an Inspector panel, and undo / redo.
 
 ## Getting started
 
@@ -88,8 +91,27 @@ A project is a glTF scene file with an `archetypes.json` next to it. The `archet
 my-level/
 ├── level.gltf          scene: nodes, transforms and archetype instances
 ├── archetypes.json     your archetype definitions
-└── models/             imported models
+├── kebab-project.json  asset scope and editable scene registration
+├── assets/             project assets
+└── models/             imported models (created when importing)
 ```
+
+New projects create `assets/` and `kebab-project.json` with version 1, `assetRoot: "."`,
+`assetFolders: ["assets", "models"]`, and the new scene in `scenes`. Existing projects
+without a config use their scene directory as the browser root. Paths must stay inside
+the project; symbolic links are omitted from the browser. Keep imported models in scope
+if you edit `assetFolders`.
+
+Select a directory in Asset Explorer, double-click a folder to navigate, and double-click
+an asset (or press Enter) to open it. A glTF/GLB file is a model unless registered in
+`scenes`. **File → Close project** clears the browser. Refresh lists filesystem changes;
+reopen the project after changing its configuration.
+
+Scene windows have independent scenes, selections, cameras and resolver caches. Their
+Save action writes only their own scene; use the main editor to manage shared archetype
+definitions. Saving refuses to overwrite a scene changed on disk since it was opened
+or last saved. See [Asset Explorer implementation and manual verification](docs/asset-explorer.md)
+for configuration rules, limitations and the changed-file inventory.
 
 Archetype instances live under `extras.kebab` on each node:
 

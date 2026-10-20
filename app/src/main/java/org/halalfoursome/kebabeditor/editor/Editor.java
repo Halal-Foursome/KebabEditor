@@ -21,6 +21,7 @@ import org.halalfoursome.kebabeditor.logging.LogService;
 import org.halalfoursome.kebabeditor.math.Vec3;
 import org.halalfoursome.kebabeditor.project.ModelImporter;
 import org.halalfoursome.kebabeditor.project.ProjectManager;
+import org.halalfoursome.kebabeditor.project.ProjectAssets;
 import org.halalfoursome.kebabeditor.project.RecentProjects;
 import org.halalfoursome.kebabeditor.scene.error.SceneException;
 import org.halalfoursome.kebabeditor.scene.error.SceneFormatException;
@@ -51,8 +52,16 @@ public class Editor {
         projectManager.create(dir, name);
     }
 
+    public void closeProject() {
+        projectManager.close();
+    }
+
     public void openProject(Path file) throws SceneException, IOException {
         projectManager.open(file);
+    }
+
+    public void saveScene() throws SceneFormatException, IOException {
+        projectManager.saveScene();
     }
 
     public void saveProject() throws SceneFormatException, IOException {
@@ -134,6 +143,14 @@ public class Editor {
 
     public RecentProjects recentProjects() {
         return projectManager.recentProjects();
+    }
+
+    public Maybe<ProjectAssets> projectAssets() {
+        return projectManager.assets();
+    }
+
+    public void removeProjectListener(Runnable listener) {
+        projectManager.removeListener(listener);
     }
 
     public void addProjectListener(Runnable listener) {

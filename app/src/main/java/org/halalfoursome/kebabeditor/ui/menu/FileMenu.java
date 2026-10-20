@@ -72,6 +72,8 @@ public class FileMenu extends Menu {
 
             new SeparatorItem(),
 
+            new SingleItem("Close project", Maybe.none(), editor::closeProject),
+
             new SingleItem("Exit", Maybe.some("control Q"), () -> {
                 frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
             }),

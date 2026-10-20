@@ -27,11 +27,16 @@ public class FileProjectWriter implements ProjectWriter {
         Files.createDirectories(dir);
 
         Path scene = dir.resolve(name + ".gltf");
+        ProjectAssets.requireInside(dir, scene);
+        if (Files.exists(scene, java.nio.file.LinkOption.NOFOLLOW_LINKS)) {
+            throw new java.nio.file.FileAlreadyExistsException(scene.toString());
+        }
+        new ProjectConfigStore(mapper).prepareNewScene(scene);
         Files.writeString(scene, ProjectTemplates.MINIMAL_GLTF, StandardOpenOption.CREATE_NEW);
 
         Path archetypes = ProjectTemplates.archetypesFileFor(scene);
         if (!Files.exists(archetypes)) {
-            Files.writeString(archetypes, ProjectTemplates.EMPTY_ARCHETYPES);
+            Files.writeString(archetypes, ProjectTemplates.EMPTY_ARCHETYPES, StandardOpenOption.CREATE_NEW);
         }
 
         return scene;

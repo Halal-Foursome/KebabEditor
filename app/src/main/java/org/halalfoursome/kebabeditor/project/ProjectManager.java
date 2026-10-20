@@ -27,6 +27,8 @@ public class ProjectManager {
     private final ProjectWriter writer;
     private final ProjectLoader loader;
 
+    private byte[] savedSceneHash;
+
     private Maybe<ProjectRepository> repository = Maybe.none();
 
     public void create(Path dir, String name) throws SceneException, IOException {
@@ -38,7 +40,10 @@ public class ProjectManager {
             throw new IOException("Not a file: " + file);
         }
 
-        repository = Maybe.some(loader.load(file));
+        ProjectRepository loaded = loader.load(file);
+        byte[] hash = sceneHash(file);
+        repository = Maybe.some(loaded);
+        savedSceneHash = hash;
         recentProjects.add(file);
         notifyListeners();
     }
@@ -153,14 +158,25 @@ public class ProjectManager {
         current.prefabResolver().invalidateAll();
     }
 
-    public void save() throws SceneFormatException, IOException {
-        if (repository.isNone()) {
-            throw new IllegalStateException("No project is open");
+    public void saveScene() throws SceneFormatException, IOException {
+        ProjectRepository current = repository.expect("No project is open");
+        if (!java.util.Arrays.equals(savedSceneHash, sceneHash(current.filePath()))) {
+            throw new IOException("Scene changed on disk in another window or application; reopen it before saving: " + current.filePath());
         }
-
-        ProjectRepository current = repository.unwrap();
         writer.saveScene(current.filePath(), current.sceneData());
+        savedSceneHash = sceneHash(current.filePath());
+    }
+
+    public void save() throws SceneFormatException, IOException {
+        saveScene();
+        ProjectRepository current = repository.unwrap();
         writer.saveArchetypes(current.filePath(), current.archetypeCatalog().getRegistry());
+    }
+
+    private static byte[] sceneHash(Path file) throws IOException {
+        try {
+            return java.security.MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(file));
+        } catch (java.security.NoSuchAlgorithmException e) { throw new IllegalStateException(e); }
     }
 
     public RecentProjects recentProjects() {
@@ -169,6 +185,14 @@ public class ProjectManager {
 
     public void addListener(Runnable listener) {
         listeners.add(listener);
+    }
+
+    public Maybe<ProjectAssets> assets() {
+        return repository.map(ProjectRepository::assets);
+    }
+
+    public void removeListener(Runnable listener) {
+        listeners.remove(listener);
     }
 
     private void notifyListeners() {

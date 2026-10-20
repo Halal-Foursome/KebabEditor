@@ -21,6 +21,8 @@ import javax.swing.WindowConstants;
 import org.halalfoursome.kebabeditor.editor.Editor;
 import org.halalfoursome.kebabeditor.logging.LogService;
 import org.halalfoursome.kebabeditor.ui.logs.LogsTab;
+import org.halalfoursome.kebabeditor.ui.assets.AssetExplorerTab;
+import org.halalfoursome.kebabeditor.ui.assets.AssetWindows;
 import org.halalfoursome.kebabeditor.math.Vec3;
 import org.halalfoursome.kebabeditor.ui.menu.EditMenu;
 import org.halalfoursome.kebabeditor.ui.object.ObjectDialog;
@@ -46,6 +48,8 @@ public class MainWindow {
     private final JFrame frame;
     private final Editor editor;
     private final LogsTab logsTab;
+    private final AssetExplorerTab assetExplorer;
+    private final AssetWindows assetWindows;
 
     private final MenuBar menuBar;
     private EditorView editorView;
@@ -64,10 +68,19 @@ public class MainWindow {
         frame = new JFrame(APP_TITLE);
         menuBar = new MenuBar(frame);
         logsTab = new LogsTab(LogService.get());
+        assetWindows = new AssetWindows(frame, editor);
+        assetExplorer = new AssetExplorerTab(editor, assetWindows.handler());
+        frame.addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override public void windowClosing(java.awt.event.WindowEvent event) {
+                assetWindows.close();
+                if (editorView != null) editorView.close();
+            }
+        });
 
         setupLayout();
 
         editor.addProjectListener(this::updateTitle);
+        updateTitle();
     }
 
     private Vec3 spawnPoint() {
@@ -151,6 +164,7 @@ public class MainWindow {
 
         // 3D viewport above a resizable bottom tool window.
         JTabbedPane bottomTabs = new JTabbedPane();
+        bottomTabs.addTab("Asset Explorer", assetExplorer);
         bottomTabs.addTab("Logs", logsTab);
         JSplitPane workspace = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
             createViewport(), bottomTabs);

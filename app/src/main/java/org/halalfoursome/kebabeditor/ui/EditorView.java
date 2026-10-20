@@ -20,6 +20,9 @@ import javax.swing.Timer;
 import org.halalfoursome.kebabeditor.editor.Editor;
 import org.halalfoursome.kebabeditor.logging.LogService;
 import org.halalfoursome.kebabeditor.behavior.BehaviorContext;
+import org.halalfoursome.kebabeditor.behavior.Drawable;
+import org.halalfoursome.kebabeditor.behavior.DrawMode;
+import org.halalfoursome.kebabeditor.scene.resolve.ModelResult.ResolvedModel;
 import org.halalfoursome.kebabeditor.math.Mat4;
 import org.halalfoursome.kebabeditor.math.Ray;
 import org.halalfoursome.kebabeditor.math.Vec3;
@@ -94,6 +97,11 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
     private final List<Consumer<SceneNode>> nodeActivatedListeners = new ArrayList<>();
 
     public EditorView(Editor editor) {
+        this(editor, null);
+    }
+
+    /** A model preview uses the same mesh renderer and navigation, with no editing input or scene passes. */
+    public EditorView(Editor editor, ResolvedModel preview) {
         super(capabilities());
         this.editor = editor;
 
@@ -103,23 +111,61 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
 
         // Order matters: opaque scene geometry, then the translucent grid and placement
         // ghost over it, then the gizmo, which clears depth to stay on top.
-        passes.add(new GreyboxRenderer(drawableObjects));
-        passes.add(new ArchetypeRenderer(drawableObjects));
-        passes.add(new GridRenderer());
-        passes.add(new ArchetypeIconRenderer(drawableObjects, icons, this::isShowIcons));
-        passes.add(new PlacementRenderer(drawableObjects));
-        passes.add(gizmo);
+        if (preview == null) {
+            passes.add(new GreyboxRenderer(drawableObjects));
+            passes.add(new ArchetypeRenderer(drawableObjects));
+            passes.add(new GridRenderer());
+            passes.add(new ArchetypeIconRenderer(drawableObjects, icons, this::isShowIcons));
+            passes.add(new PlacementRenderer(drawableObjects));
+            passes.add(gizmo);
+        } else {
+            List<Drawable> objects = preview.parts().stream()
+                .map(part -> new Drawable(part.mesh(), part.transform(),
+                    part.material(), DrawMode.SOLID)).toList();
+            passes.add(new RenderPass() {
+                public void init(GL3 gl) { }
+                public void render(GL3 gl, RenderContext context) { drawableObjects.draw(gl, context, objects, false); }
+                public void dispose(GL3 gl) { }
+            });
+            var bounds = preview.bounds();
+            Vec3 center = new Vec3((bounds.getMinX() + bounds.getMaxX()) / 2,
+                (bounds.getMinY() + bounds.getMaxY()) / 2, (bounds.getMinZ() + bounds.getMaxZ()) / 2);
+            float radius = Math.max(0.5f, new Vec3(bounds.getMaxX() - bounds.getMinX(),
+                bounds.getMaxY() - bounds.getMinY(), bounds.getMaxZ() - bounds.getMinZ()).length() / 2);
+            camera.getPosition().set(center.sub(camera.forward().mulLocal(radius * 3)));
+            camera.setFar(Math.max(2000, radius * 20));
+        }
 
         placement = new PlacementTool(this, editor, picker);
         gizmoInteraction = new GizmoInteraction(gizmo, editor::snapStep);
         // Registered before any navigation mode, so these listeners see events first.
-        installInput();
+        if (preview == null) installInput();
 
         addGLEventListener(this);
 
         lastTime = System.nanoTime();
         timer = new Timer(FRAME_MILLIS, e -> tick());
+
+    }
+
+    @Override public void addNotify() {
+        super.addNotify();
+        lastTime = System.nanoTime();
         timer.start();
+    }
+
+    @Override public void removeNotify() {
+        timer.stop();
+        super.removeNotify();
+    }
+
+    /** Stop input and the render timer, then release this window's OpenGL resources. */
+    public void close() {
+        timer.stop();
+        setNavigationMode(null);
+        nodeActivatedListeners.clear();
+        gizmoModeListeners.clear();
+        destroy();
     }
 
     private static GLCapabilities capabilities() {

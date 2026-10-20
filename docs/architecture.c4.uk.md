@@ -821,3 +821,25 @@ classDiagram
     classDef planned fill:#eee,stroke:#888,stroke-dasharray: 4 3,color:#333
 ```
 
+
+
+## Asset Explorer — реалізовано (жовтень 2026)
+
+Діаграми вище містять історичні позначки planned. Фактична реалізація:
+`MainWindow` містить `AssetExplorerTab` поруч із `LogsTab`. `AssetTreeModel`
+ліниво завантажує директорії через `AssetService`; SwingWorker виконує файлові
+операції, а лічильники версій відкидають застарілі результати після зміни проєкту
+чи директорії. `ProjectConfigStore` читає та перевіряє `ProjectConfig`, повертає
+незмінний `ProjectAssets`; `ProjectRepository` зберігає цю область видимості.
+Старий вхід через файл сцени збережено.
+
+`AssetType` використовує список scenes, а `AssetOpenHandler` виконує диспетчеризацію.
+`AssetWindows` завантажує ресурси у фонових потоках. `ModelPreviewWindow` повторно
+використовує `EditorView` та `DrawableRenderer` без інструментів редагування.
+`SceneEditorWindow` має власний `Editor`, `ProjectManager`, каталог, резолвери та
+selection. Початкові посилання моделей прогріваються у фоновому потоці через
+`EditorSessions.open`. Збереження у такому вікні записує лише його сцену, без
+спільного archetypes.json. SHA-256 перевірка відхиляє перезапис сцени, зміненої
+іншим вікном або програмою. Undo/redo досі не реалізовано.
+
+Деталі, обмеження та ручні перевірки: [asset-explorer.md](asset-explorer.md).

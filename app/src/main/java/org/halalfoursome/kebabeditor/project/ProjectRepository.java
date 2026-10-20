@@ -12,5 +12,6 @@ public record ProjectRepository(
     Scene sceneData,
     ArchetypeCatalog archetypeCatalog,
     ModelResolver modelResolver,
-    PrefabResolver prefabResolver
+    PrefabResolver prefabResolver,
+    ProjectAssets assets
 ) {}

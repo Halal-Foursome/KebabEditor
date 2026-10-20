@@ -20,7 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
 
-// A project is a scene file with an archetypes.json next to it
+// A project keeps its scene-file entry point, extended by optional kebab-project.json scope.
 @RequiredArgsConstructor
 public class FileProjectLoader implements ProjectLoader {
 
@@ -30,6 +30,7 @@ public class FileProjectLoader implements ProjectLoader {
 
     @Override
     public ProjectRepository load(Path file) throws SceneException, IOException {
+        ProjectAssets assets = new ProjectConfigStore(mapper).loadForScene(file);
         Path registryPath = ProjectTemplates.archetypesFileFor(file);
         ArchetypeRegistry registry = loadRegistry(registryPath);
         ArchetypeCatalog catalog = new ArchetypeCatalog(registry);
@@ -37,12 +38,12 @@ public class FileProjectLoader implements ProjectLoader {
         Scene scene = sceneReader.read(file, catalog);
 
         // Each project gets its own resolver, rooted at the project folder, so models never leak between projects
-        Path projectRoot = file.toAbsolutePath().getParent();
+        Path projectRoot = assets.root();
         ModelResolver modelResolver = new CachingModelResolver(modelExtractor, projectRoot);
 
         PrefabResolver prefabResolver = new CachingPrefabResolver(sceneReader, catalog, projectRoot);
 
-        return new ProjectRepository(file, scene, catalog, modelResolver, prefabResolver);
+        return new ProjectRepository(file, scene, catalog, modelResolver, prefabResolver, assets);
     }
 
     // A missing registry is just an empty one; 
