@@ -8,6 +8,7 @@ import org.halalfoursome.kebabeditor.ui.archetype.ArchetypeManagerDialog;
 import org.halalfoursome.kebabeditor.ui.menu.generic.Menu;
 import org.halalfoursome.kebabeditor.ui.menu.generic.MenuItem;
 import org.halalfoursome.kebabeditor.ui.menu.generic.SingleItem;
+import org.halalfoursome.kebabeditor.ui.project.AssetScopeDialog;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
 public class ProjectMenu extends Menu {
@@ -21,9 +22,19 @@ public class ProjectMenu extends Menu {
             () -> new ArchetypeManagerDialog(frame, editor).setVisible(true)
         );
 
-        manageArchetypes.setEnabled(editor.isProjectOpen());
-        editor.addProjectListener(() -> manageArchetypes.setEnabled(editor.isProjectOpen()));
+        SingleItem assetFolders = new SingleItem(
+            "Asset folders...",
+            Maybe.none(),
+            () -> new AssetScopeDialog(frame, editor).setVisible(true)
+        );
 
-        setItems(new MenuItem[] { manageArchetypes });
+        Runnable updateEnabled = () -> {
+            manageArchetypes.setEnabled(editor.isProjectOpen());
+            assetFolders.setEnabled(editor.isProjectOpen());
+        };
+        updateEnabled.run();
+        editor.addProjectListener(updateEnabled);
+
+        setItems(new MenuItem[] { manageArchetypes, assetFolders });
     }
 }

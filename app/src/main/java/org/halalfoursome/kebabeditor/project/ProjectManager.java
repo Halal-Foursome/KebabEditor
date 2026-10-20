@@ -3,7 +3,10 @@ package org.halalfoursome.kebabeditor.project;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
@@ -28,6 +31,7 @@ public class ProjectManager {
     private final ProjectLoader loader;
 
     private Maybe<ProjectRepository> repository = Maybe.none();
+    private byte[] savedSceneHash;
 
     public void create(Path dir, String name) throws SceneException, IOException {
         open(writer.createProject(dir, name));
@@ -38,7 +42,10 @@ public class ProjectManager {
             throw new IOException("Not a file: " + file);
         }
 
-        repository = Maybe.some(loader.load(file));
+        byte[] hash = sceneHash(file);
+        ProjectRepository loaded = loader.load(file);
+        repository = Maybe.some(loaded);
+        savedSceneHash = hash;
         recentProjects.add(file);
         notifyListeners();
     }
@@ -153,14 +160,41 @@ public class ProjectManager {
         current.prefabResolver().invalidateAll();
     }
 
-    public void save() throws SceneFormatException, IOException {
-        if (repository.isNone()) {
-            throw new IllegalStateException("No project is open");
+    public void saveScene() throws SceneFormatException, IOException {
+        ProjectRepository current = repository.expect("No project is open");
+        if (!Arrays.equals(savedSceneHash, sceneHash(current.filePath()))) {
+            throw new IOException("Scene changed on disk since it was opened; reopen it before saving: "
+                + current.filePath());
         }
-
-        ProjectRepository current = repository.unwrap();
         writer.saveScene(current.filePath(), current.sceneData());
+        savedSceneHash = sceneHash(current.filePath());
+    }
+
+    public void save() throws SceneFormatException, IOException {
+        saveScene();
+        ProjectRepository current = repository.unwrap();
         writer.saveArchetypes(current.filePath(), current.archetypeCatalog().getRegistry());
+    }
+
+    private static byte[] sceneHash(Path file) throws IOException {
+        try {
+            return MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(file));
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    // A moved asset root rebuilds the resolvers, which means reloading the scene from disk
+    public void updateAssetScope(Path root, List<String> folders, List<String> scenes)
+        throws SceneException, IOException {
+        ProjectRepository current = repository.expect("No project is open");
+        ProjectAssets assets = writer.saveAssetScope(current.filePath(), root, folders, scenes);
+        if (assets.root().equals(current.assets().root())) {
+            repository = Maybe.some(current.withAssets(assets));
+            notifyListeners();
+        } else {
+            open(current.filePath());
+        }
     }
 
     public RecentProjects recentProjects() {
@@ -169,6 +203,14 @@ public class ProjectManager {
 
     public void addListener(Runnable listener) {
         listeners.add(listener);
+    }
+
+    public Maybe<ProjectAssets> assets() {
+        return repository.map(ProjectRepository::assets);
+    }
+
+    public void removeListener(Runnable listener) {
+        listeners.remove(listener);
     }
 
     private void notifyListeners() {

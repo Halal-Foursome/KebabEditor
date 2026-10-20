@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.List;
 
 import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeRegistry;
 import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeRegistryJson;
@@ -27,11 +28,16 @@ public class FileProjectWriter implements ProjectWriter {
         Files.createDirectories(dir);
 
         Path scene = dir.resolve(name + ".gltf");
+        ProjectAssets.requireInside(dir, scene);
+        if (Files.exists(scene, java.nio.file.LinkOption.NOFOLLOW_LINKS)) {
+            throw new java.nio.file.FileAlreadyExistsException(scene.toString());
+        }
+        new ProjectConfigStore(mapper).prepareNewScene(scene);
         Files.writeString(scene, ProjectTemplates.MINIMAL_GLTF, StandardOpenOption.CREATE_NEW);
 
         Path archetypes = ProjectTemplates.archetypesFileFor(scene);
         if (!Files.exists(archetypes)) {
-            Files.writeString(archetypes, ProjectTemplates.EMPTY_ARCHETYPES);
+            Files.writeString(archetypes, ProjectTemplates.EMPTY_ARCHETYPES, StandardOpenOption.CREATE_NEW);
         }
 
         return scene;
@@ -40,6 +46,12 @@ public class FileProjectWriter implements ProjectWriter {
     @Override
     public void saveScene(Path path, Scene sceneData) throws SceneFormatException, IOException {
         sceneWriter.write(sceneData, path);
+    }
+
+    @Override
+    public ProjectAssets saveAssetScope(Path scene, Path root, List<String> folders, List<String> scenes)
+        throws IOException {
+        return new ProjectConfigStore(mapper).saveScope(scene, root, folders, scenes);
     }
 
     @Override

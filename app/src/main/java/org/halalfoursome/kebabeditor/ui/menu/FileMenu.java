@@ -24,7 +24,7 @@ import org.halalfoursome.kebabeditor.utils.Maybe;
 
 public class FileMenu extends Menu {
 
-    public FileMenu(JFrame frame, Editor editor) {
+    public FileMenu(JFrame frame, Editor editor, Runnable refreshAssets) {
         super("File");
 
         Menu openRecent = new Menu("Open recent...");
@@ -71,6 +71,10 @@ public class FileMenu extends Menu {
             }),
 
             new SeparatorItem(),
+
+            new SingleItem("Refresh assets", Maybe.some("F5"), refreshAssets),
+
+            new SingleItem("Close project", Maybe.none(), editor::closeProject),
 
             new SingleItem("Exit", Maybe.some("control Q"), () -> {
                 frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));

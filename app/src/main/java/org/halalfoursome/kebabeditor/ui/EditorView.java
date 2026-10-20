@@ -94,6 +94,10 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
     private final List<Consumer<SceneNode>> nodeActivatedListeners = new ArrayList<>();
 
     public EditorView(Editor editor) {
+        this(editor, true);
+    }
+
+    protected EditorView(Editor editor, boolean interactive) {
         super(capabilities());
         this.editor = editor;
 
@@ -101,25 +105,57 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
         setMinimumSize(new Dimension(100, 100));
         setFocusable(true);
 
-        // Order matters: opaque scene geometry, then the translucent grid and placement
-        // ghost over it, then the gizmo, which clears depth to stay on top.
-        passes.add(new GreyboxRenderer(drawableObjects));
-        passes.add(new ArchetypeRenderer(drawableObjects));
-        passes.add(new GridRenderer());
-        passes.add(new ArchetypeIconRenderer(drawableObjects, icons, this::isShowIcons));
-        passes.add(new PlacementRenderer(drawableObjects));
-        passes.add(gizmo);
+        if (interactive) {
+            // Order matters: opaque scene geometry, then the translucent grid and placement
+            // ghost over it, then the gizmo, which clears depth to stay on top.
+            passes.add(new GreyboxRenderer(drawableObjects));
+            passes.add(new ArchetypeRenderer(drawableObjects));
+            passes.add(new GridRenderer());
+            passes.add(new ArchetypeIconRenderer(drawableObjects, icons, this::isShowIcons));
+            passes.add(new PlacementRenderer(drawableObjects));
+            passes.add(gizmo);
+        }
 
         placement = new PlacementTool(this, editor, picker);
         gizmoInteraction = new GizmoInteraction(gizmo, editor::snapStep);
         // Registered before any navigation mode, so these listeners see events first.
-        installInput();
+        if (interactive) {
+            installInput();
+        }
 
         addGLEventListener(this);
 
         lastTime = System.nanoTime();
         timer = new Timer(FRAME_MILLIS, e -> tick());
+
+    }
+
+    protected void addPass(RenderPass pass) {
+        passes.add(pass);
+    }
+
+    protected DrawableRenderer drawables() {
+        return drawableObjects;
+    }
+
+    @Override public void addNotify() {
+        super.addNotify();
+        lastTime = System.nanoTime();
         timer.start();
+    }
+
+    @Override public void removeNotify() {
+        timer.stop();
+        super.removeNotify();
+    }
+
+    /** Stop input and the render timer, then release this window's OpenGL resources. */
+    public void close() {
+        timer.stop();
+        setNavigationMode(null);
+        nodeActivatedListeners.clear();
+        gizmoModeListeners.clear();
+        destroy();
     }
 
     private static GLCapabilities capabilities() {
