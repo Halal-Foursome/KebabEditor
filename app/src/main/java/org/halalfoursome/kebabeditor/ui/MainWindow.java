@@ -4,6 +4,8 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Insets;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 import javax.swing.Box;
 import javax.swing.JDialog;
@@ -70,10 +72,13 @@ public class MainWindow {
         logsTab = new LogsTab(LogService.get());
         assetWindows = new AssetWindows(frame, editor);
         assetExplorer = new AssetExplorerTab(editor, assetWindows.handler());
-        frame.addWindowListener(new java.awt.event.WindowAdapter() {
-            @Override public void windowClosing(java.awt.event.WindowEvent event) {
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent event) {
                 assetWindows.close();
-                if (editorView != null) editorView.close();
+                if (editorView != null) {
+                    editorView.close();
+                }
             }
         });
 
@@ -174,7 +179,7 @@ public class MainWindow {
         frame.add(workspace, BorderLayout.CENTER);
 
         // Menu bar
-        menuBar.addMenu(new FileMenu(frame, editor));
+        menuBar.addMenu(new FileMenu(frame, editor, assetExplorer::refresh));
         menuBar.addMenu(new ProjectMenu(frame, editor));
         menuBar.addMenu(new EditMenu(frame, editor, this::spawnPoint, Maybe.ofNullable(editorView)));
         menuBar.addMenu(new ViewMenu(frame, editor, Maybe.ofNullable(editorView)));

@@ -3,6 +3,7 @@ package org.halalfoursome.kebabeditor.utils;
 import java.awt.Component;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -46,6 +47,11 @@ public class FileChooser {
         if (extensions.length > 0) {
             addFilter(String.join(", ", extensions), extensions);
         }
+    }
+
+    public FileChooser startIn(Path directory) {
+        fileChooser.setCurrentDirectory(directory.toFile());
+        return this;
     }
 
     public FileChooser addFilter(String description, String... extensions) {

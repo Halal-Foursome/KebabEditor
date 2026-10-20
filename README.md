@@ -104,8 +104,8 @@ if you edit `assetFolders`.
 
 Select a directory in Asset Explorer, double-click a folder to navigate, and double-click
 an asset (or press Enter) to open it. A glTF/GLB file is a model unless registered in
-`scenes`. **File → Close project** clears the browser. Refresh lists filesystem changes;
-reopen the project after changing its configuration.
+`scenes`. **File → Close project** clears the browser. **File → Refresh assets** (`F5`) lists filesystem changes, and the explorer also refreshes when the window regains focus;
+use **Project → Asset folders…** to edit the asset root, folders and registered scenes of the open project. The root can be any folder that contains the open scene, for example a `Project/` folder above `Scenes/` and `Models/`. Moving it moves `kebab-project.json` and reloads the scene. Reopen the project after editing `kebab-project.json` by hand.
 
 Scene windows have independent scenes, selections, cameras and resolver caches. Their
 Save action writes only their own scene; use the main editor to manage shared archetype

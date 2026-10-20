@@ -52,7 +52,7 @@ class AssetExplorerTabTest {
                 for (javax.swing.LookAndFeel theme : List.of(new com.formdev.flatlaf.FlatLightLaf(), new com.formdev.flatlaf.FlatDarkLaf())) {
                     javax.swing.UIManager.setLookAndFeel(theme);
                     AssetExplorerTab tab = new AssetExplorerTab(EditorSessions.create(), new AssetOpenHandler(p -> {}, p -> {}));
-                    assertEquals(KebabStyle.getCurrent().uiFont(), ((javax.swing.JLabel) ((javax.swing.JPanel) tab.getComponent(0)).getComponent(0)).getFont());
+                    assertEquals(KebabStyle.getCurrent().uiFont(), ((javax.swing.JLabel) ((javax.swing.JPanel) ((javax.swing.JSplitPane) tab.getComponent(0)).getRightComponent()).getComponent(1)).getFont());
                     assertNotNull(javax.swing.UIManager.getColor("List.selectionBackground"));
                     assertNotNull(javax.swing.UIManager.getColor("Tree.selectionForeground"));
                     assertTrue(org.halalfoursome.kebabeditor.utils.LucideIcon.IMAGE.icon(22, java.awt.Color.GRAY).hasFound());

@@ -149,6 +149,11 @@ public class Editor {
         return projectManager.assets();
     }
 
+    public void updateAssetScope(Path root, List<String> folders, List<String> scenes)
+        throws SceneException, IOException {
+        projectManager.updateAssetScope(root, folders, scenes);
+    }
+
     public void removeProjectListener(Runnable listener) {
         projectManager.removeListener(listener);
     }

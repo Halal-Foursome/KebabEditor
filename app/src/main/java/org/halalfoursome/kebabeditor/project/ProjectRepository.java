@@ -14,4 +14,9 @@ public record ProjectRepository(
     ModelResolver modelResolver,
     PrefabResolver prefabResolver,
     ProjectAssets assets
-) {}
+) {
+
+    public ProjectRepository withAssets(ProjectAssets newAssets) {
+        return new ProjectRepository(filePath, sceneData, archetypeCatalog, modelResolver, prefabResolver, newAssets);
+    }
+}
