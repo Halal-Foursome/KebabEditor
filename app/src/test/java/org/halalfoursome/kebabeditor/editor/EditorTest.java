@@ -1,6 +1,7 @@
 package org.halalfoursome.kebabeditor.editor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -92,6 +93,17 @@ class EditorTest {
         assertThrows(IllegalArgumentException.class, () -> editor.setSnapDistance(0f));
         assertThrows(IllegalArgumentException.class, () -> editor.setSnapDistance(-1f));
         assertThrows(IllegalArgumentException.class, () -> editor.setSnapDistance(Float.NaN));
+    }
+
+    @Test
+    void playtestingFlagIsOffUntilSet() {
+        assertFalse(editor.isPlaytesting());
+
+        editor.setPlaytesting(true);
+        assertTrue(editor.isPlaytesting());
+
+        editor.setPlaytesting(false);
+        assertFalse(editor.isPlaytesting());
     }
 
     @Test

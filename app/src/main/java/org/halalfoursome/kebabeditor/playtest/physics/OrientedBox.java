@@ -13,7 +13,7 @@ public final class OrientedBox implements ConvexShape {
 
     private OrientedBox(ShapeFrame frame) {
         this.frame = frame;
-        this.bounds = frame.bounds(frame.half);
+        this.bounds = frame.boxBounds();
     }
 
     /** The [-0.5, 0.5] cube under {@code world}; none when the matrix flattens it. */

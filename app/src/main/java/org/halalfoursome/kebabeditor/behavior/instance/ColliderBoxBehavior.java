@@ -11,6 +11,7 @@ import org.halalfoursome.kebabeditor.behavior.Drawable;
 import org.halalfoursome.kebabeditor.math.Aabb;
 import org.halalfoursome.kebabeditor.model.GizmoShape;
 import org.halalfoursome.kebabeditor.model.Material;
+import org.halalfoursome.kebabeditor.playtest.physics.PhysicsVolume;
 import org.halalfoursome.kebabeditor.scene.model.SceneNode;
 import org.halalfoursome.kebabeditor.utils.BoxVolumes;
 import org.halalfoursome.kebabeditor.utils.Maybe;
@@ -53,5 +54,14 @@ public class ColliderBoxBehavior implements ArchetypeBehavior {
         BehaviorContext context
     ) {
         return BoxVolumes.validate("collider_box", archetype);
+    }
+
+    @Override
+    public List<PhysicsVolume> physicsVolumes(
+        SceneNode node,
+        ArchetypeInstance archetype,
+        BehaviorContext context
+    ) {
+        return BoxVolumes.physicsVolumes(node, archetype, PhysicsVolume.Role.SOLID);
     }
 }

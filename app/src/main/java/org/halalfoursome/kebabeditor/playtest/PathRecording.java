@@ -28,6 +28,17 @@ public record PathRecording(List<Run> runs, List<JumpMetrics> jumps, List<Vec3> 
             grounded = grounded.clone();
         }
 
+        // Copies, so a finished recording cannot be changed through them.
+        @Override
+        public float[] positions() {
+            return positions.clone();
+        }
+
+        @Override
+        public boolean[] grounded() {
+            return grounded.clone();
+        }
+
         public int size() {
             return grounded.length;
         }

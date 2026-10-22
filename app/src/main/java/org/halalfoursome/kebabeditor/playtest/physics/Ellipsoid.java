@@ -20,7 +20,7 @@ public final class Ellipsoid implements ConvexShape {
 
     private Ellipsoid(ShapeFrame frame) {
         this.frame = frame;
-        this.bounds = frame.bounds(frame.half);
+        this.bounds = frame.ellipsoidBounds();
 
         float[] a = frame.half;
         this.sphere = Math.abs(a[0] - a[1]) <= SPHERE_TOLERANCE * a[0]

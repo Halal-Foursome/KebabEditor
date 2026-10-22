@@ -48,6 +48,24 @@ public final class PhysicsWorld {
             .reduce(Aabb::union));
     }
 
+    /** Volumes that flatten to nothing are left out. */
+    public static PhysicsWorld of(List<PhysicsVolume> volumes) {
+        List<Collider> solids = new ArrayList<>();
+        List<Collider> triggers = new ArrayList<>();
+
+        for (PhysicsVolume volume : volumes) {
+            volume.convexShape().ifSome(shape -> {
+                Collider collider = new Collider(shape, volume.name());
+                switch (volume.role()) {
+                    case SOLID -> solids.add(collider);
+                    case TRIGGER -> triggers.add(collider);
+                }
+            });
+        }
+
+        return new PhysicsWorld(solids, triggers);
+    }
+
     public List<Collider> solids() {
         return solids;
     }

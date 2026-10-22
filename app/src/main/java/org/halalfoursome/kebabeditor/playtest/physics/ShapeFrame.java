@@ -71,16 +71,36 @@ final class ShapeFrame {
             .addLocal(axes[2].mul(local[2]));
     }
 
-    /** World box around the shape when each local axis reaches {@code extent[i]}. */
-    Aabb bounds(float[] extent) {
+    /** World box around the box with half extents {@link #half}. */
+    Aabb boxBounds() {
         float[] reach = new float[3];
 
         for (int world = 0; world < 3; world++) {
             for (int i = 0; i < 3; i++) {
-                reach[world] += Math.abs(component(axes[i], world)) * extent[i];
+                reach[world] += Math.abs(component(axes[i], world)) * half[i];
             }
         }
 
+        return around(reach);
+    }
+
+    /** World box around the ellipsoid with semi-axes {@link #half}: tighter than its box's when rotated. */
+    Aabb ellipsoidBounds() {
+        float[] reach = new float[3];
+
+        for (int world = 0; world < 3; world++) {
+            float sum = 0f;
+            for (int i = 0; i < 3; i++) {
+                float r = component(axes[i], world) * half[i];
+                sum += r * r;
+            }
+            reach[world] = (float) Math.sqrt(sum);
+        }
+
+        return around(reach);
+    }
+
+    private Aabb around(float[] reach) {
         return new Aabb(
             center.getX() - reach[0], center.getX() + reach[0],
             center.getY() - reach[1], center.getY() + reach[1],

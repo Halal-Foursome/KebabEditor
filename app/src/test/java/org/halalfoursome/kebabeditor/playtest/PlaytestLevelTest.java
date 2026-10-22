@@ -57,12 +57,54 @@ class PlaytestLevelTest {
         model.addArchetype(instanceOf(BuiltinArchetypes.MODEL_REF));
         scene.add(model);
 
-        PlaytestLevel level = PlaytestLevel.build(scene, Maybe.none());
+        PlaytestLevel level = PlaytestLevel.build(scene, PhysicsTestSupport.NO_ASSETS);
 
         assertEquals(List.of("floor", "ball", "crate"),
             level.world().solids().stream().map(c -> c.name()).toList());
         assertEquals(List.of("goal"), level.world().triggers().stream().map(c -> c.name()).toList());
         assertTrue(level.starts().isEmpty());
+    }
+
+    private static SceneNode playerStart(String name) {
+        SceneNode node = node(name, Vec3.zero());
+        node.addArchetype(instanceOf(BuiltinArchetypes.PLAYER_START));
+        return node;
+    }
+
+    @Test
+    void selectedPlayerStartIsUsed() throws Exception {
+        Scene scene = new Scene();
+        SceneNode first = playerStart("first");
+        SceneNode second = playerStart("second");
+        scene.add(first);
+        scene.add(second);
+
+        PlaytestLevel level = PlaytestLevel.build(scene, PhysicsTestSupport.NO_ASSETS);
+
+        assertEquals("second", level.startFor(Maybe.some(second)).unwrap().name());
+        assertEquals("first", level.startFor(Maybe.none()).unwrap().name());
+        // Something else selected: the first start, as with nothing selected.
+        assertEquals("first", level.startFor(Maybe.some(node("crate", Vec3.zero()))).unwrap().name());
+    }
+
+    @Test
+    void levelWithoutPlayerStartHasNoStart() {
+        PlaytestLevel level = PlaytestLevel.build(new Scene(), PhysicsTestSupport.NO_ASSETS);
+
+        assertTrue(level.startFor(Maybe.none()).isNone());
+    }
+
+    @Test
+    void levelWithOnlyTriggersHasNothingToStandOn() throws Exception {
+        Scene scene = new Scene();
+        SceneNode goal = node("goal", Vec3.zero());
+        goal.addArchetype(instanceOf(BuiltinArchetypes.TRIGGER));
+        scene.add(goal);
+
+        assertTrue(PlaytestLevel.build(scene, PhysicsTestSupport.NO_ASSETS).hasNothingToStandOn());
+
+        scene.add(greybox("floor", GreyboxShape.BOX, Vec3.zero(), Vec3.one()));
+        assertFalse(PlaytestLevel.build(scene, PhysicsTestSupport.NO_ASSETS).hasNothingToStandOn());
     }
 
     @Test
@@ -74,7 +116,7 @@ class PlaytestLevelTest {
         // A 4 m bar along the parent's X, which the rotation turns onto world -Z.
         scene.add(greybox("bar", GreyboxShape.BOX, Vec3.zero(), new Vec3(4, 1, 1)), parent);
 
-        PlaytestLevel level = PlaytestLevel.build(scene, Maybe.none());
+        PlaytestLevel level = PlaytestLevel.build(scene, PhysicsTestSupport.NO_ASSETS);
         Aabb bounds = level.world().solids().getFirst().bounds();
 
         assertTrue(level.world().solids().getFirst().shape() instanceof OrientedBox);
@@ -93,7 +135,7 @@ class PlaytestLevelTest {
         start.addArchetype(archetype);
         scene.add(start);
 
-        PlayerStart found = PlaytestLevel.build(scene, Maybe.none()).starts().getFirst();
+        PlayerStart found = PlaytestLevel.build(scene, PhysicsTestSupport.NO_ASSETS).starts().getFirst();
 
         assertTrue(new Vec3(1, 2, 3).approxEquals(found.feet(), 1e-5f));
         assertEquals(Math.PI / 2, found.yaw(), 1e-4);
@@ -110,7 +152,7 @@ class PlaytestLevelTest {
         start.addArchetype(archetype);
         scene.add(start);
 
-        PlayerStart found = PlaytestLevel.build(scene, Maybe.none()).starts().getFirst();
+        PlayerStart found = PlaytestLevel.build(scene, PhysicsTestSupport.NO_ASSETS).starts().getFirst();
 
         assertTrue(found.settings().isNone());
         assertFalse(found.problems().isEmpty());

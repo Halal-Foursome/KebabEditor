@@ -111,6 +111,71 @@ class ShapesTest {
     }
 
     @Test
+    void pointInsideASphereEscapesRadially() {
+        Ellipsoid sphere = Ellipsoid.of(placed(Vec3.zero(), Quat.identity(), new Vec3(4, 4, 4))).unwrap();
+
+        ConvexShape.SurfacePoint surface = sphere.nearestSurface(new Vec3(0.5f, 0, 0));
+
+        assertVec(new Vec3(2, 0, 0), surface.point());
+        assertVec(Vec3.unitX(), surface.normal());
+        // Inside, the closest point is the point itself.
+        assertVec(new Vec3(0.5f, 0, 0), sphere.closestPoint(new Vec3(0.5f, 0, 0)));
+    }
+
+    @Test
+    void ellipsoidCenterEscapesAlongItsThinnestAxis() {
+        // Semi-axes 3, 0.5, 2: the thinnest is Y.
+        Ellipsoid flat = Ellipsoid.of(placed(Vec3.zero(), Quat.identity(), new Vec3(6, 1, 4))).unwrap();
+
+        ConvexShape.SurfacePoint surface = flat.nearestSurface(Vec3.zero());
+
+        assertVec(new Vec3(0, 0.5f, 0), surface.point());
+        assertVec(Vec3.unitY(), surface.normal());
+    }
+
+    @Test
+    void pointInsideAnEllipsoidEscapesOutwards() {
+        Ellipsoid ellipsoid = Ellipsoid.of(placed(Vec3.zero(), Quat.identity(), new Vec3(6, 2, 4))).unwrap();
+        Vec3 inside = new Vec3(1, 0.3f, 0.5f);
+
+        ConvexShape.SurfacePoint surface = ellipsoid.nearestSurface(inside);
+
+        Vec3 p = surface.point();
+        assertEquals(1f, sq(p.getX() / 3) + sq(p.getY() / 1) + sq(p.getZ() / 2), 1e-3f);
+        assertTrue(surface.normal().dot(p.sub(inside)) > 0, "the normal points out of the shape");
+        assertEquals(1f, surface.normal().length(), EPS);
+    }
+
+    @Test
+    void ellipsoidRaycastFromInsideHitsAtOnceAndMissesWhenPointingAway() {
+        Ellipsoid ball = Ellipsoid.of(placed(Vec3.zero(), Quat.identity(), new Vec3(2, 2, 2))).unwrap();
+
+        assertEquals(0f, ball.raycast(Vec3.zero(), Vec3.unitX(), 10).unwrap(), EPS);
+        assertTrue(ball.raycast(new Vec3(5, 0, 0), Vec3.unitX(), 10).isNone());
+        assertTrue(ball.raycast(new Vec3(-5, 3, 0), Vec3.unitX(), 10).isNone());
+        assertTrue(ball.raycast(new Vec3(-5, 0, 0), Vec3.unitX(), 2).isNone());
+    }
+
+    @Test
+    void ellipsoidReportsItsPlacement() {
+        Ellipsoid ellipsoid = Ellipsoid.of(placed(new Vec3(1, 2, 3), Quat.identity(), new Vec3(6, 2, 4))).unwrap();
+
+        assertVec(new Vec3(1, 2, 3), ellipsoid.center());
+        assertVec(new Vec3(3, 1, 2), ellipsoid.semiAxes());
+        assertTrue(Ellipsoid.of(Mat4.scaling(new Vec3(1, 1, 0))).isNone());
+    }
+
+    @Test
+    void boxReportsItsPlacementAndRayAlongAFaceMisses() {
+        OrientedBox box = OrientedBox.of(placed(new Vec3(1, 2, 3), Quat.identity(), new Vec3(2, 4, 6))).unwrap();
+
+        assertVec(new Vec3(1, 2, 3), box.center());
+        assertVec(new Vec3(1, 2, 3), box.halfExtents());
+        // Parallel to X, but above the box.
+        assertTrue(box.raycast(new Vec3(-10, 10, 3), Vec3.unitX(), 100).isNone());
+    }
+
+    @Test
     void capsuleStandingOnABoxGetsAnUpwardContact() {
         OrientedBox floor = OrientedBox.of(placed(new Vec3(0, -0.5f, 0), Quat.identity(), new Vec3(10, 1, 10))).unwrap();
         Capsule capsule = Capsule.standing(new Vec3(0, -0.1f, 0), 0.4f, 1.8f);

@@ -31,6 +31,16 @@ class AabbTest {
     }
 
     @Test
+    void intersectsWhenOverlappingOrTouchingOnEveryAxis() {
+        Aabb unit = new Aabb(0, 1, 0, 1, 0, 1);
+
+        assertEquals(true, unit.intersects(new Aabb(0.5f, 2, 0.5f, 2, 0.5f, 2)));
+        assertEquals(true, unit.intersects(new Aabb(1, 2, 0, 1, 0, 1)));    // touching face
+        assertEquals(false, unit.intersects(new Aabb(1.1f, 2, 0, 1, 0, 1)));
+        assertEquals(false, unit.intersects(new Aabb(0, 1, 0, 1, -3, -0.1f)));
+    }
+
+    @Test
     void transformedDoesNotMutateTheSource() {
         Aabb unit = new Aabb(-0.5f, 0.5f, -0.5f, 0.5f, -0.5f, 0.5f);
 

@@ -3,10 +3,8 @@ package org.halalfoursome.kebabeditor.playtest;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 
-import org.halalfoursome.kebabeditor.logging.LogService;
 import org.halalfoursome.kebabeditor.math.Aabb;
 import org.halalfoursome.kebabeditor.math.Vec3;
 import org.halalfoursome.kebabeditor.playtest.physics.PhysicsWorld;
@@ -16,8 +14,9 @@ import org.halalfoursome.kebabeditor.playtest.physics.PhysicsWorld.Collider;
  * One running playtest: the actor in a fixed world, stepped at a fixed rate so
  * a run does not depend on the frame rate, and recorded for the path rays.
  *
- * Jumps and longer drops are logged with their metrics as they land; entering
- * a trigger is logged too. Falling far below the level respawns the actor.
+ * Jumps and longer drops are reported to a {@link PlaytestListener} with their
+ * metrics as they land, and so is entering a trigger. Falling far below the
+ * level respawns the actor.
  */
 public final class PlaytestSession {
 
@@ -29,12 +28,13 @@ public final class PlaytestSession {
     private static final int SAMPLE_EVERY_STEPS = 4;
     /** Falling this far below the lowest solid counts as falling out of the level. */
     private static final float FALL_LIMIT = 25f;
-    /** Walking off ledges lower than this is not worth a log line. */
+    /** Walking off ledges lower than this is not worth reporting. */
     private static final float MIN_REPORTED_DROP = 1f;
 
     private final PhysicsWorld world;
     private final PlayerStart start;
     private final Actor actor;
+    private final PlaytestListener listener;
     private final PathRecorder recorder = new PathRecorder();
     private final Set<Collider> insideTriggers = Collections.newSetFromMap(new IdentityHashMap<>());
     private final float killY;
@@ -48,7 +48,7 @@ public final class PlaytestSession {
     /**
      * @throws IllegalArgumentException when the start's settings are invalid
      */
-    public PlaytestSession(PhysicsWorld world, PlayerStart start) {
+    public PlaytestSession(PhysicsWorld world, PlayerStart start, PlaytestListener listener) {
         ActorSettings settings = start.settings().unwrapOrElse(() -> {
             throw new IllegalArgumentException(
                 "Player start '" + start.name() + "' is invalid: " + String.join("; ", start.problems())
@@ -57,6 +57,7 @@ public final class PlaytestSession {
 
         this.world = world;
         this.start = start;
+        this.listener = listener;
         this.actor = new Actor(settings, start.feet(), start.yaw());
 
         float lowest = world.solidBounds().map(Aabb::getMinY).unwrapOr(start.feet().getY());
@@ -150,11 +151,10 @@ public final class PlaytestSession {
     private void landed(ActorEvent.Landed landed) {
         landed.jump().ifSomeOrElse(jump -> {
             recorder.addJump(jump);
-            LogService.get().info("Playtest jump " + recorder.jumps().size() + ": " + jump.describe());
+            listener.jumped(recorder.jumps().size(), jump);
         }, () -> {
             if (landed.dropHeight() >= MIN_REPORTED_DROP) {
-                LogService.get().info(String.format(Locale.ROOT,
-                    "Playtest drop: fell %.2f m, %.2f s in the air", landed.dropHeight(), landed.airTime()));
+                listener.dropped(landed.dropHeight(), landed.airTime());
             }
         });
     }
@@ -165,8 +165,7 @@ public final class PlaytestSession {
         for (Collider trigger : touching) {
             if (!insideTriggers.contains(trigger)) {
                 recorder.addTriggerHit(actor.position());
-                LogService.get().info(String.format(Locale.ROOT,
-                    "Playtest trigger '%s' entered at %.2f s", trigger.name(), elapsed()));
+                listener.triggerEntered(trigger.name(), elapsed());
             }
         }
 
@@ -176,7 +175,7 @@ public final class PlaytestSession {
 
     private void respawn() {
         respawns++;
-        LogService.get().warn("Playtest: the actor fell out of the level and respawned at '" + start.name() + "'");
+        listener.respawned(start.name());
 
         recorder.sample(actor.position(), false);
         recorder.breakPath();

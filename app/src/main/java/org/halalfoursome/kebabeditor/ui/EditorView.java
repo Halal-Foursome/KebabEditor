@@ -47,6 +47,7 @@ import org.halalfoursome.kebabeditor.scene.model.Scene;
 import org.halalfoursome.kebabeditor.scene.model.SceneNode;
 import org.halalfoursome.kebabeditor.ui.navigation.NavigationMode;
 import org.halalfoursome.kebabeditor.ui.placement.PlacementTool;
+import org.halalfoursome.kebabeditor.ui.playtest.PlaytestViewport;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
 import com.jogamp.opengl.GL3;
@@ -68,7 +69,7 @@ import com.jogamp.opengl.awt.GLJPanel;
  * Pressing on a gizmo handle drags it instead; 1, 2 and 3 switch the gizmo
  * between move, rotate and scale.
  */
-public class EditorView extends GLJPanel implements GLEventListener, GizmoInteraction.Viewport {
+public class EditorView extends GLJPanel implements GLEventListener, GizmoInteraction.Viewport, PlaytestViewport {
 
     private static final int FRAME_MILLIS = 16;
     private static final float[] CLEAR_COLOR = { 28 / 255f, 30 / 255f, 34 / 255f };
@@ -216,6 +217,7 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
     }
 
     /** What archetype behaviors need to draw and pick: the project's model resolver and scene file. */
+    @Override
     public Maybe<BehaviorContext> behaviorContext() {
         return editor.modelResolver().andThen(models ->
             editor.prefabResolver().andThen(prefabs ->
@@ -227,6 +229,7 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
      * or a point a short way ahead when the ground is out of sight. Snapped to
      * the grid while snapping is on.
      */
+    @Override
     public Vec3 spawnPoint() {
         Vec3 eye = camera.getPosition();
         Vec3 dir = camera.forward();
@@ -467,6 +470,7 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
     }
 
     /** Recorded paths of finished playtests, drawn in this viewport. */
+    @Override
     public PathRays pathRays() {
         return pathRays;
     }
@@ -476,6 +480,7 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
      * and icons are hidden, and {@code navigation} drives the camera. The editor
      * camera comes back on {@link #stopPlaytest}.
      */
+    @Override
     public void startPlaytest(PlaytestSession session, NavigationMode navigation) {
         if (isPlaytesting()) {
             throw new IllegalStateException("A playtest is already running");
@@ -492,6 +497,12 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
         setNavigationMode(navigation);
     }
 
+    @Override
+    public float cameraYaw() {
+        return camera.getYaw();
+    }
+
+    @Override
     public void stopPlaytest() {
         if (!isPlaytesting()) {
             return;

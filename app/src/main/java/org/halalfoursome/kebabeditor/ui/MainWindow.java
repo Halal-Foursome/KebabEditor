@@ -105,7 +105,12 @@ public class MainWindow {
             editorView = new EditorView(editor);
             editorView.setNavigationMode(new FreeFlightNavigation());
             editorView.addNodeActivatedListener(node -> new ObjectDialog(frame, editor, node).setVisible(true));
-            playtest = Maybe.some(new PlaytestController(frame, editor, editorView));
+            playtest = Maybe.some(new PlaytestController(
+                editor,
+                editorView,
+                (title, message) -> JOptionPane.showMessageDialog(frame, message, title, JOptionPane.INFORMATION_MESSAGE),
+                LogService.get()
+            ));
             return editorView;
         } catch (GLException e) {
             LogService.get().error("OpenGL 3.x is not available, the 3D viewport is disabled", e);
