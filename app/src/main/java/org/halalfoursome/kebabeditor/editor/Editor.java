@@ -39,13 +39,60 @@ public class Editor {
     private final ModelImporter modelImporter;
     private final Selection selection = new Selection();
     private boolean snapping = true;
+    private final List<Runnable> sceneListeners = new java.util.concurrent.CopyOnWriteArrayList<>();
+    private Scene observedScene;
+    private final Runnable structureListener = this::sceneChanged;
+
+    public void addSceneListener(Runnable listener) { sceneListeners.add(listener); }
+    public void removeSceneListener(Runnable listener) { sceneListeners.remove(listener); }
+
+    /** Model edits and gizmo drags publish here; listeners marshal UI work to the EDT. */
+    public void sceneChanged() {
+        selection.primary().ifSome(node -> {
+            if (scene().isNone() || scene().unwrap().find(node.getId()).unwrapOr(null) != node) selection.clear();
+        });
+        sceneListeners.forEach(Runnable::run);
+    }
+
+    public void updateTransform(SceneNode node, org.halalfoursome.kebabeditor.math.Transform transform) {
+        Vec3 p = transform.getTranslation();
+        var q = transform.getRotation();
+        if (!Float.isFinite(p.getX()) || !Float.isFinite(p.getY()) || !Float.isFinite(p.getZ())
+            || !Float.isFinite(transform.getScale()) || !Float.isFinite(q.getX())
+            || !Float.isFinite(q.getY()) || !Float.isFinite(q.getZ()) || !Float.isFinite(q.getW())) {
+            throw new IllegalArgumentException("Transform values must be finite");
+        }
+        node.setTransform(transform.copy());
+        sceneChanged();
+    }
+
+    public void setArchetypeParam(ArchetypeInstance instance, String name, Object value) {
+        if (value instanceof Float f && !Float.isFinite(f)
+            || value instanceof Vec3 v && (!Float.isFinite(v.getX()) || !Float.isFinite(v.getY()) || !Float.isFinite(v.getZ()))) {
+            throw new IllegalArgumentException("Parameter values must be finite");
+        }
+        setParam(instance, name, value);
+        sceneChanged();
+    }
+
 
     public Editor(ProjectManager projectManager, ModelImporter modelImporter) {
         this.projectManager = projectManager;
         this.modelImporter = modelImporter;
 
         // Selected nodes belong to the scene that was just replaced or closed.
-        projectManager.addListener(selection::clear);
+        projectManager.addListener(() -> {
+            Scene next = scene().unwrapOr(null);
+            if (next != observedScene) {
+                if (observedScene != null) observedScene.removeListener(structureListener);
+                observedScene = next;
+                if (next != null) next.addListener(structureListener);
+                selection.clear();
+            }
+            sceneChanged();
+        });
+        observedScene = scene().unwrapOr(null);
+        if (observedScene != null) observedScene.addListener(structureListener);
     }
 
     public void createProject(Path dir, String name) throws SceneException, IOException {
@@ -134,11 +181,13 @@ public class Editor {
             }
         }
 
+        sceneChanged();
         LogService.get().info("Removed archetype " + definition.getId() + " and its instances from " + users.size() + " objects");
     }
 
     public void saveArchetypes() throws IOException {
         projectManager.saveArchetypes();
+        sceneChanged();
     }
 
     public RecentProjects recentProjects() {
@@ -203,6 +252,7 @@ public class Editor {
         }
 
         node.addArchetype(instance);
+        sceneChanged();
         LogService.get().info("Added " + definition.getId() + " to " + node.getName());
     }
 
@@ -215,6 +265,7 @@ public class Editor {
 
         String previous = Objects.toString(node.getName(), "");
         node.setName(trimmed);
+        sceneChanged();
         LogService.get().info("Renamed '" + previous + "' to '" + trimmed + "'");
     }
 
@@ -313,6 +364,7 @@ public class Editor {
 
     public void detachArchetype(SceneNode node, NodeArchetype archetype) {
         node.removeArchetype(archetype);
+        sceneChanged();
         LogService.get().info("Removed " + archetype.archetypeId() + " from " + node.getName());
     }
 
@@ -389,7 +441,7 @@ public class Editor {
             return created;
         });
 
-        setParam(instance, "distance", distance);
+        setArchetypeParam(instance, "distance", distance);
         LogService.get().info("Snap distance set to " + distance);
     }
 

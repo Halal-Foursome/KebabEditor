@@ -32,6 +32,27 @@ public class Quat {
         return qy.mulLocal(qx).mulLocal(qz);
     }
 
+    /** Pitch X, yaw Y, roll Z in radians, inverse of fromEuler (Y * X * Z).
+     * At gimbal lock roll is zero and yaw carries the combined rotation.
+     */
+    public Vec3 toEuler() {
+        double length = Math.sqrt((double)x*x + (double)y*y + (double)z*z + (double)w*w);
+        if (length == 0) return Vec3.zero();
+        double a=x/length, b=y/length, c=z/length, d=w/length;
+        double sinPitch = Math.max(-1, Math.min(1, 2*(d*a-b*c)));
+        double pitch = Math.asin(sinPitch);
+        double yaw, roll;
+        if (Math.abs(sinPitch) > 1 - 1e-12) {
+            pitch = Math.copySign(Math.PI / 2, sinPitch);
+            yaw = Math.atan2(2*(d*b-a*c), 1-2*(b*b+c*c));
+            roll = 0;
+        } else {
+            yaw = Math.atan2(2*(a*c+d*b), 1-2*(a*a+b*b));
+            roll = Math.atan2(2*(a*b+d*c), 1-2*(a*a+c*c));
+        }
+        return new Vec3((float)pitch, (float)yaw, (float)roll);
+    }
+
     public static Quat fromTo(Vec3 from, Vec3 to) {
         Vec3 a = from.normalize();
         Vec3 b = to.normalize();

@@ -193,8 +193,12 @@ class GizmoInteractionTest {
         int[] a = viewport.pixel(grab);
         int[] b = viewport.pixel(grab.add(new Vec3(3, 0, 0)));
         assertTrue(gizmo.press(viewport, Maybe.some(node), a[0], a[1]));
+        java.util.concurrent.atomic.AtomicInteger changes = new java.util.concurrent.atomic.AtomicInteger();
+        gizmo.setChangeListener(changes::incrementAndGet);
         gizmo.drag(viewport, b[0], b[1]);
+        assertEquals(1, changes.get(), "drag must publish a change");
         gizmo.cancel();
+        assertEquals(2, changes.get(), "cancel must publish the restored transform");
 
         assertTrue(before.getTranslation().approxEquals(node.worldMatrix().getTranslation(), 1e-6f));
         assertFalse(gizmo.isDragging());

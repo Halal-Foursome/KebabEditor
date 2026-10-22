@@ -138,6 +138,10 @@ public final class GizmoInteraction {
         return true;
     }
 
+    private Runnable changeListener = () -> {};
+
+    public void setChangeListener(Runnable listener) { changeListener = listener; }
+
     public void drag(Viewport viewport, int x, int y) {
         if (drag.isNone()) {
             return;
@@ -151,6 +155,7 @@ public final class GizmoInteraction {
             case ROTATE -> rotate(d, ray);
             case SCALE -> scale(d, ray, x, y);
         }
+        changeListener.run();
     }
 
     /** Ends the drag. @return whether a drag was in progress */
@@ -179,6 +184,7 @@ public final class GizmoInteraction {
         drag.ifSome(d -> {
             d.node().setTransform(d.startLocal().copy());
             d.startGreybox().ifSome(g -> g.writeTo(d.node()));
+            changeListener.run();
         });
         drag = Maybe.none();
         renderer.setHighlight(Maybe.none());

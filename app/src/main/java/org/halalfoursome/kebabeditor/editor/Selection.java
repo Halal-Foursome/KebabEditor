@@ -43,6 +43,10 @@ public class Selection {
         listeners.add(listener);
     }
 
+    public void removeListener(Runnable listener) {
+        listeners.remove(listener);
+    }
+
     private void notifyListeners() {
         listeners.forEach(Runnable::run);
     }

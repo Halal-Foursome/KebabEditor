@@ -21,6 +21,11 @@ On save, the instances are written into the standard glTF `extras` field, so a l
 - Greybox boxes and spheres, plus a placement ray that spawns objects on surfaces
 - Billboard icons for every archetype on an object, arranged in a pyramid when there are several. Empty objects get an icon too, so they stay selectable (toggle in *View → Show icons*)
 
+**Inspector**
+- Resizable right sidebar for the selected object, with name, local position, rotation in degrees and uniform scale
+- Collapsible archetype sections with typed parameter controls, add/remove actions, and live gizmo synchronization
+- Enter or focus loss commits text and numeric edits; invalid input preserves the model
+
 **Archetypes**
 - Built-in archetypes: model reference, prefab reference, box and sphere colliders, trigger, point / directional / spot lights, snap distance
 - Create, edit, duplicate and delete your own archetypes (**Project → Manage archetypes**, `Ctrl+Shift+A`), including per-parameter defaults and a **single** flag that limits an archetype to one instance per object
@@ -42,7 +47,7 @@ On save, the instances are written into the standard glTF `extras` field, so a l
 
 ### Planned
 
-Playtest mode with simple AABB physics, an Inspector panel, and undo / redo.
+Playtest mode with simple AABB physics, and undo / redo.
 
 ## Getting started
 

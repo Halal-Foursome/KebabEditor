@@ -843,3 +843,19 @@ selection. Початкові посилання моделей прогріва
 іншим вікном або програмою. Undo/redo досі не реалізовано.
 
 Деталі, обмеження та ручні перевірки: [asset-explorer.md](asset-explorer.md).
+
+
+## Inspector — реалізовано (жовтень 2026)
+
+`MainWindow` містить зовнішній горизонтальний `JSplitPane`: ліворуч існуючий
+viewport і нижні вкладки, праворуч `InspectorPane` з початковою шириною 350 px.
+`InspectorPane` слухає `Selection` та події `Editor.sceneChanged()`, об'єднує
+оновлення через EDT і відписується при видаленні компонента.
+`TransformEditor` редагує локальний transform через `Editor.updateTransform`;
+`Quat.toEuler()` є оберненням `fromEuler` у порядку Y * X * Z.
+`ArchetypeSection` використовує спільний `ParamValueEditor`, а зміни параметрів
+проходять через `Editor.setArchetypeParam`. `GizmoInteraction` повідомляє про
+перетягування та скасування через callback, підключений у `EditorView`.
+Структурні події `Scene` дозволяють очищати selection після прямого видалення
+вузла. Нові шляхи редагування мають викликати методи `Editor` або
+`sceneChanged()` після прямої зміни моделі. CommandStack залишається окремим завданням.

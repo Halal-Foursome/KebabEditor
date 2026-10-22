@@ -37,7 +37,44 @@ public final class ParamValueEditor extends JPanel {
     private final Maybe<Supplier<List<SceneNode>>> nodes;
 
     private Supplier<Object> reader = () -> Maybe.none();
-    private FieldValidator validator;
+    private final java.util.List<FieldValidator> vectorValidators = new java.util.ArrayList<>();
+    private final java.util.List<Runnable> commitListeners = new java.util.ArrayList<>();
+    private boolean updating;
+    private Supplier<Maybe<java.nio.file.Path>> pathBase = Maybe::none;
+
+    /** Scene-relative paths are available when this editor is used on an instance. */
+    public void setPathBase(Supplier<Maybe<java.nio.file.Path>> base) { pathBase = base; }
+
+    /** Commits only on Enter, focus loss or an explicit control action, never on typing. */
+    public void addCommitListener(Runnable listener) { commitListeners.add(listener); }
+
+    private void committed() {
+        if (!updating && validation.isValid()) commitListeners.forEach(Runnable::run);
+    }
+
+    private void bindCommits(java.awt.Component component) {
+        if (component instanceof JSpinner spinner) {
+            spinner.addChangeListener(e -> committed());
+        } else if (component instanceof JTextField field) {
+            field.addActionListener(e -> committed());
+            field.addFocusListener(new java.awt.event.FocusAdapter() {
+                @Override public void focusLost(java.awt.event.FocusEvent e) { committed(); }
+            });
+        } else if (component instanceof JCheckBox button) {
+            button.addActionListener(e -> committed());
+        } else if (component instanceof JComboBox<?> box) {
+            box.addActionListener(e -> committed());
+            return;
+        }
+        if (component instanceof java.awt.Container container) {
+            for (java.awt.Component child : container.getComponents()) bindCommits(child);
+        }
+    }
+
+    public boolean isEditing() {
+        java.awt.Component focus = java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
+        return focus != null && SwingUtilities.isDescendingFrom(focus, this);
+    }
 
     public ParamValueEditor(KebabStyle style, ValidationGroup validation) {
         this(style, validation, Maybe.none());
@@ -57,6 +94,7 @@ public final class ParamValueEditor extends JPanel {
     }
 
     public void showFor(ParamType type, Object value) {
+        updating = true;
         dispose();
         removeAll();
 
@@ -64,32 +102,48 @@ public final class ParamValueEditor extends JPanel {
             case INT -> intEditor(value instanceof Integer i ? i : 0);
             case FLOAT -> floatEditor(value instanceof Float f ? f : 0f);
             case BOOL -> boolEditor(value instanceof Boolean b && b);
-            case STRING, REL_PATH -> textEditor(value instanceof String s ? s : "");
+            case STRING -> textEditor(value instanceof String s ? s : "");
+            case REL_PATH -> pathEditor(value instanceof String s ? s : "");
             case VEC3 -> vec3Editor(value instanceof Vec3 v ? v : Vec3.zero());
             case NODE_REF -> nodes.isSome() ? nodeEditor(nodes.unwrap().get(), value) : noDefault();
             case COLOR -> colorEditor(value instanceof Color c ? c : Color.BLACK);
         };
 
         editor.setFont(style.uiFont());
+        bindCommits(editor);
         add(editor, BorderLayout.CENTER);
         revalidate();
         repaint();
+        updating = false;
     }
 
     public Object value() {
-        return reader.get();
+        if (!validation.isValid()) throw new IllegalArgumentException("Invalid parameter value");
+        Object result = reader.get();
+        if (result instanceof Float f && !Float.isFinite(f)
+            || result instanceof Vec3 v && (!Float.isFinite(v.getX()) || !Float.isFinite(v.getY()) || !Float.isFinite(v.getZ()))) {
+            throw new IllegalArgumentException("Values must be finite");
+        }
+        return result;
     }
 
     public void dispose() {
-        if (validator != null) {
-            validation.remove(validator);
-            validator = null;
-        }
+        vectorValidators.forEach(validation::remove);
+        vectorValidators.clear();
+    }
+
+    private void commitSpinner(JSpinner spinner) {
+        boolean previous = updating;
+        updating = true;
+        try { spinner.commitEdit(); }
+        catch (java.text.ParseException e) { throw new IllegalArgumentException("Invalid number", e); }
+        finally { updating = previous; }
     }
 
     private JComponent intEditor(int value) {
         JSpinner spinner = new JSpinner(new SpinnerNumberModel(value, Integer.MIN_VALUE, Integer.MAX_VALUE, 1));
-        reader = () -> ((Number) spinner.getValue()).intValue();
+        ((JSpinner.DefaultEditor) spinner.getEditor()).getTextField().setFont(style.techFont());
+        reader = () -> { commitSpinner(spinner); return ((Number) spinner.getValue()).intValue(); };
 
         return spinner;
     }
@@ -98,7 +152,8 @@ public final class ParamValueEditor extends JPanel {
         JSpinner spinner = new JSpinner(
             new SpinnerNumberModel((double) value, -(double) Float.MAX_VALUE, (double) Float.MAX_VALUE, 0.1)
         );
-        reader = () -> ((Number) spinner.getValue()).floatValue();
+        ((JSpinner.DefaultEditor) spinner.getEditor()).getTextField().setFont(style.techFont());
+        reader = () -> { commitSpinner(spinner); return ((Number) spinner.getValue()).floatValue(); };
 
         return spinner;
     }
@@ -117,15 +172,53 @@ public final class ParamValueEditor extends JPanel {
         return field;
     }
 
-    private JComponent vec3Editor(Vec3 value) {
-        JTextField field = new JTextField(value.toString());
-        validator = validation.add(field, text -> Vec3.fromString(text).isSome()
-            ? Maybe.none()
-            : Maybe.some("Default must look like (1.0, 2.0, 3.0)")
-        );
-        reader = () -> Vec3.fromString(field.getText()).unwrapOr(Vec3.zero());
+    private JComponent pathEditor(String value) {
+        JTextField field = new JTextField(value);
+        reader = field::getText;
+        if (pathBase.get().isNone()) return field;
+        JPanel row = new JPanel(new BorderLayout(4, 0));
+        JButton browse = new JButton("…");
+        browse.setFont(style.uiFont());
+        browse.setToolTipText("Choose a file (stored relative to the scene)");
+        browse.addActionListener(e -> pathBase.get().ifSome(base ->
+            new org.halalfoursome.kebabeditor.utils.FileChooser(
+                org.halalfoursome.kebabeditor.utils.FileChooser.FileChooserMode.FILES)
+                .startIn(base).open(this, file -> {
+                    field.setText(base.relativize(file.toPath().toAbsolutePath().normalize()).toString().replace('\\', '/'));
+                    committed();
+                })
+        ));
+        row.add(field, BorderLayout.CENTER);
+        row.add(browse, BorderLayout.EAST);
+        return row;
+    }
 
-        return field;
+    private JComponent vec3Editor(Vec3 value) {
+        JPanel row = new JPanel(new java.awt.GridLayout(1, 3, 4, 0));
+        JTextField[] fields = new JTextField[3];
+        float[] values = {value.getX(), value.getY(), value.getZ()};
+        for (int i=0; i<3; i++) {
+            JPanel axis = new JPanel(new BorderLayout(2, 0));
+            JLabel label = new JLabel(new String[]{"X", "Y", "Z"}[i]);
+            label.setFont(style.uiFont());
+            fields[i] = new JTextField(Float.toString(values[i]));
+            fields[i].setFont(style.techFont());
+            vectorValidators.add(validation.add(fields[i], text -> {
+                try {
+                    return Float.isFinite(Float.parseFloat(text.trim())) ? Maybe.none() : Maybe.some("Enter a finite number");
+                } catch (NumberFormatException e) { return Maybe.some("Enter a finite number"); }
+            }));
+            axis.add(label, BorderLayout.WEST);
+            axis.add(fields[i], BorderLayout.CENTER);
+            row.add(axis);
+        }
+        reader = () -> {
+            try {
+                return new Vec3(Float.parseFloat(fields[0].getText().trim()),
+                    Float.parseFloat(fields[1].getText().trim()), Float.parseFloat(fields[2].getText().trim()));
+            } catch (NumberFormatException e) { throw new IllegalArgumentException("Invalid vector", e); }
+        };
+        return row;
     }
 
     // The button shows the colour and opens the chooser on click; Cancel keeps the current one
@@ -148,6 +241,7 @@ public final class ParamValueEditor extends JPanel {
             if (chosen != null) {
                 current[0] = chosen;
                 refresh.run();
+                committed();
             }
         });
         refresh.run();

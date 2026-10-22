@@ -52,6 +52,7 @@ public class MainWindow {
     private final LogsTab logsTab;
     private final AssetExplorerTab assetExplorer;
     private final AssetWindows assetWindows;
+    private final org.halalfoursome.kebabeditor.ui.inspector.InspectorPane inspector;
 
     private final MenuBar menuBar;
     private EditorView editorView;
@@ -72,9 +73,11 @@ public class MainWindow {
         logsTab = new LogsTab(LogService.get());
         assetWindows = new AssetWindows(frame, editor);
         assetExplorer = new AssetExplorerTab(editor, assetWindows.handler());
+        inspector = new org.halalfoursome.kebabeditor.ui.inspector.InspectorPane(editor);
         frame.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent event) {
+                inspector.close();
                 assetWindows.close();
                 if (editorView != null) {
                     editorView.close();
@@ -176,7 +179,12 @@ public class MainWindow {
         workspace.setContinuousLayout(false);
         workspace.setResizeWeight(0.75);
         SwingUtilities.invokeLater(() -> workspace.setDividerLocation(0.75));
-        frame.add(workspace, BorderLayout.CENTER);
+        JSplitPane layout = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, workspace, inspector);
+        layout.setResizeWeight(1.0);
+        layout.setContinuousLayout(false);
+        SwingUtilities.invokeLater(() -> layout.setDividerLocation(
+            Math.max(240, layout.getWidth() - 350 - layout.getDividerSize())));
+        frame.add(layout, BorderLayout.CENTER);
 
         // Menu bar
         menuBar.addMenu(new FileMenu(frame, editor, assetExplorer::refresh));
