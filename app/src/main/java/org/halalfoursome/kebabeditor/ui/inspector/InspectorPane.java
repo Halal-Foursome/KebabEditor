@@ -150,6 +150,7 @@ public final class InspectorPane extends JPanel implements AutoCloseable {
         }
         add = new JButton("Add Archetype");
         add.setFont(KebabStyle.getCurrent().uiFont());
+        add.setAlignmentX(Component.CENTER_ALIGNMENT);
         add.addActionListener(e -> {
             if (editor.selection().primary().unwrapOr(null) != target) return;
             JPopupMenu menu = new JPopupMenu();

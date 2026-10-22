@@ -70,6 +70,7 @@ final class ArchetypeSection extends InspectorSection {
         }
         JButton remove = new JButton("Remove archetype");
         remove.setFont(KebabStyle.getCurrent().uiFont());
+        remove.setAlignmentX(Component.CENTER_ALIGNMENT);
         remove.addActionListener(e -> {
             if (editor.selection().primary().unwrapOr(null) != node) return;
             if (JOptionPane.showConfirmDialog(this, "Remove this archetype from the object?",
