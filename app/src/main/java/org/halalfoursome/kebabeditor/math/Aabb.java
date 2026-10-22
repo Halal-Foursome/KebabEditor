@@ -61,6 +61,13 @@ public class Aabb {
         return new Aabb(minX, maxX, minY, maxY, minZ, maxZ);
     }
 
+    // Touching boxes count as intersecting
+    public boolean intersects(Aabb other) {
+        return minX <= other.maxX && maxX >= other.minX
+            && minY <= other.maxY && maxY >= other.minY
+            && minZ <= other.maxZ && maxZ >= other.minZ;
+    }
+
     public Aabb union(Aabb other) {
         return new Aabb(
             Math.min(minX, other.minX),

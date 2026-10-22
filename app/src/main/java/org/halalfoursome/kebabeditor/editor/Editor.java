@@ -39,6 +39,7 @@ public class Editor {
     private final ModelImporter modelImporter;
     private final Selection selection = new Selection();
     private boolean snapping = true;
+    private boolean playtesting;
 
     public Editor(ProjectManager projectManager, ModelImporter modelImporter) {
         this.projectManager = projectManager;
@@ -354,6 +355,15 @@ public class Editor {
         addToScene(node);
         LogService.get().info("Imported model " + reference + " at " + base);
         return node;
+    }
+
+    /** While a playtest runs the scene is being played, and edit commands refuse to change it. */
+    public boolean isPlaytesting() {
+        return playtesting;
+    }
+
+    public void setPlaytesting(boolean playtesting) {
+        this.playtesting = playtesting;
     }
 
     public boolean isSnapping() {

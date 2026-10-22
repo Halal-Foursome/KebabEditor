@@ -11,6 +11,7 @@ import org.halalfoursome.kebabeditor.math.Mat4;
 import org.halalfoursome.kebabeditor.math.Vec3;
 import org.halalfoursome.kebabeditor.model.AlphaMode;
 import org.halalfoursome.kebabeditor.model.Material;
+import org.halalfoursome.kebabeditor.model.MeshData;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
 import com.jogamp.opengl.GL3;
@@ -121,6 +122,11 @@ public final class DrawableRenderer {
         } catch (ArithmeticException e) {
             return world;
         }
+    }
+
+    /** Free a mesh that will not be drawn again; see {@link GpuMeshCache#release}. */
+    public void release(MeshData mesh) {
+        meshes.release(mesh);
     }
 
     public void endFrame(GL3 gl) {

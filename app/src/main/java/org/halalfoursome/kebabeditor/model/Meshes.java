@@ -238,6 +238,131 @@ public final class Meshes {
         return MeshData.lines(positions, indices);
     }
 
+    /**
+     * An upright capsule of the given size standing on the origin: it spans
+     * y = 0 to y = height. Unlike the unit meshes above it is built to size,
+     * because stretching a unit capsule would flatten its rounded ends.
+     *
+     * @param capRings rings per hemisphere
+     */
+    public static MeshData capsuleTriangles(float radius, float height, int capRings, int segments) {
+        if (capRings < 1 || segments < 3) {
+            throw new IllegalArgumentException("need at least 1 cap ring and 3 segments");
+        }
+        if (radius <= 0 || height < 2 * radius) {
+            throw new IllegalArgumentException("need radius > 0 and height >= 2 * radius");
+        }
+
+        // The top cap's equator row and the bottom cap's form the straight middle band.
+        int rows = 2 * (capRings + 1);
+        int columns = segments + 1;
+        float[] positions = new float[rows * columns * 3];
+        float[] normals = new float[rows * columns * 3];
+
+        for (int row = 0; row < rows; row++) {
+            boolean top = row <= capRings;
+            int ring = top ? row : row - capRings - 1;
+            double theta = Math.PI / 2 * (top ? (double) ring / capRings : 1 + (double) ring / capRings);
+            float centerY = top ? height - radius : radius;
+
+            for (int s = 0; s <= segments; s++) {
+                double phi = 2 * Math.PI * s / segments;
+                int vertex = row * columns + s;
+                float x = (float) (Math.sin(theta) * Math.cos(phi));
+                float y = (float) Math.cos(theta);
+                float z = (float) (Math.sin(theta) * Math.sin(phi));
+
+                set(positions, vertex, radius * x, centerY + radius * y, radius * z);
+                set(normals, vertex, x, y, z);
+            }
+        }
+
+        // Same winding as sphereTriangles; the pole rows skip their degenerate halves.
+        int[] indices = new int[((rows - 1) * segments * 2 - 2 * segments) * 3];
+        int next = 0;
+
+        for (int r = 0; r < rows - 1; r++) {
+            for (int s = 0; s < segments; s++) {
+                int a = r * columns + s;
+                int b = a + columns;
+
+                if (r != 0) {
+                    indices[next++] = a;
+                    indices[next++] = a + 1;
+                    indices[next++] = b;
+                }
+                if (r != rows - 2) {
+                    indices[next++] = a + 1;
+                    indices[next++] = b + 1;
+                    indices[next++] = b;
+                }
+            }
+        }
+
+        return MeshData.triangles(positions, normals, new float[0], indices);
+    }
+
+    /**
+     * Wireframe of the capsule {@link #capsuleTriangles} builds: the two rings
+     * where the caps meet the middle, four side lines, and the outline of each cap
+     * in the XY and ZY planes.
+     *
+     * @param segments a multiple of 4, so the side lines meet ring vertices
+     */
+    public static MeshData capsuleLines(float radius, float height, int segments) {
+        if (segments < 4 || segments % 4 != 0) {
+            throw new IllegalArgumentException("segments must be a positive multiple of 4");
+        }
+        if (radius <= 0 || height < 2 * radius) {
+            throw new IllegalArgumentException("need radius > 0 and height >= 2 * radius");
+        }
+
+        int half = segments / 2;
+        float low = radius;
+        float high = height - radius;
+        float[] positions = new float[(2 * segments + 4 * (half + 1)) * 3];
+        int[] indices = new int[(2 * segments + 4 + 4 * half) * 2];
+        int vertex = 0;
+        int next = 0;
+
+        for (float y : new float[] { low, high }) {
+            int first = vertex;
+            for (int i = 0; i < segments; i++) {
+                double angle = 2 * Math.PI * i / segments;
+                set(positions, vertex++, radius * (float) Math.cos(angle), y, radius * (float) Math.sin(angle));
+                indices[next++] = first + i;
+                indices[next++] = first + (i + 1) % segments;
+            }
+        }
+
+        for (int side = 0; side < 4; side++) {
+            indices[next++] = side * segments / 4;
+            indices[next++] = segments + side * segments / 4;
+        }
+
+        // Half circles over the top and under the bottom, across X and across Z.
+        for (int arc = 0; arc < 4; arc++) {
+            boolean alongX = arc % 2 == 0;
+            boolean top = arc < 2;
+            int first = vertex;
+
+            for (int i = 0; i <= half; i++) {
+                double angle = Math.PI * i / half;
+                float across = radius * (float) Math.cos(angle);
+                float rise = radius * (float) Math.sin(angle);
+                float y = top ? high + rise : low - rise;
+                set(positions, vertex++, alongX ? across : 0, y, alongX ? 0 : across);
+
+                if (i > 0) {
+                    indices[next++] = first + i - 1;
+                    indices[next++] = first + i;
+                }
+            }
+        }
+
+        return MeshData.lines(positions, indices);
+    }
+
     private static void set(float[] positions, int vertex, float x, float y, float z) {
         positions[vertex * 3] = x;
         positions[vertex * 3 + 1] = y;

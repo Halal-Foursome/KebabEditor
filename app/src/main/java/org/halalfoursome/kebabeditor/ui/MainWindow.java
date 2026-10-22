@@ -12,6 +12,7 @@ import javax.swing.JDialog;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
@@ -30,12 +31,14 @@ import org.halalfoursome.kebabeditor.ui.menu.EditMenu;
 import org.halalfoursome.kebabeditor.ui.object.ObjectDialog;
 import org.halalfoursome.kebabeditor.ui.menu.FileMenu;
 import org.halalfoursome.kebabeditor.ui.menu.OptionsMenu;
+import org.halalfoursome.kebabeditor.ui.menu.PlaytestMenu;
 import org.halalfoursome.kebabeditor.ui.menu.ProjectMenu;
 import org.halalfoursome.kebabeditor.ui.menu.ViewMenu;
 import org.halalfoursome.kebabeditor.ui.menu.generic.Menu;
 import org.halalfoursome.kebabeditor.ui.menu.generic.MenuBar;
 import org.halalfoursome.kebabeditor.ui.menu.generic.MenuButton;
 import org.halalfoursome.kebabeditor.ui.navigation.FreeFlightNavigation;
+import org.halalfoursome.kebabeditor.ui.playtest.PlaytestController;
 import org.halalfoursome.kebabeditor.utils.KebabStyle;
 import org.halalfoursome.kebabeditor.utils.LucideIcon;
 import org.halalfoursome.kebabeditor.utils.Maybe;
@@ -46,6 +49,7 @@ import com.jogamp.opengl.GLException;
 public class MainWindow {
 
     private static final String APP_TITLE = "Kebab Editor";
+    private static final String RUN_TOOLTIP = "Run level (F5)";
 
     private final JFrame frame;
     private final Editor editor;
@@ -55,6 +59,7 @@ public class MainWindow {
 
     private final MenuBar menuBar;
     private EditorView editorView;
+    private Maybe<PlaytestController> playtest = Maybe.none();
 
     static {
         JFrame.setDefaultLookAndFeelDecorated(true);
@@ -75,6 +80,7 @@ public class MainWindow {
         frame.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent event) {
+                playtest.ifSome(PlaytestController::stop);
                 assetWindows.close();
                 if (editorView != null) {
                     editorView.close();
@@ -99,6 +105,7 @@ public class MainWindow {
             editorView = new EditorView(editor);
             editorView.setNavigationMode(new FreeFlightNavigation());
             editorView.addNodeActivatedListener(node -> new ObjectDialog(frame, editor, node).setVisible(true));
+            playtest = Maybe.some(new PlaytestController(frame, editor, editorView));
             return editorView;
         } catch (GLException e) {
             LogService.get().error("OpenGL 3.x is not available, the 3D viewport is disabled", e);
@@ -183,6 +190,7 @@ public class MainWindow {
         menuBar.addMenu(new ProjectMenu(frame, editor));
         menuBar.addMenu(new EditMenu(frame, editor, this::spawnPoint, Maybe.ofNullable(editorView)));
         menuBar.addMenu(new ViewMenu(frame, editor, Maybe.ofNullable(editorView)));
+        menuBar.addMenu(new PlaytestMenu(playtest));
         menuBar.addMenu(new OptionsMenu(frame, editor));
         menuBar.addMenu(new Menu("Help"));
 
@@ -190,14 +198,25 @@ public class MainWindow {
         menuBar.add(Box.createGlue());
 
         // Menu buttons
-        menuBar.add(new MenuButton(
-            LucideIcon.PLAY, 
-            "Run level", 
-            MenuButton.PLAY_BUTTON_COLOR, 
-            () -> {
-                // TODO: Run created level
+        MenuButton runButton = new MenuButton(
+            LucideIcon.PLAY,
+            RUN_TOOLTIP,
+            MenuButton.PLAY_BUTTON_COLOR,
+            () -> playtest.ifSomeOrElse(PlaytestController::toggle, () -> JOptionPane.showMessageDialog(
+                frame,
+                "The 3D viewport is unavailable, so the level cannot be run.",
+                "Run level",
+                JOptionPane.INFORMATION_MESSAGE
+            ))
+        );
+        playtest.ifSome(controller -> controller.addListener(() -> {
+            if (controller.isRunning()) {
+                runButton.setAppearance(LucideIcon.SQUARE, MenuButton.STOP_BUTTON_COLOR, "Stop playtest (Esc)");
+            } else {
+                runButton.setAppearance(LucideIcon.PLAY, MenuButton.PLAY_BUTTON_COLOR, RUN_TOOLTIP);
             }
-        ));
+        }));
+        menuBar.add(runButton);
 
         menuBar.add(new MenuButton(
             LucideIcon.ELLIPSIS_VERTICAL, 
