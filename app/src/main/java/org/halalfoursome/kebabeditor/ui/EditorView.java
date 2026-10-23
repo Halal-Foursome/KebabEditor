@@ -38,8 +38,6 @@ import org.halalfoursome.kebabeditor.render.PickHit;
 import org.halalfoursome.kebabeditor.render.Picker;
 import org.halalfoursome.kebabeditor.render.PlacementRenderer;
 import org.halalfoursome.kebabeditor.render.PlaytestRenderer;
-import org.halalfoursome.kebabeditor.playtest.PathRays;
-import org.halalfoursome.kebabeditor.playtest.PlaytestSession;
 import org.halalfoursome.kebabeditor.render.GridRenderer;
 import org.halalfoursome.kebabeditor.render.RenderContext;
 import org.halalfoursome.kebabeditor.render.RenderPass;
@@ -47,7 +45,6 @@ import org.halalfoursome.kebabeditor.scene.model.Scene;
 import org.halalfoursome.kebabeditor.scene.model.SceneNode;
 import org.halalfoursome.kebabeditor.ui.navigation.NavigationMode;
 import org.halalfoursome.kebabeditor.ui.placement.PlacementTool;
-import org.halalfoursome.kebabeditor.ui.playtest.PlaytestViewport;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
 import com.jogamp.opengl.GL3;
@@ -56,6 +53,9 @@ import com.jogamp.opengl.GLCapabilities;
 import com.jogamp.opengl.GLEventListener;
 import com.jogamp.opengl.GLProfile;
 import com.jogamp.opengl.awt.GLJPanel;
+
+import lombok.AccessLevel;
+import lombok.Getter;
 
 /**
  * The 3D viewport. A lightweight {@link GLJPanel}, so Swing popups and split
@@ -69,7 +69,7 @@ import com.jogamp.opengl.awt.GLJPanel;
  * Pressing on a gizmo handle drags it instead; 1, 2 and 3 switch the gizmo
  * between move, rotate and scale.
  */
-public class EditorView extends GLJPanel implements GLEventListener, GizmoInteraction.Viewport, PlaytestViewport {
+public class EditorView extends GLJPanel implements GLEventListener, GizmoInteraction.Viewport {
 
     private static final int FRAME_MILLIS = 16;
     private static final float[] CLEAR_COLOR = { 28 / 255f, 30 / 255f, 34 / 255f };
@@ -91,11 +91,10 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
     private final Set<RenderPass> failedPasses = new HashSet<>();
     private final Timer timer;
 
-    private final PathRays pathRays = new PathRays();
-    private Maybe<PlaytestSession> playtest = Maybe.none();
-    private NavigationMode editingNavigation;
-    private CameraPose editingCamera;
+    @Getter
+    private final ViewportPlaytest playtest = new ViewportPlaytest(this);
 
+    @Getter(AccessLevel.PACKAGE)
     private NavigationMode navigationMode;
     private long lastTime;
     private boolean glReady;
@@ -120,11 +119,11 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
             // ghost over it, then the gizmo, which clears depth to stay on top.
             passes.add(new GreyboxRenderer(drawableObjects));
             passes.add(new ArchetypeRenderer(drawableObjects));
-            passes.add(new PathRayRenderer(drawableObjects, pathRays));
-            passes.add(new PlaytestRenderer(drawableObjects, () -> playtest));
+            passes.add(new PathRayRenderer(drawableObjects, playtest.pathRays()));
+            passes.add(new PlaytestRenderer(drawableObjects, playtest::getSession));
             passes.add(new GridRenderer());
             // Icons would hide the level while playing it.
-            passes.add(new ArchetypeIconRenderer(drawableObjects, icons, () -> showIcons && playtest.isNone()));
+            passes.add(new ArchetypeIconRenderer(drawableObjects, icons, () -> showIcons && !isPlaytesting()));
             passes.add(new PlacementRenderer(drawableObjects));
             passes.add(gizmo);
         }
@@ -217,7 +216,6 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
     }
 
     /** What archetype behaviors need to draw and pick: the project's model resolver and scene file. */
-    @Override
     public Maybe<BehaviorContext> behaviorContext() {
         return editor.modelResolver().andThen(models ->
             editor.prefabResolver().andThen(prefabs ->
@@ -229,7 +227,6 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
      * or a point a short way ahead when the ground is out of sight. Snapped to
      * the grid while snapping is on.
      */
-    @Override
     public Vec3 spawnPoint() {
         Vec3 eye = camera.getPosition();
         Vec3 dir = camera.forward();
@@ -458,63 +455,16 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
         requestFocusInWindow();
     }
 
-    /** The editor camera before a playtest took it over. */
-    private record CameraPose(Vec3 position, float yaw, float pitch) {}
-
     public boolean isPlaytesting() {
-        return playtest.isSome();
+        return playtest.isRunning();
     }
 
-    public Maybe<PlaytestSession> playtest() {
-        return playtest;
-    }
-
-    /** Recorded paths of finished playtests, drawn in this viewport. */
-    @Override
-    public PathRays pathRays() {
-        return pathRays;
-    }
-
-    /**
-     * Hand the viewport to a playtest: editing input stops, the gizmo, selection
-     * and icons are hidden, and {@code navigation} drives the camera. The editor
-     * camera comes back on {@link #stopPlaytest}.
-     */
-    @Override
-    public void startPlaytest(PlaytestSession session, NavigationMode navigation) {
-        if (isPlaytesting()) {
-            throw new IllegalStateException("A playtest is already running");
-        }
-
+    /** Drop any gizmo drag, placement or click in progress, e.g. when a playtest takes over. */
+    void cancelEditingInput() {
         gizmoInteraction.cancel();
         placement.setActive(false);
         pressedAt = Maybe.none();
         gizmoPressedAt = Maybe.none();
-
-        editingCamera = new CameraPose(camera.getPosition().copy(), camera.getYaw(), camera.getPitch());
-        editingNavigation = navigationMode;
-        playtest = Maybe.some(session);
-        setNavigationMode(navigation);
-    }
-
-    @Override
-    public float cameraYaw() {
-        return camera.getYaw();
-    }
-
-    @Override
-    public void stopPlaytest() {
-        if (!isPlaytesting()) {
-            return;
-        }
-
-        playtest = Maybe.none();
-        setNavigationMode(editingNavigation);
-        editingNavigation = null;
-
-        camera.getPosition().set(editingCamera.position());
-        camera.setOrientation(editingCamera.yaw(), editingCamera.pitch());
-        editingCamera = null;
     }
 
     private void tick() {

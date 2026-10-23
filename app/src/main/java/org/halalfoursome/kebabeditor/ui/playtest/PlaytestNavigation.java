@@ -9,6 +9,8 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import org.halalfoursome.kebabeditor.math.Vec3;
@@ -17,9 +19,9 @@ import org.halalfoursome.kebabeditor.ui.EditorView;
 import org.halalfoursome.kebabeditor.ui.navigation.NavigationMode;
 
 /**
- * Plays the level in the viewport: feeds the keys to {@link PlaytestKeys},
- * mouse drags and the wheel to a {@link ThirdPersonRig}, and each frame advances
- * the session and places the camera. Esc ends the playtest.
+ * Plays the level in the viewport: WASD or the arrow keys run relative to where
+ * the camera looks, Space jumps, mouse drags and the wheel move a
+ * {@link ThirdPersonRig}, and Esc ends the playtest.
  */
 public class PlaytestNavigation implements NavigationMode {
 
@@ -29,10 +31,11 @@ public class PlaytestNavigation implements NavigationMode {
     private final PlaytestSession session;
     private final Runnable stop;
     private final Consumer<RuntimeException> failed;
-    private final PlaytestKeys keys = new PlaytestKeys();
+    private final Set<Integer> keys = new HashSet<>();
     private final ThirdPersonRig rig;
 
     private EditorView view;
+    private boolean jumpPressed;
     private boolean dragging;
     private int lastMouseX;
     private int lastMouseY;
@@ -48,12 +51,15 @@ public class PlaytestNavigation implements NavigationMode {
             if (e.isControlDown() || e.isAltDown()) {
                 return; // a shortcut, not movement
             }
-            keys.press(e.getKeyCode());
+            // Held keys repeat; only the first press of Space is a jump.
+            if (keys.add(e.getKeyCode()) && e.getKeyCode() == KeyEvent.VK_SPACE) {
+                jumpPressed = true;
+            }
         }
 
         @Override
         public void keyReleased(KeyEvent e) {
-            keys.release(e.getKeyCode());
+            keys.remove(e.getKeyCode());
         }
     };
 
@@ -138,7 +144,8 @@ public class PlaytestNavigation implements NavigationMode {
         }
 
         try {
-            session.advance(deltaSeconds, keys.move(rig.yaw()), keys.takeJump());
+            session.advance(deltaSeconds, moveDirection(keys, rig.yaw()), jumpPressed);
+            jumpPressed = false;
         } catch (RuntimeException e) {
             failed.accept(e);
             return;
@@ -147,12 +154,31 @@ public class PlaytestNavigation implements NavigationMode {
         placeCamera();
     }
 
+    /**
+     * The wished horizontal direction, at most unit length.
+     *
+     * @param yaw the camera's facing: forward is where it looks, flattened onto the ground
+     */
+    static Vec3 moveDirection(Set<Integer> keys, float yaw) {
+        float forward = axis(keys, KeyEvent.VK_W, KeyEvent.VK_UP) - axis(keys, KeyEvent.VK_S, KeyEvent.VK_DOWN);
+        float right = axis(keys, KeyEvent.VK_D, KeyEvent.VK_RIGHT) - axis(keys, KeyEvent.VK_A, KeyEvent.VK_LEFT);
+
+        Vec3 move = new Vec3((float) -Math.sin(yaw), 0, (float) -Math.cos(yaw)).mulLocal(forward)
+            .addLocal(new Vec3((float) Math.cos(yaw), 0, (float) -Math.sin(yaw)).mulLocal(right));
+
+        return move.lengthSquared() > 1 ? move.normalizeLocal() : move;
+    }
+
+    private static float axis(Set<Integer> keys, int key, int alternative) {
+        return keys.contains(key) || keys.contains(alternative) ? 1f : 0f;
+    }
+
     private void wheelMoved(MouseWheelEvent e) {
         rig.zoom(e.getPreciseWheelRotation());
     }
 
     private void placeCamera() {
         Vec3 target = session.actorPosition().addLocal(0, session.settings().height() * LOOK_AT_HEIGHT, 0);
-        rig.place(view.getCamera(), target, session.world());
+        rig.place(view.getCamera(), target, session.getWorld());
     }
 }

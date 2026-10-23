@@ -1,7 +1,6 @@
 package org.halalfoursome.kebabeditor.ui.playtest;
 
 import org.halalfoursome.kebabeditor.behavior.BehaviorContext;
-import org.halalfoursome.kebabeditor.math.Vec3;
 import org.halalfoursome.kebabeditor.playtest.PathRays;
 import org.halalfoursome.kebabeditor.playtest.PhysicsTestSupport;
 import org.halalfoursome.kebabeditor.playtest.PlaytestSession;
@@ -12,8 +11,6 @@ import org.halalfoursome.kebabeditor.utils.Maybe;
 public final class FakePlaytestViewport implements PlaytestViewport {
 
     public Maybe<BehaviorContext> context = Maybe.some(PhysicsTestSupport.NO_ASSETS);
-    public Vec3 spawnPoint = new Vec3(0, 0, 0);
-    public float cameraYaw = 0.25f;
     public final PathRays pathRays = new PathRays();
 
     public Maybe<PlaytestSession> playing = Maybe.none();
@@ -23,16 +20,6 @@ public final class FakePlaytestViewport implements PlaytestViewport {
     @Override
     public Maybe<BehaviorContext> behaviorContext() {
         return context;
-    }
-
-    @Override
-    public Vec3 spawnPoint() {
-        return spawnPoint.copy();
-    }
-
-    @Override
-    public float cameraYaw() {
-        return cameraYaw;
     }
 
     @Override

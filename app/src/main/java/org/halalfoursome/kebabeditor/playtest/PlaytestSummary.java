@@ -10,7 +10,7 @@ public final class PlaytestSummary {
     private PlaytestSummary() {}
 
     public static String of(PlaytestSession finished) {
-        return describe(finished.elapsed(), finished.jumps(), finished.respawns());
+        return describe(finished.elapsed(), finished.jumps(), finished.getRespawns());
     }
 
     public static String describe(float seconds, List<JumpMetrics> jumps, int respawns) {

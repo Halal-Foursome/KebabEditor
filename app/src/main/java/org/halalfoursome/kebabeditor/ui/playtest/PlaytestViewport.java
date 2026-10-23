@@ -1,7 +1,6 @@
 package org.halalfoursome.kebabeditor.ui.playtest;
 
 import org.halalfoursome.kebabeditor.behavior.BehaviorContext;
-import org.halalfoursome.kebabeditor.math.Vec3;
 import org.halalfoursome.kebabeditor.playtest.PathRays;
 import org.halalfoursome.kebabeditor.playtest.PlaytestSession;
 import org.halalfoursome.kebabeditor.ui.navigation.NavigationMode;
@@ -12,12 +11,6 @@ public interface PlaytestViewport {
 
     /** Resolves models and prefabs of the open project; none without one. */
     Maybe<BehaviorContext> behaviorContext();
-
-    /** Where the actor starts in a level without a player start. */
-    Vec3 spawnPoint();
-
-    /** The camera's facing, used for the actor in a level without a player start. */
-    float cameraYaw();
 
     /** Paths of finished playtests, drawn in the viewport. */
     PathRays pathRays();

@@ -65,6 +65,7 @@ class PlaytestControllerTest {
         editor.createProject(projectDir, "level");
         SceneNode floor = editor.placeGreybox(GreyboxShape.BOX, new Vec3(0, -0.5f, 0));
         new Greybox(GreyboxShape.BOX, new Vec3(20, 1, 20), Greybox.DEFAULT_COLOR).writeTo(floor);
+        editor.spawnArchetype(BuiltinArchetypes.PLAYER_START, Vec3.zero());
         editor.selection().clear();
     }
 
@@ -101,6 +102,7 @@ class PlaytestControllerTest {
         openProjectWithFloor();
         SceneNode start = editor.spawnArchetype(BuiltinArchetypes.PLAYER_START, Vec3.zero());
         ((ArchetypeInstance) start.getArchetypes().getFirst()).set(ActorSettings.GRAVITY, -1f);
+        editor.selection().select(start);
 
         controller.start();
 
@@ -110,9 +112,22 @@ class PlaytestControllerTest {
     }
 
     @Test
-    void startsWhereTheCameraLooksWithoutAPlayerStart() throws Exception {
+    void refusesALevelWithoutAPlayerStart() throws Exception {
+        editor.createProject(projectDir, "level");
+        SceneNode floor = editor.placeGreybox(GreyboxShape.BOX, new Vec3(0, -0.5f, 0));
+        new Greybox(GreyboxShape.BOX, new Vec3(20, 1, 20), Greybox.DEFAULT_COLOR).writeTo(floor);
+
+        controller.start();
+
+        assertFalse(controller.isRunning());
+        assertFalse(editor.isPlaytesting());
+        assertEquals(List.of("No player start"), notices);
+        assertTrue(logged(LogLevel.WARN, "no player start"));
+    }
+
+    @Test
+    void startsAtThePlayerStart() throws Exception {
         openProjectWithFloor();
-        viewport.spawnPoint = new Vec3(2, 0, 3);
         int[] changes = { 0 };
         controller.addListener(() -> changes[0]++);
 
@@ -121,24 +136,21 @@ class PlaytestControllerTest {
         assertTrue(controller.isRunning());
         assertTrue(editor.isPlaytesting());
         assertTrue(viewport.navigation.unwrap() instanceof PlaytestNavigation);
-        assertTrue(new Vec3(2, 0, 3).approxEquals(running().start().feet(), 1e-5f));
-        assertEquals(viewport.cameraYaw, running().start().yaw());
+        assertTrue(new Vec3(0, 0, 0).approxEquals(running().getStart().feet(), 1e-5f));
         assertEquals(1, changes[0]);
         assertTrue(notices.isEmpty());
-        assertTrue(logged(LogLevel.WARN, "no Player Start"));
         assertTrue(logged(LogLevel.INFO, "Playtest started"));
     }
 
     @Test
     void startsAtTheSelectedPlayerStart() throws Exception {
         openProjectWithFloor();
-        editor.spawnArchetype(BuiltinArchetypes.PLAYER_START, new Vec3(-3, 0, 0));
         SceneNode chosen = editor.spawnArchetype(BuiltinArchetypes.PLAYER_START, new Vec3(3, 0, 0));
         editor.selection().select(chosen);
 
         controller.start();
 
-        assertEquals(chosen, running().start().node().unwrap());
+        assertEquals(chosen, running().getStart().node());
     }
 
     @Test

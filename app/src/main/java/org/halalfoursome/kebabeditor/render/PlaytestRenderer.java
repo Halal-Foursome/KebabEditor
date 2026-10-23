@@ -81,14 +81,14 @@ public class PlaytestRenderer implements RenderPass {
 
     private void updateTrail(PlaytestSession running) {
         long now = System.nanoTime();
-        int version = running.recorder().version();
+        int version = running.getRecorder().version();
 
         if (trail != null && (version == trailVersion || now - trailBuiltAt < TRAIL_REBUILD_NANOS)) {
             return;
         }
 
         PathRayMeshes previous = trail;
-        trail = PathRayMeshes.of(running.recorder().snapshot(running.elapsed()), false);
+        trail = PathRayMeshes.of(running.getRecorder().snapshot(running.elapsed()), false);
         trailVersion = version;
         trailBuiltAt = now;
         if (previous != null) {

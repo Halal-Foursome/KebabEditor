@@ -18,11 +18,8 @@ import org.halalfoursome.kebabeditor.playtest.PathRecording;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
 /**
- * Line meshes for one recorded path: the path itself, coloured by whether the
- * actor was on the ground or in the air, a straight span from each take-off to
- * its landing, and crosses marking take-offs, landings and trigger hits.
- *
- * Built once per recording; the meshes are released when it is no longer drawn.
+ * Line meshes for one recorded path: the path coloured by ground or air, jump
+ * spans, and crosses at take-offs, landings and trigger hits.
  */
 final class PathRayMeshes {
 

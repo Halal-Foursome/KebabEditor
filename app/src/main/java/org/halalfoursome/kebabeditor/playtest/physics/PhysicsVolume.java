@@ -7,8 +7,7 @@ import org.halalfoursome.kebabeditor.utils.Maybe;
 
 /**
  * What one scene object contributes to playtest physics: a unit shape placed by
- * a world matrix. Archetype behaviors produce these from the same matrix they
- * draw with, so what collides is what is shown.
+ * the same world matrix it is drawn with.
  *
  * @param name  the scene object it came from, for the log
  * @param shape the [-0.5, 0.5] cube or the sphere of radius 0.5

@@ -7,7 +7,6 @@ import java.util.Locale;
 import org.halalfoursome.kebabeditor.behavior.BehaviorContext;
 import org.halalfoursome.kebabeditor.editor.Editor;
 import org.halalfoursome.kebabeditor.logging.LogService;
-import org.halalfoursome.kebabeditor.playtest.LoggingPlaytestListener;
 import org.halalfoursome.kebabeditor.playtest.PathRays;
 import org.halalfoursome.kebabeditor.playtest.PathRecording;
 import org.halalfoursome.kebabeditor.playtest.PlayerStart;
@@ -18,11 +17,8 @@ import org.halalfoursome.kebabeditor.scene.model.Scene;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
 /**
- * Starts and stops playtests in the viewport.
- *
- * A playtest runs on a snapshot of the scene as it is, saved or not, and never
- * changes it, so stopping returns to exactly the level that was being edited.
- * Scene edits are refused while it runs. Each finished run is kept as path rays.
+ * Starts and stops playtests in the viewport. A playtest runs on a snapshot of
+ * the scene and never changes it; each finished run is kept as path rays.
  */
 public class PlaytestController {
 
@@ -101,7 +97,15 @@ public class PlaytestController {
             return;
         }
 
-        PlayerStart start = chooseStart(level);
+        Maybe<PlayerStart> chosen = chooseStart(level);
+        if (chosen.isNone()) {
+            log.warn("Playtest not started: the level has no player start");
+            notice.show("No player start",
+                "The level has no player start. Add one with Edit > Add player start.");
+            return;
+        }
+
+        PlayerStart start = chosen.unwrap();
         if (start.settings().isNone()) {
             log.warn("Playtest not started: player start '" + start.name() + "' is invalid");
             notice.show("Invalid player start",
@@ -110,7 +114,7 @@ public class PlaytestController {
             return;
         }
 
-        PlaytestSession running = new PlaytestSession(level.world(), start, new LoggingPlaytestListener(log));
+        PlaytestSession running = new PlaytestSession(level.world(), start, log);
         session = Maybe.some(running);
         playedScene = Maybe.some(scene);
         raysScene = Maybe.some(scene);
@@ -158,23 +162,17 @@ public class PlaytestController {
     }
 
     // A selected player start wins, so a designer can test from any of several.
-    private PlayerStart chooseStart(PlaytestLevel level) {
+    private Maybe<PlayerStart> chooseStart(PlaytestLevel level) {
         Maybe<PlayerStart> chosen = level.startFor(editor.selection().primary());
 
-        if (chosen.isNone()) {
-            log.warn("The level has no Player Start: starting where the camera looks. "
-                + "Add one with Edit > Add player start.");
-            return PlayerStart.fallback(viewport.spawnPoint(), viewport.cameraYaw());
-        }
-
-        PlayerStart start = chosen.unwrap();
-        boolean selected = editor.selection().primary()
-            .isSomeAnd(node -> start.node().isSomeAnd(startNode -> startNode == node));
-        if (level.starts().size() > 1 && !selected) {
-            log.info(level.starts().size() + " player starts in the level, using '" + chosen.unwrap().name()
-                + "'. Select another one to start there.");
-        }
-        return chosen.unwrap();
+        chosen.ifSome(start -> {
+            boolean selected = editor.selection().primary().isSomeAnd(node -> node == start.node());
+            if (level.starts().size() > 1 && !selected) {
+                log.info(level.starts().size() + " player starts in the level, using '" + start.name()
+                    + "'. Select another one to start there.");
+            }
+        });
+        return chosen;
     }
 
     private boolean sameScene(Maybe<Scene> scene) {

@@ -5,11 +5,8 @@ import org.halalfoursome.kebabeditor.math.Vec3;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
 /**
- * A collision volume in world space. Shapes follow their node's full transform,
- * rotation included, which an axis-aligned box could not.
- *
- * Every shape is convex, so the point nearest to any outside point is unique and
- * the actor's contacts come from closest-point queries alone.
+ * A convex collision volume in world space, following its node's full transform.
+ * Being convex, contacts come from closest-point queries alone.
  */
 public sealed interface ConvexShape permits OrientedBox, Ellipsoid {
 

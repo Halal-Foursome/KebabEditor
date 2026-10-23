@@ -11,12 +11,7 @@ import org.halalfoursome.kebabeditor.utils.Maybe;
 
 /**
  * The playtest character: a capsule moved by input, gravity and contacts.
- *
- * Each step accelerates towards the wished velocity, applies gravity, then moves
- * in substeps short enough that the capsule cannot pass through thin platforms,
- * pushing it out of every solid it overlaps. Contacts whose normal points mostly
- * up count as ground; the actor is pushed straight up out of those, so it stands
- * still on slopes instead of sliding down them.
+ * Moves in short substeps so it cannot tunnel through thin platforms.
  */
 public final class Actor {
 

@@ -4,11 +4,7 @@ import org.halalfoursome.kebabeditor.math.Aabb;
 import org.halalfoursome.kebabeditor.math.Vec3;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
-/**
- * An upright capsule: every point within {@code radius} of the segment from
- * {@code bottom} to {@code top}. The rounded bottom slides over small edges and
- * lets the actor stand on slopes without catching on corners.
- */
+/** An upright capsule: every point within {@code radius} of the segment {@code bottom}-{@code top}. */
 public record Capsule(Vec3 bottom, Vec3 top, float radius) {
 
     private static final int MAX_ITERATIONS = 16;
@@ -51,12 +47,8 @@ public record Capsule(Vec3 bottom, Vec3 top, float radius) {
     }
 
     /**
-     * Penetration into a shape, or none when they do not overlap.
-     *
-     * The closest pair between the core segment and the convex shape is found by
-     * projecting back and forth between the two, which converges because both are
-     * convex. When the segment itself has entered the shape, the shape's nearest
-     * surface decides the way out.
+     * Penetration into a shape, or none when they do not overlap. The closest pair
+     * is found by projecting back and forth between the segment and the shape.
      */
     public Maybe<Contact> contact(ConvexShape shape) {
         Vec3 q = shape.closestPoint(bottom.lerp(top, 0.5f));

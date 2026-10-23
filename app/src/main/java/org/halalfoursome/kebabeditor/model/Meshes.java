@@ -239,9 +239,7 @@ public final class Meshes {
     }
 
     /**
-     * An upright capsule of the given size standing on the origin: it spans
-     * y = 0 to y = height. Unlike the unit meshes above it is built to size,
-     * because stretching a unit capsule would flatten its rounded ends.
+     * An upright capsule from y = 0 to y = height, built to size so its ends stay round.
      *
      * @param capRings rings per hemisphere
      */
@@ -303,9 +301,7 @@ public final class Meshes {
     }
 
     /**
-     * Wireframe of the capsule {@link #capsuleTriangles} builds: the two rings
-     * where the caps meet the middle, four side lines, and the outline of each cap
-     * in the XY and ZY planes.
+     * Wireframe of the capsule {@link #capsuleTriangles} builds.
      *
      * @param segments a multiple of 4, so the side lines meet ring vertices
      */

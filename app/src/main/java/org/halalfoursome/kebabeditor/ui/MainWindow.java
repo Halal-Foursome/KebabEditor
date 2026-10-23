@@ -107,8 +107,8 @@ public class MainWindow {
             editorView.addNodeActivatedListener(node -> new ObjectDialog(frame, editor, node).setVisible(true));
             playtest = Maybe.some(new PlaytestController(
                 editor,
-                editorView,
-                (title, message) -> JOptionPane.showMessageDialog(frame, message, title, JOptionPane.INFORMATION_MESSAGE),
+                editorView.getPlaytest(),
+                (title, message) -> JOptionPane.showMessageDialog(frame, message, title, JOptionPane.ERROR_MESSAGE),
                 LogService.get()
             ));
             return editorView;

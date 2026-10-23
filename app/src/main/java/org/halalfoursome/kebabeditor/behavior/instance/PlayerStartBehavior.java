@@ -24,11 +24,8 @@ import org.halalfoursome.kebabeditor.scene.model.SceneNode;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
 /**
- * Draws the actor a playtest would spawn: its capsule standing on the node, at
- * the size its parameters give, and an arrow for the direction it faces.
- *
- * The node's scale is ignored, since the actor's size comes from the parameters.
- * Invalid parameters draw the default actor and are reported by validation.
+ * Draws the actor a playtest would spawn: its capsule, sized by the parameters
+ * (not the node's scale), and an arrow for where it faces.
  */
 public class PlayerStartBehavior implements ArchetypeBehavior {
 

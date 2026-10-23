@@ -17,17 +17,8 @@ import org.halalfoursome.kebabeditor.scene.model.SceneNode;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
 /**
- * A snapshot of a scene as the playtest sees it, taken when the playtest starts,
- * so the scene itself is never touched by the simulation.
- *
- * Greyboxes are solid. Archetypes add what their behavior's
- * {@code physicsVolumes} gives, built from the same parameters they are drawn
- * with, so what collides is what the viewport shows: box and sphere colliders
- * are solid, triggers report the actor entering them, and prefab references
- * bring their contents' archetypes along. Models are only visuals; give them a
- * collider to make them solid.
- *
- * Player starts are only taken from the level itself, not from prefabs inside it.
+ * A snapshot of a scene's physics and player starts, taken when a playtest starts.
+ * Greyboxes are solid; archetypes add their behavior's {@code physicsVolumes}.
  */
 public record PlaytestLevel(PhysicsWorld world, List<PlayerStart> starts) {
 
@@ -66,7 +57,7 @@ public record PlaytestLevel(PhysicsWorld world, List<PlayerStart> starts) {
      */
     public Maybe<PlayerStart> startFor(Maybe<SceneNode> selected) {
         for (PlayerStart start : starts) {
-            if (start.node().isSome() && selected.isSomeAnd(node -> node == start.node().unwrap())) {
+            if (selected.isSomeAnd(node -> node == start.node())) {
                 return Maybe.some(start);
             }
         }
@@ -93,7 +84,7 @@ public record PlaytestLevel(PhysicsWorld world, List<PlayerStart> starts) {
         Mat4 world = node.worldMatrix();
 
         return new PlayerStart(
-            Maybe.some(node),
+            node,
             world.getTranslation(),
             PlayerStart.yawOf(world),
             ActorSettings.from(instance),

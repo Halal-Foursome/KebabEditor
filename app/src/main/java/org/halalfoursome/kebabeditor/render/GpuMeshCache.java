@@ -34,11 +34,7 @@ public final class GpuMeshCache {
         return entry.mesh;
     }
 
-    /**
-     * Free a mesh that will not be drawn again (e.g. a path that was rebuilt) at
-     * the next {@link #evictUnused} instead of after the usual wait. Drawing it
-     * again before then keeps it.
-     */
+    /** Free a mesh that will not be drawn again at the next {@link #evictUnused}, without waiting. */
     public void release(MeshData mesh) {
         Entry entry = entries.get(mesh);
         if (entry != null) {

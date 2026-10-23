@@ -9,11 +9,8 @@ import org.halalfoursome.kebabeditor.math.Vec3;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
 /**
- * The colliders of one playtest, fixed when it starts. Solids block the actor;
- * triggers only report that the actor is inside them.
- *
- * Every query scans the whole list after a cheap bounds check, which is plenty
- * for hand-made levels of a few thousand objects.
+ * The colliders of one playtest: solids block the actor, triggers only report it.
+ * Queries scan the whole list after a bounds check, enough for hand-made levels.
  */
 public final class PhysicsWorld {
 

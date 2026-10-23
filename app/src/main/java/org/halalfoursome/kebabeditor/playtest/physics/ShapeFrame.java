@@ -5,11 +5,7 @@ import org.halalfoursome.kebabeditor.math.Mat4;
 import org.halalfoursome.kebabeditor.math.Vec3;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
-/**
- * Where a unit mesh (the [-0.5, 0.5] cube or the sphere of radius 0.5) ends up
- * under a world matrix: a center, three orthonormal axes and the half extent
- * along each.
- */
+/** A unit shape under a world matrix: a center, three orthonormal axes and their half extents. */
 final class ShapeFrame {
 
     private static final float MIN_EXTENT = 1e-4f;

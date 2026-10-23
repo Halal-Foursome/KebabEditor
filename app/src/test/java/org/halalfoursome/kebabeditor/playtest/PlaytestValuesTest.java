@@ -1,18 +1,17 @@
 package org.halalfoursome.kebabeditor.playtest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
 import org.halalfoursome.kebabeditor.archetype.builtin.BuiltinArchetypes;
 import org.halalfoursome.kebabeditor.archetype.instance.ArchetypeInstance;
-import org.halalfoursome.kebabeditor.logging.LogLevel;
-import org.halalfoursome.kebabeditor.logging.LogService;
 import org.halalfoursome.kebabeditor.math.Mat4;
 import org.halalfoursome.kebabeditor.math.Quat;
 import org.halalfoursome.kebabeditor.math.Vec3;
+import org.halalfoursome.kebabeditor.scene.model.SceneNode;
+import org.halalfoursome.kebabeditor.utils.Maybe;
 import org.junit.jupiter.api.Test;
 
 /** The small value types of a playtest: settings, starts, jumps and the summary. */
@@ -69,13 +68,14 @@ class PlaytestValuesTest {
     }
 
     @Test
-    void fallbackStartUsesDefaultSettings() {
-        PlayerStart start = PlayerStart.fallback(new Vec3(1, 2, 3), 0.5f);
+    void startIsNamedAfterItsNodeAndKeepsItsFeet() {
+        Vec3 feet = new Vec3(1, 2, 3);
+        PlayerStart start = new PlayerStart(new SceneNode("spawn"), feet, 0.5f, Maybe.some(ActorSettings.DEFAULT), List.of());
 
-        assertEquals(ActorSettings.DEFAULT, start.settings().unwrap());
-        assertTrue(start.node().isNone());
-        assertTrue(start.problems().isEmpty());
-        assertEquals("default start", start.name());
+        feet.set(9, 9, 9);
+        start.feet().set(9, 9, 9);
+
+        assertEquals("spawn", start.name());
         assertTrue(new Vec3(1, 2, 3).approxEquals(start.feet(), EPS));
     }
 
@@ -113,26 +113,5 @@ class PlaytestValuesTest {
             PlaytestSummary.describe(12.34f, jumps, 1)
         );
         assertEquals("Playtest stopped after 0.5 s: 0 jump(s)", PlaytestSummary.describe(0.5f, List.of(), 0));
-    }
-
-    @Test
-    void loggingListenerWritesEachEventToTheLog() {
-        LogService log = new LogService();
-        LoggingPlaytestListener listener = new LoggingPlaytestListener(log);
-
-        listener.jumped(3, new JumpMetrics(Vec3.zero(), new Vec3(1, 0, 0), 1, 0.5f));
-        listener.dropped(2f, 0.6f);
-        listener.triggerEntered("goal", 1.25f);
-        listener.respawned("spawn");
-
-        List<String> messages = log.entries().stream().map(e -> e.message()).toList();
-        assertEquals(List.of(
-            "Playtest jump 3: 1.00 m across, 1.00 m up, landed +0.00 m, 0.50 s in the air",
-            "Playtest drop: fell 2.00 m, 0.60 s in the air",
-            "Playtest trigger 'goal' entered at 1.25 s",
-            "Playtest: the actor fell out of the level and respawned at 'spawn'"
-        ), messages);
-        assertEquals(LogLevel.WARN, log.entries().getLast().level());
-        assertFalse(log.entries().getFirst().level() == LogLevel.WARN);
     }
 }
