@@ -228,7 +228,7 @@ public class ArchetypeInstanceDialog extends JDialog {
 
         try {
             if (editing.isSome()) {
-                apply(editing.unwrap());
+                editor.setParams(editing.unwrap(), enteredValues());
             } else {
                 ArchetypeInstance created = new ArchetypeInstance(definition);
                 apply(created);
@@ -239,6 +239,12 @@ public class ArchetypeInstanceDialog extends JDialog {
         } catch (IllegalArgumentException e) {
             JOptionPane.showMessageDialog(this, e.getMessage(), "Cannot add archetype", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    private Map<String, Object> enteredValues() {
+        Map<String, Object> values = new LinkedHashMap<>();
+        valueEditors.forEach((name, valueEditor) -> values.put(name, valueEditor.value()));
+        return values;
     }
 
     private void apply(ArchetypeInstance target) {

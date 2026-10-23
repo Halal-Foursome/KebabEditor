@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -41,6 +42,7 @@ public class Editor {
     private final ProjectManager projectManager;
     private final ModelImporter modelImporter;
     private final Selection selection = new Selection();
+    private final History history;
     private boolean snapping = true;
     /** While a playtest runs the scene is being played, and edit commands refuse to change it. */
     @Getter
@@ -50,9 +52,12 @@ public class Editor {
     public Editor(ProjectManager projectManager, ModelImporter modelImporter) {
         this.projectManager = projectManager;
         this.modelImporter = modelImporter;
+        this.history = new History(projectManager::scene, selection);
 
         // Selected nodes belong to the scene that was just replaced or closed.
         projectManager.addListener(selection::clear);
+        // So does the history, and a changed archetype registry can make old steps unrestorable.
+        projectManager.addListener(history::clear);
     }
 
     public void createProject(Path dir, String name) throws SceneException, IOException {
@@ -85,6 +90,18 @@ public class Editor {
 
     public Selection selection() {
         return selection;
+    }
+
+    public History history() {
+        return history;
+    }
+
+    public void undo() {
+        history.undo().ifSome(label -> LogService.get().info("Undid " + label));
+    }
+
+    public void redo() {
+        history.redo().ifSome(label -> LogService.get().info("Redid " + label));
     }
 
     public boolean isProjectOpen() {
@@ -175,13 +192,15 @@ public class Editor {
     }
 
     public SceneNode placeGreybox(GreyboxShape shape, Vec3 center) {
-        SceneNode node = new SceneNode(shape.displayName());
-        node.getTransform().setTranslation(center.copy());
-        Greybox.unit(shape).writeTo(node);
+        return history.record("add " + shape.displayName(), () -> {
+            SceneNode node = new SceneNode(shape.displayName());
+            node.getTransform().setTranslation(center.copy());
+            Greybox.unit(shape).writeTo(node);
 
-        addToScene(node);
-        LogService.get().info("Spawned greybox " + shape.jsonName() + " at " + center);
-        return node;
+            addToScene(node);
+            LogService.get().info("Spawned greybox " + shape.jsonName() + " at " + center);
+            return node;
+        });
     }
 
     public List<SceneNode> sceneNodes() {
@@ -209,8 +228,13 @@ public class Editor {
             );
         }
 
-        node.addArchetype(instance);
+        history.record("add " + definition.getDisplayName(), () -> node.addArchetype(instance));
         LogService.get().info("Added " + definition.getId() + " to " + node.getName());
+    }
+
+    public void setParams(ArchetypeInstance instance, Map<String, Object> values) {
+        history.record("edit " + instance.getDefinition().getDisplayName(), () ->
+            values.forEach((name, value) -> setParam(instance, name, value)));
     }
 
     public void renameNode(SceneNode node, String name) {
@@ -221,7 +245,7 @@ public class Editor {
         }
 
         String previous = Objects.toString(node.getName(), "");
-        node.setName(trimmed);
+        history.record("rename", () -> node.setName(trimmed));
         LogService.get().info("Renamed '" + previous + "' to '" + trimmed + "'");
     }
 
@@ -258,19 +282,21 @@ public class Editor {
     public void delete(Deletion deletion) {
         Scene scene = projectManager.scene().expect("No project is open");
 
-        for (Deletion.NodeReference reference : deletion.references()) {
-            setParam(reference.instance(), reference.param(), Maybe.none());
-        }
-
-        for (SceneNode root : deletion.roots()) {
-            try {
-                scene.remove(root);
-            } catch (SceneException e) {
-                throw new IllegalStateException("Cannot remove '" + root.getName() + "' from the scene", e);
+        history.record("delete", () -> {
+            for (Deletion.NodeReference reference : deletion.references()) {
+                setParam(reference.instance(), reference.param(), Maybe.none());
             }
-        }
 
-        selection.clear();
+            for (SceneNode root : deletion.roots()) {
+                try {
+                    scene.remove(root);
+                } catch (SceneException e) {
+                    throw new IllegalStateException("Cannot remove '" + root.getName() + "' from the scene", e);
+                }
+            }
+
+            selection.clear();
+        });
         LogService.get().info(
             "Deleted " + deletion.nodeCount() + " object(s), cleared " + deletion.references().size() + " reference(s)"
         );
@@ -319,28 +345,33 @@ public class Editor {
     }
 
     public void detachArchetype(SceneNode node, NodeArchetype archetype) {
-        node.removeArchetype(archetype);
+        history.record("remove " + archetype.archetypeId(), () -> node.removeArchetype(archetype));
         LogService.get().info("Removed " + archetype.archetypeId() + " from " + node.getName());
     }
 
     public SceneNode spawnEmpty(Vec3 base) {
-        SceneNode node = new SceneNode("Empty");
-        node.getTransform().setTranslation(base.copy());
+        return history.record("add empty", () -> {
+            SceneNode node = new SceneNode("Empty");
+            node.getTransform().setTranslation(base.copy());
 
-        addToScene(node);
-        LogService.get().info("Spawned empty at " + base);
-        return node;
+            addToScene(node);
+            LogService.get().info("Spawned empty at " + base);
+            return node;
+        });
     }
 
     public SceneNode spawnArchetype(String archetypeId, Vec3 base) {
         ArchetypeInstance instance = newInstance(archetypeId);
-        SceneNode node = new SceneNode(instance.getDefinition().getDisplayName());
-        node.getTransform().setTranslation(base.copy());
-        node.addArchetype(instance);
 
-        addToScene(node);
-        LogService.get().info("Spawned " + archetypeId + " at " + base);
-        return node;
+        return history.record("add " + instance.getDefinition().getDisplayName(), () -> {
+            SceneNode node = new SceneNode(instance.getDefinition().getDisplayName());
+            node.getTransform().setTranslation(base.copy());
+            node.addArchetype(instance);
+
+            addToScene(node);
+            LogService.get().info("Spawned " + archetypeId + " at " + base);
+            return node;
+        });
     }
 
     public SceneNode importModel(Path modelFile, Vec3 base) throws IOException {
@@ -358,7 +389,7 @@ public class Editor {
         node.getTransform().setTranslation(base.copy());
         node.addArchetype(modelRef);
 
-        addToScene(node);
+        history.record("import model", () -> addToScene(node));
         LogService.get().info("Imported model " + reference + " at " + base);
         return node;
     }
@@ -388,15 +419,17 @@ public class Editor {
             throw new IllegalArgumentException("Snap distance must be a positive number, got " + distance);
         }
 
-        ArchetypeInstance instance = snapDistanceInstance().unwrapOrElse(() -> {
-            ArchetypeInstance created = newInstance(BuiltinArchetypes.SNAP_DISTANCE);
-            SceneNode node = new SceneNode("Snap Distance");
-            node.addArchetype(created);
-            addToScene(node);
-            return created;
-        });
+        history.record("snap distance", () -> {
+            ArchetypeInstance instance = snapDistanceInstance().unwrapOrElse(() -> {
+                ArchetypeInstance created = newInstance(BuiltinArchetypes.SNAP_DISTANCE);
+                SceneNode node = new SceneNode("Snap Distance");
+                node.addArchetype(created);
+                addToScene(node);
+                return created;
+            });
 
-        setParam(instance, "distance", distance);
+            setParam(instance, "distance", distance);
+        });
         LogService.get().info("Snap distance set to " + distance);
     }
 

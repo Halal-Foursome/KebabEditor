@@ -31,6 +31,15 @@ public class Selection {
         notifyListeners();
     }
 
+    public void set(List<SceneNode> selected) {
+        if (nodes.equals(selected)) {
+            return;
+        }
+        nodes.clear();
+        nodes.addAll(selected);
+        notifyListeners();
+    }
+
     public void clear() {
         if (nodes.isEmpty()) {
             return;

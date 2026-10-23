@@ -13,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.halalfoursome.kebabeditor.archetype.builtin.BuiltinArchetypes;
 import org.halalfoursome.kebabeditor.archetype.instance.ArchetypeInstance;
@@ -24,6 +25,7 @@ import org.halalfoursome.kebabeditor.project.ProjectManager;
 import org.halalfoursome.kebabeditor.project.RecentProjects;
 import org.halalfoursome.kebabeditor.scene.io.GltfSceneReader;
 import org.halalfoursome.kebabeditor.scene.io.GltfSceneWriter;
+import org.halalfoursome.kebabeditor.scene.model.GreyboxShape;
 import org.halalfoursome.kebabeditor.scene.model.SceneNode;
 import org.halalfoursome.kebabeditor.scene.resolve.CompositeModelExtractor;
 import org.halalfoursome.kebabeditor.scene.resolve.GltfMeshExtractor;
@@ -131,6 +133,81 @@ class EditorTest {
             editor.modelResolver().unwrap().resolve(editor.currentProjectFile().unwrap(), "models/tri/tri.gltf"));
         assertEquals(1, resolved.parts().size());
         assertSame(node, editor.selection().primary().unwrap());
+    }
+
+    @Test
+    void undoRemovesASpawnedObjectAndRedoBringsItBack() {
+        SceneNode box = editor.spawnGreybox(GreyboxShape.BOX, Vec3.zero());
+
+        editor.undo();
+        assertTrue(editor.scene().unwrap().find(box.getId()).isNone());
+        assertTrue(editor.selection().nodes().isEmpty());
+        assertTrue(editor.history().canRedo());
+
+        editor.redo();
+        assertSame(box, editor.scene().unwrap().find(box.getId()).unwrap());
+        assertSame(box, editor.selection().primary().unwrap());
+    }
+
+    @Test
+    void undoingADeleteRestoresTheSameNodesWithTheirChildren() throws Exception {
+        SceneNode parent = editor.spawnEmpty(Vec3.zero());
+        SceneNode child = new SceneNode("child");
+        editor.scene().unwrap().add(child, parent);
+
+        editor.delete(editor.planDeletion(List.of(parent)));
+        assertTrue(editor.scene().unwrap().find(child.getId()).isNone());
+
+        editor.undo();
+        assertSame(parent, editor.scene().unwrap().find(parent.getId()).unwrap());
+        assertSame(child, editor.scene().unwrap().find(child.getId()).unwrap());
+        assertSame(parent, child.getParent().unwrap());
+        assertEquals(List.of(child), parent.getChildren());
+    }
+
+    @Test
+    void aDragIsOneStepAndAnUnchangedOneIsNotRecorded() {
+        SceneNode node = editor.spawnEmpty(Vec3.zero());
+
+        editor.history().begin();
+        assertFalse(editor.history().canUndo());
+        node.getTransform().setTranslation(new Vec3(1, 0, 0));
+        node.getTransform().setTranslation(new Vec3(2, 0, 0));
+        editor.history().commit("move");
+
+        editor.history().begin();
+        editor.history().commit("move");
+
+        editor.undo();
+        assertEquals(Vec3.zero(), node.getTransform().getTranslation());
+
+        editor.undo();
+        assertTrue(editor.scene().unwrap().find(node.getId()).isNone());
+        assertFalse(editor.history().canUndo());
+    }
+
+    @Test
+    void undoRestoresParamValuesAndANewEditClearsRedo() throws Exception {
+        editor.setSnapDistance(2f);
+        ArchetypeInstance snap = editor.sceneNodes().stream()
+            .flatMap(n -> n.getArchetypes().stream())
+            .map(ArchetypeInstance.class::cast)
+            .findFirst().orElseThrow();
+        editor.setParams(snap, Map.of("distance", 4f));
+
+        editor.undo();
+        assertEquals(2f, snap.get("distance"));
+
+        editor.renameNode(editor.sceneNodes().getFirst(), "Grid");
+        assertFalse(editor.history().canRedo());
+    }
+
+    @Test
+    void reopeningTheProjectClearsTheHistory() throws Exception {
+        editor.spawnEmpty(Vec3.zero());
+        editor.openProject(editor.currentProjectFile().unwrap());
+
+        assertFalse(editor.history().canUndo());
     }
 
     // One triangle with positions in an external .bin next to the .gltf.
