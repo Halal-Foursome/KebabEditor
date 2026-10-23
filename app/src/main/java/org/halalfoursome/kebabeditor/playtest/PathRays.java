@@ -14,6 +14,7 @@ public final class PathRays {
     private final List<PathRecording> recordings = new ArrayList<>();
     private final List<Runnable> listeners = new ArrayList<>();
     private boolean visible = true;
+    private PathThickness thickness = PathThickness.MEDIUM;
 
     /** Oldest first. */
     public List<PathRecording> recordings() {
@@ -51,6 +52,18 @@ public final class PathRays {
             return;
         }
         this.visible = visible;
+        notifyListeners();
+    }
+
+    public PathThickness thickness() {
+        return thickness;
+    }
+
+    public void setThickness(PathThickness thickness) {
+        if (this.thickness == thickness) {
+            return;
+        }
+        this.thickness = thickness;
         notifyListeners();
     }
 

@@ -32,6 +32,7 @@ import org.halalfoursome.kebabeditor.archetype.error.InvalidParamType;
 import org.halalfoursome.kebabeditor.archetype.error.UnknownParamException;
 import org.halalfoursome.kebabeditor.archetype.instance.ArchetypeInstance;
 import org.halalfoursome.kebabeditor.editor.Editor;
+import org.halalfoursome.kebabeditor.editor.InitialValues;
 import org.halalfoursome.kebabeditor.scene.model.SceneNode;
 import org.halalfoursome.kebabeditor.ui.archetype.ParamValueEditor;
 import org.halalfoursome.kebabeditor.ui.validation.ValidationGroup;
@@ -199,7 +200,7 @@ public class ArchetypeInstanceDialog extends JDialog {
             parameters.add(label(entry.getKey() + "  (" + spec.type().displayName() + ")"), labelConstraints);
 
             ParamValueEditor valueEditor = new ParamValueEditor(style, validation, editor::sceneNodes);
-            valueEditor.showFor(spec.type(), initialValue(entry.getKey(), spec));
+            valueEditor.showFor(spec.type(), initialValue(definition, entry.getKey(), spec));
             GridBagConstraints editorConstraints = rowAt(row, 1);
             editorConstraints.weightx = 1.0;
             editorConstraints.fill = GridBagConstraints.HORIZONTAL;
@@ -210,9 +211,9 @@ public class ArchetypeInstanceDialog extends JDialog {
         }
     }
 
-    private Object initialValue(String name, ParamSpec spec) {
+    private Object initialValue(ArchetypeDefinition definition, String name, ParamSpec spec) {
         if (editing.isNone()) {
-            return spec.defaultValue();
+            return InitialValues.forParam(node, definition, name, spec);
         }
 
         try {

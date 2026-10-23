@@ -83,8 +83,15 @@ final class PathRayMeshes {
         return new PathRayMeshes(meshes);
     }
 
-    /** @param newest the latest run is bright, older ones are dimmed */
     List<Drawable> drawables(boolean newest) {
+        return drawables(newest, 1f);
+    }
+
+    /**
+     * @param newest    the latest run is bright, older ones are dimmed
+     * @param lineWidth in pixels
+     */
+    List<Drawable> drawables(boolean newest, float lineWidth) {
         List<Drawable> drawables = new ArrayList<>();
         Mat4 identity = Mat4.identity();
 
@@ -92,7 +99,8 @@ final class PathRayMeshes {
             mesh,
             identity,
             Material.solid(newest ? layer.color : dim(layer.color)),
-            DrawMode.SOLID
+            DrawMode.SOLID,
+            lineWidth
         )));
 
         return drawables;

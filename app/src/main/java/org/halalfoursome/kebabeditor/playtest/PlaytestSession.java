@@ -88,6 +88,11 @@ public final class PlaytestSession {
         }
     }
 
+    /** The triggers the actor is inside right now. */
+    public List<Collider> activeTriggers() {
+        return List.copyOf(insideTriggers);
+    }
+
     /** The feet, smoothed between the last two steps for drawing. */
     public Vec3 actorPosition() {
         return actor.previousPosition().lerpLocal(actor.position(), (float) (accumulator / STEP));

@@ -120,7 +120,7 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
             passes.add(new GreyboxRenderer(drawableObjects));
             passes.add(new ArchetypeRenderer(drawableObjects));
             passes.add(new PathRayRenderer(drawableObjects, playtest.pathRays()));
-            passes.add(new PlaytestRenderer(drawableObjects, playtest::getSession));
+            passes.add(new PlaytestRenderer(drawableObjects, playtest::getSession, playtest.pathRays()));
             passes.add(new GridRenderer());
             // Icons would hide the level while playing it.
             passes.add(new ArchetypeIconRenderer(drawableObjects, icons, () -> showIcons && !isPlaytesting()));

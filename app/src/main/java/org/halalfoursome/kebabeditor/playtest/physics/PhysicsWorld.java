@@ -15,12 +15,16 @@ import org.halalfoursome.kebabeditor.utils.Maybe;
 public final class PhysicsWorld {
 
     /** One volume and the name of the scene object it came from, for the log. */
-    public record Collider(ConvexShape shape, String name, Aabb bounds) {
+    public record Collider(ConvexShape shape, String name, Aabb bounds, Maybe<PhysicsVolume> source) {
 
         public Collider {
             Objects.requireNonNull(shape, "shape");
             Objects.requireNonNull(name, "name");
             bounds = bounds.copy();
+        }
+
+        public Collider(ConvexShape shape, String name, Aabb bounds) {
+            this(shape, name, bounds, Maybe.none());
         }
 
         public Collider(ConvexShape shape, String name) {
@@ -52,7 +56,7 @@ public final class PhysicsWorld {
 
         for (PhysicsVolume volume : volumes) {
             volume.convexShape().ifSome(shape -> {
-                Collider collider = new Collider(shape, volume.name());
+                Collider collider = new Collider(shape, volume.name(), shape.bounds(), Maybe.some(volume));
                 switch (volume.role()) {
                     case SOLID -> solids.add(collider);
                     case TRIGGER -> triggers.add(collider);

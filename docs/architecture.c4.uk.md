@@ -248,11 +248,7 @@ classDiagram
 
     class ViewMenu
 
-    class OptionsMenu
-
     class CreateProjectDialog
-
-    class OptionsDialog
 
     class Editor
     class ArchetypeManagerDialog
@@ -274,14 +270,12 @@ classDiagram
     Menu <|-- FileMenu
     Menu <|-- ProjectMenu
     Menu <|-- ViewMenu
-    Menu <|-- OptionsMenu
     Menu o-- MenuItem
     FileMenu --> Editor
     ProjectMenu --> Editor
     FileMenu ..> CreateProjectDialog
     FileMenu ..> FileChooser
     FileMenu ..> ErrorDialogs
-    OptionsMenu ..> OptionsDialog
     ProjectMenu ..> ArchetypeManagerDialog
     CreateProjectDialog --> Editor
 ```

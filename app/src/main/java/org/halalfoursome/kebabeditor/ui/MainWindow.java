@@ -30,7 +30,6 @@ import org.halalfoursome.kebabeditor.math.Vec3;
 import org.halalfoursome.kebabeditor.ui.menu.EditMenu;
 import org.halalfoursome.kebabeditor.ui.object.ObjectDialog;
 import org.halalfoursome.kebabeditor.ui.menu.FileMenu;
-import org.halalfoursome.kebabeditor.ui.menu.OptionsMenu;
 import org.halalfoursome.kebabeditor.ui.menu.PlaytestMenu;
 import org.halalfoursome.kebabeditor.ui.menu.ProjectMenu;
 import org.halalfoursome.kebabeditor.ui.menu.ViewMenu;
@@ -196,7 +195,6 @@ public class MainWindow {
         menuBar.addMenu(new EditMenu(frame, editor, this::spawnPoint, Maybe.ofNullable(editorView)));
         menuBar.addMenu(new ViewMenu(frame, editor, Maybe.ofNullable(editorView)));
         menuBar.addMenu(new PlaytestMenu(playtest));
-        menuBar.addMenu(new OptionsMenu(frame, editor));
         menuBar.addMenu(new Menu("Help"));
 
         // Glue between menu bar and buttons

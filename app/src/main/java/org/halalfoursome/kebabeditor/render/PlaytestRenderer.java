@@ -10,23 +10,32 @@ import org.halalfoursome.kebabeditor.behavior.Drawable;
 import org.halalfoursome.kebabeditor.math.Mat4;
 import org.halalfoursome.kebabeditor.math.Quat;
 import org.halalfoursome.kebabeditor.math.Vec3;
+import org.halalfoursome.kebabeditor.model.AlphaMode;
 import org.halalfoursome.kebabeditor.model.Material;
 import org.halalfoursome.kebabeditor.model.MeshData;
 import org.halalfoursome.kebabeditor.model.Meshes;
+import org.halalfoursome.kebabeditor.model.TextureSlot;
 import org.halalfoursome.kebabeditor.playtest.ActorSettings;
+import org.halalfoursome.kebabeditor.playtest.PathRays;
 import org.halalfoursome.kebabeditor.playtest.PlaytestSession;
+import org.halalfoursome.kebabeditor.playtest.physics.PhysicsVolume;
+import org.halalfoursome.kebabeditor.playtest.physics.PhysicsWorld.Collider;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
 import com.jogamp.opengl.GL3;
 
 /**
  * The running playtest: the actor's capsule with an arrow for where it faces,
- * and the trail it has left so far.
+ * the trail it has left so far, and the triggers it is inside, in green.
  */
 public class PlaytestRenderer implements RenderPass {
 
     private static final Material BODY = Material.solid(new Color(235, 90, 120));
     private static final Material FACING = Material.solid(new Color(255, 255, 255));
+    private static final Material ACTIVE_TRIGGER_FILL = new Material(
+        new Color(70, 220, 110, 90), TextureSlot.NONE, AlphaMode.BLEND, false
+    );
+    private static final Material ACTIVE_TRIGGER_EDGES = Material.solid(new Color(90, 255, 130));
     private static final int CAP_RINGS = 6;
     private static final int SEGMENTS = 24;
     /** The trail is rebuilt at most this often, so a long run does not re-upload it every frame. */
@@ -34,6 +43,7 @@ public class PlaytestRenderer implements RenderPass {
 
     private final DrawableRenderer drawableObjects;
     private final Supplier<Maybe<PlaytestSession>> session;
+    private final PathRays rays;
 
     private PlaytestSession builtFor;
     private MeshData body;
@@ -41,9 +51,14 @@ public class PlaytestRenderer implements RenderPass {
     private int trailVersion;
     private long trailBuiltAt;
 
-    public PlaytestRenderer(DrawableRenderer drawableObjects, Supplier<Maybe<PlaytestSession>> session) {
+    public PlaytestRenderer(
+        DrawableRenderer drawableObjects,
+        Supplier<Maybe<PlaytestSession>> session,
+        PathRays rays
+    ) {
         this.drawableObjects = drawableObjects;
         this.session = session;
+        this.rays = rays;
     }
 
     @Override
@@ -73,10 +88,23 @@ public class PlaytestRenderer implements RenderPass {
         drawables.add(new Drawable(body, world, BODY, DrawMode.SOLID));
         drawables.add(new Drawable(Meshes.ARROW_LINES, arrow, FACING, DrawMode.OVERLAY));
         if (trail != null) {
-            drawables.addAll(trail.drawables(true));
+            drawables.addAll(trail.drawables(true, rays.thickness().width()));
+        }
+        for (Collider trigger : running.activeTriggers()) {
+            trigger.source().ifSome(volume -> drawables.addAll(highlight(volume)));
         }
 
         drawableObjects.draw(gl, context, drawables, false);
+    }
+
+    private static List<Drawable> highlight(PhysicsVolume volume) {
+        MeshData fill = volume.shape() == PhysicsVolume.Shape.BOX ? Meshes.CUBE_TRIANGLES : Meshes.SPHERE_TRIANGLES;
+        MeshData edges = volume.shape() == PhysicsVolume.Shape.BOX ? Meshes.CUBE_LINES : Meshes.SPHERE_LINES;
+
+        return List.of(
+            new Drawable(fill, volume.world(), ACTIVE_TRIGGER_FILL, DrawMode.SOLID),
+            new Drawable(edges, volume.world(), ACTIVE_TRIGGER_EDGES, DrawMode.OVERLAY)
+        );
     }
 
     private void updateTrail(PlaytestSession running) {

@@ -152,6 +152,9 @@ public class PlaytestController {
     }
 
     public void clearPathRays() {
+        if (isRunning()) {
+            return;
+        }
         viewport.pathRays().clear();
         log.info("Path rays cleared");
     }

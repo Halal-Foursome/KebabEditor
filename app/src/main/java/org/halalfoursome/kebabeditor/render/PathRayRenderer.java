@@ -42,7 +42,7 @@ public class PathRayRenderer implements RenderPass {
         for (int i = 0; i < recordings.size(); i++) {
             PathRecording recording = recordings.get(i);
             PathRayMeshes meshes = built.computeIfAbsent(recording, r -> PathRayMeshes.of(r, true));
-            drawables.addAll(meshes.drawables(i == recordings.size() - 1));
+            drawables.addAll(meshes.drawables(i == recordings.size() - 1, rays.thickness().width()));
         }
 
         drawableObjects.draw(gl, context, drawables, false);
