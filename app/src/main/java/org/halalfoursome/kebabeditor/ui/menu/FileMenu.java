@@ -72,7 +72,7 @@ public class FileMenu extends Menu {
 
             new SeparatorItem(),
 
-            new SingleItem("Refresh assets", Maybe.some("F5"), refreshAssets),
+            new SingleItem("Refresh assets", Maybe.some("control F5"), refreshAssets),
 
             new SingleItem("Close project", Maybe.none(), editor::closeProject),
 

@@ -33,12 +33,19 @@ import org.halalfoursome.kebabeditor.scene.resolve.ModelResolver;
 import org.halalfoursome.kebabeditor.scene.resolve.PrefabResolver;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
+import lombok.Getter;
+import lombok.Setter;
+
 public class Editor {
 
     private final ProjectManager projectManager;
     private final ModelImporter modelImporter;
     private final Selection selection = new Selection();
     private boolean snapping = true;
+    /** While a playtest runs the scene is being played, and edit commands refuse to change it. */
+    @Getter
+    @Setter
+    private boolean playtesting;
 
     public Editor(ProjectManager projectManager, ModelImporter modelImporter) {
         this.projectManager = projectManager;

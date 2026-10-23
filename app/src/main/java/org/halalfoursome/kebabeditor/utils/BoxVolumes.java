@@ -13,6 +13,7 @@ import org.halalfoursome.kebabeditor.math.Vec3;
 import org.halalfoursome.kebabeditor.model.GizmoShape;
 import org.halalfoursome.kebabeditor.model.Material;
 import org.halalfoursome.kebabeditor.model.Meshes;
+import org.halalfoursome.kebabeditor.playtest.physics.PhysicsVolume;
 import org.halalfoursome.kebabeditor.scene.model.SceneNode;
 
 public final class BoxVolumes {
@@ -33,6 +34,17 @@ public final class BoxVolumes {
                 material,
                 DrawMode.OVERLAY
             )))
+            .unwrapOr(List.of());
+    }
+
+    /** The box as a physics volume, placed exactly where it is drawn. */
+    public static List<PhysicsVolume> physicsVolumes(
+        SceneNode node,
+        ArchetypeInstance archetype,
+        PhysicsVolume.Role role
+    ) {
+        return validSize(archetype)
+            .map(size -> List.of(new PhysicsVolume(node.getName(), PhysicsVolume.Shape.BOX, matrix(node, size), role)))
             .unwrapOr(List.of());
     }
 

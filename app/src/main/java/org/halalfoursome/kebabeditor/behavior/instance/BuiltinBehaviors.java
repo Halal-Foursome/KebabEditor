@@ -17,7 +17,8 @@ public final class BuiltinBehaviors {
         BuiltinArchetypes.POINT_LIGHT,      new PointLightBehavior(),
         BuiltinArchetypes.DIR_LIGHT,        new DirLightBehavior(),
         BuiltinArchetypes.SPOT_LIGHT,       new SpotLightBehavior(),
-        BuiltinArchetypes.SNAP_DISTANCE,    new SnapDistanceBehavior()
+        BuiltinArchetypes.SNAP_DISTANCE,    new SnapDistanceBehavior(),
+        BuiltinArchetypes.PLAYER_START,     new PlayerStartBehavior()
     );
 
     private BuiltinBehaviors() {}

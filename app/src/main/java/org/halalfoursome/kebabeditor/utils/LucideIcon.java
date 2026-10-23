@@ -28,6 +28,7 @@ public enum LucideIcon {
     INFO("info"),
     HAMMER("hammer"),
     PLAY("play"),
+    SQUARE("square"),
     ELLIPSIS_VERTICAL("ellipsis-vertical"),
     SUN_MOON("sun-moon"),
     BOXES("boxes"),

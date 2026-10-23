@@ -50,6 +50,9 @@ public class EditMenu extends Menu {
         SingleItem spawnEmpty = new SingleItem("Add empty", Maybe.none(),
             ProjectRequired.guard(frame, editor, () -> editor.spawnEmpty(spawnPoint.get())));
 
+        SingleItem spawnPlayerStart = new SingleItem("Add player start", Maybe.none(),
+            ProjectRequired.guard(frame, editor, () -> editor.spawnArchetype(BuiltinArchetypes.PLAYER_START, spawnPoint.get())));
+
         SingleItem spawnPointLight = lightItem(frame, editor, spawnPoint, "Add point light", BuiltinArchetypes.POINT_LIGHT);
         SingleItem spawnDirLight = lightItem(frame, editor, spawnPoint, "Add directional light", BuiltinArchetypes.DIR_LIGHT);
         SingleItem spawnSpotLight = lightItem(frame, editor, spawnPoint, "Add spot light", BuiltinArchetypes.SPOT_LIGHT);
@@ -89,6 +92,7 @@ public class EditMenu extends Menu {
             spawnBox,
             spawnSphere,
             spawnEmpty,
+            spawnPlayerStart,
             new SeparatorItem(),
             spawnPointLight,
             spawnDirLight,

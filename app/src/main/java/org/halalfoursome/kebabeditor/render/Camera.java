@@ -28,6 +28,11 @@ public class Camera {
         pitch = Math.clamp(pitch + deltaPitch, -PITCH_LIMIT, PITCH_LIMIT);
     }
 
+    public void setOrientation(float yaw, float pitch) {
+        this.yaw = yaw;
+        this.pitch = Math.clamp(pitch, -PITCH_LIMIT, PITCH_LIMIT);
+    }
+
     public void move(Vec3 delta) {
         position.addLocal(delta);
     }

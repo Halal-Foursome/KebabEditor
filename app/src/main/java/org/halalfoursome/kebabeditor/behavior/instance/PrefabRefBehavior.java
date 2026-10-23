@@ -14,6 +14,7 @@ import org.halalfoursome.kebabeditor.math.Aabb;
 import org.halalfoursome.kebabeditor.math.Mat4;
 import org.halalfoursome.kebabeditor.math.Vec3;
 import org.halalfoursome.kebabeditor.model.GizmoShape;
+import org.halalfoursome.kebabeditor.playtest.physics.PhysicsVolume;
 import org.halalfoursome.kebabeditor.scene.model.SceneNode;
 import org.halalfoursome.kebabeditor.scene.resolve.PrefabResult.BrokenPrefab;
 import org.halalfoursome.kebabeditor.scene.resolve.PrefabResult.LoadedPrefab;
@@ -118,6 +119,29 @@ public class PrefabRefBehavior implements ArchetypeBehavior {
                 yield new Target.Open(prefab, context.within(prefab.path()));
             }
         };
+    }
+
+    // Collides like it is drawn: the contents' archetypes, placed by the referencing node
+    @Override
+    public List<PhysicsVolume> physicsVolumes(
+        SceneNode node,
+        ArchetypeInstance archetype,
+        BehaviorContext context
+    ) {
+        if (!(target(archetype, context) instanceof Target.Open open)) {
+            return List.of();
+        }
+
+        Mat4 base = node.worldMatrix();
+        List<PhysicsVolume> volumes = new ArrayList<>();
+
+        forEachBehavior(open, (behavior, innerNode, instance) -> {
+            for (PhysicsVolume volume : behavior.physicsVolumes(innerNode, instance, open.context())) {
+                volumes.add(volume.placedIn(base, node.getName()));
+            }
+        });
+
+        return volumes;
     }
 
     // The prefab's nodes are positioned relative to its own root, so the referencing node's world matrix goes in front

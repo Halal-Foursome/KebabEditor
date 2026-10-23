@@ -33,9 +33,11 @@ import org.halalfoursome.kebabeditor.render.ArchetypeIconRenderer;
 import org.halalfoursome.kebabeditor.render.ArchetypeIcons;
 import org.halalfoursome.kebabeditor.render.ArchetypeRenderer;
 import org.halalfoursome.kebabeditor.render.GizmoInteraction;
+import org.halalfoursome.kebabeditor.render.PathRayRenderer;
 import org.halalfoursome.kebabeditor.render.PickHit;
 import org.halalfoursome.kebabeditor.render.Picker;
 import org.halalfoursome.kebabeditor.render.PlacementRenderer;
+import org.halalfoursome.kebabeditor.render.PlaytestRenderer;
 import org.halalfoursome.kebabeditor.render.GridRenderer;
 import org.halalfoursome.kebabeditor.render.RenderContext;
 import org.halalfoursome.kebabeditor.render.RenderPass;
@@ -51,6 +53,9 @@ import com.jogamp.opengl.GLCapabilities;
 import com.jogamp.opengl.GLEventListener;
 import com.jogamp.opengl.GLProfile;
 import com.jogamp.opengl.awt.GLJPanel;
+
+import lombok.AccessLevel;
+import lombok.Getter;
 
 /**
  * The 3D viewport. A lightweight {@link GLJPanel}, so Swing popups and split
@@ -86,6 +91,10 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
     private final Set<RenderPass> failedPasses = new HashSet<>();
     private final Timer timer;
 
+    @Getter
+    private final ViewportPlaytest playtest = new ViewportPlaytest(this);
+
+    @Getter(AccessLevel.PACKAGE)
     private NavigationMode navigationMode;
     private long lastTime;
     private boolean glReady;
@@ -110,8 +119,11 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
             // ghost over it, then the gizmo, which clears depth to stay on top.
             passes.add(new GreyboxRenderer(drawableObjects));
             passes.add(new ArchetypeRenderer(drawableObjects));
+            passes.add(new PathRayRenderer(drawableObjects, playtest.pathRays()));
+            passes.add(new PlaytestRenderer(drawableObjects, playtest::getSession, playtest.pathRays()));
             passes.add(new GridRenderer());
-            passes.add(new ArchetypeIconRenderer(drawableObjects, icons, this::isShowIcons));
+            // Icons would hide the level while playing it.
+            passes.add(new ArchetypeIconRenderer(drawableObjects, icons, () -> showIcons && !isPlaytesting()));
             passes.add(new PlacementRenderer(drawableObjects));
             passes.add(gizmo);
         }
@@ -250,7 +262,7 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
             @Override
             public void mousePressed(MouseEvent e) {
                 pressedAt = Maybe.none();
-                if (!SwingUtilities.isLeftMouseButton(e)) {
+                if (isPlaytesting() || !SwingUtilities.isLeftMouseButton(e)) {
                     return;
                 }
                 // A press on a gizmo handle starts a drag, which the camera must not see.
@@ -266,6 +278,9 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
 
             @Override
             public void mouseReleased(MouseEvent e) {
+                if (isPlaytesting()) {
+                    return;
+                }
                 if (gizmoInteraction.release()) {
                     boolean doubleClick = e.getClickCount() >= 2
                         && gizmoPressedAt.isSomeAnd(p -> p.distance(e.getPoint()) <= CLICK_SLOP_PIXELS);
@@ -292,6 +307,9 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
         addMouseMotionListener(new MouseMotionAdapter() {
             @Override
             public void mouseMoved(MouseEvent e) {
+                if (isPlaytesting()) {
+                    return;
+                }
                 placement.cursorMoved(e.getX(), e.getY());
                 placement.setSurfacesIgnored(e.isAltDown());
                 if (!placement.isActive()) {
@@ -301,6 +319,9 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
 
             @Override
             public void mouseDragged(MouseEvent e) {
+                if (isPlaytesting()) {
+                    return;
+                }
                 if (gizmoInteraction.isDragging()) {
                     gizmoInteraction.drag(EditorView.this, e.getX(), e.getY());
                     e.consume();
@@ -322,6 +343,9 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
         addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
+                if (isPlaytesting()) {
+                    return;
+                }
                 if (e.getKeyCode() == KeyEvent.VK_ESCAPE && gizmoInteraction.isDragging()) {
                     gizmoInteraction.cancel();
                     e.consume();
@@ -349,7 +373,7 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
 
             @Override
             public void keyReleased(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_ALT) {
+                if (!isPlaytesting() && e.getKeyCode() == KeyEvent.VK_ALT) {
                     placement.setSurfacesIgnored(false);
                     if (placement.isActive()) {
                         e.consume();
@@ -431,6 +455,18 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
         requestFocusInWindow();
     }
 
+    public boolean isPlaytesting() {
+        return playtest.isRunning();
+    }
+
+    /** Drop any gizmo drag, placement or click in progress, e.g. when a playtest takes over. */
+    void cancelEditingInput() {
+        gizmoInteraction.cancel();
+        placement.setActive(false);
+        pressedAt = Maybe.none();
+        gizmoPressedAt = Maybe.none();
+    }
+
     private void tick() {
         long now = System.nanoTime();
         double dt = (now - lastTime) / 1e9;
@@ -486,8 +522,9 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
             editor.scene(),
             editor.currentProjectFile(),
             behaviorContext(),
-            editor.selection().nodes(),
-            placement.preview()
+            // While playing, nothing is selected or being placed, so no gizmo or ghost shows.
+            isPlaytesting() ? List.of() : editor.selection().nodes(),
+            isPlaytesting() ? Maybe.none() : placement.preview()
         );
 
         for (RenderPass pass : passes) {

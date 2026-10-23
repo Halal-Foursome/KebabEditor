@@ -61,6 +61,20 @@ class CameraTest {
         assertEquals(2f, topRight.getX() / -topRight.getZ(), 1e-4f);
     }
 
+    @Test
+    void setOrientationReplacesYawAndClampsPitch() {
+        Camera camera = new Camera();
+
+        camera.setOrientation(1.25f, 0.3f);
+        assertEquals(1.25f, camera.getYaw(), EPS);
+        assertEquals(0.3f, camera.getPitch(), EPS);
+
+        camera.setOrientation(0f, 3f);
+        assertEquals(Math.toRadians(89), camera.getPitch(), 1e-5);
+        camera.setOrientation(0f, -3f);
+        assertEquals(-Math.toRadians(89), camera.getPitch(), 1e-5);
+    }
+
     private static Camera levelCamera() {
         Camera camera = new Camera();
         camera.rotate(-camera.getYaw(), -camera.getPitch());
