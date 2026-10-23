@@ -262,6 +262,8 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
         addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
+                // Clicking the viewport makes the scene active, e.g. for undo and redo.
+                requestFocusInWindow();
                 pressedAt = Maybe.none();
                 if (isPlaytesting() || !SwingUtilities.isLeftMouseButton(e)) {
                     return;
@@ -269,7 +271,7 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
                 // A press on a gizmo handle starts a drag, which the camera must not see.
                 if (!placement.isActive()
                     && gizmoInteraction.press(EditorView.this, editor.selection().primary(), e.getX(), e.getY())) {
-                    requestFocusInWindow();
+                    editor.history().begin();
                     gizmoPressedAt = Maybe.some(e.getPoint());
                     e.consume();
                     return;
@@ -283,6 +285,11 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
                     return;
                 }
                 if (gizmoInteraction.release()) {
+                    editor.history().commit(switch (getGizmoMode()) {
+                        case TRANSLATE -> "move";
+                        case ROTATE -> "rotate";
+                        case SCALE -> "scale";
+                    });
                     boolean doubleClick = e.getClickCount() >= 2
                         && gizmoPressedAt.isSomeAnd(p -> p.distance(e.getPoint()) <= CLICK_SLOP_PIXELS);
                     gizmoPressedAt = Maybe.none();
@@ -348,7 +355,7 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
                     return;
                 }
                 if (e.getKeyCode() == KeyEvent.VK_ESCAPE && gizmoInteraction.isDragging()) {
-                    gizmoInteraction.cancel();
+                    cancelDrag();
                     e.consume();
                     return;
                 }
@@ -439,9 +446,14 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
         if (gizmo.getMode() == mode) {
             return;
         }
-        gizmoInteraction.cancel();
+        cancelDrag();
         gizmo.setMode(mode);
         gizmoModeListeners.forEach(Runnable::run);
+    }
+
+    private void cancelDrag() {
+        gizmoInteraction.cancel();
+        editor.history().cancel();
     }
 
     /** Called when the gizmo mode changes, e.g. to keep menu items in sync. */

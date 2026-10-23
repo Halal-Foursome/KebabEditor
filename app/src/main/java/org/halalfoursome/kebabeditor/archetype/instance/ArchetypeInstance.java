@@ -7,6 +7,7 @@ import org.halalfoursome.kebabeditor.archetype.ParamSpec;
 import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeDefinition;
 import org.halalfoursome.kebabeditor.archetype.error.InvalidParamType;
 import org.halalfoursome.kebabeditor.archetype.error.UnknownParamException;
+import org.halalfoursome.kebabeditor.math.Vec3;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -68,5 +69,28 @@ public final class ArchetypeInstance implements NodeArchetype {
         }
 
         values.put(name, value);
+    }
+
+    /** A copy of the current values, to hand back to {@link #restoreValues} later. */
+    public Map<String, Object> copyValues() {
+        Map<String, Object> copy = new HashMap<>();
+        values.forEach((name, value) -> copy.put(name, copyOf(value)));
+        return copy;
+    }
+
+    /** Puts back values from {@link #copyValues}, skipping any the definition no longer accepts. */
+    public void restoreValues(Map<String, Object> saved) {
+        values.clear();
+        saved.forEach((name, value) -> {
+            ParamSpec spec = definition.getParams().get(name);
+            if (spec != null && spec.type().javaClass().isInstance(value)) {
+                values.put(name, copyOf(value));
+            }
+        });
+    }
+
+    // Vec3 is the only mutable param type
+    private static Object copyOf(Object value) {
+        return value instanceof Vec3 vec ? vec.copy() : value;
     }
 }

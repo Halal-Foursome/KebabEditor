@@ -1,6 +1,9 @@
 package org.halalfoursome.kebabeditor.ui.menu;
 
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.io.IOException;
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 import javax.swing.ButtonGroup;
@@ -40,6 +43,22 @@ public class EditMenu extends Menu {
         Maybe<EditorView> view
     ) {
         super("Edit");
+
+        // Undo and redo only act on the scene while its viewport has focus, so the
+        // shortcuts are left to whatever else is focused, like a text field.
+        BooleanSupplier sceneActive = () -> view.isSomeAnd(EditorView::isFocusOwner);
+        SingleItem undo = new SingleItem("Undo", Maybe.some("control Z"), editor::undo);
+        SingleItem redo = new SingleItem("Redo", Maybe.some("control Y"), editor::redo);
+        Runnable syncHistory = () -> {
+            undo.setEnabled(sceneActive.getAsBoolean() && editor.history().canUndo());
+            redo.setEnabled(sceneActive.getAsBoolean() && editor.history().canRedo());
+        };
+        syncHistory.run();
+        editor.history().addListener(syncHistory);
+        view.ifSome(v -> v.addFocusListener(new FocusListener() {
+            @Override public void focusGained(FocusEvent e) { syncHistory.run(); }
+            @Override public void focusLost(FocusEvent e) { syncHistory.run(); }
+        }));
 
         SingleItem spawnBox = new SingleItem("Add greybox box", Maybe.some("control B"),
             ProjectRequired.guard(frame, editor, () -> editor.spawnGreybox(GreyboxShape.BOX, spawnPoint.get())));
@@ -89,6 +108,9 @@ public class EditMenu extends Menu {
         ButtonGroup tools = new ButtonGroup();
 
         setItems(new MenuItem[] {
+            undo,
+            redo,
+            new SeparatorItem(),
             spawnBox,
             spawnSphere,
             spawnEmpty,
