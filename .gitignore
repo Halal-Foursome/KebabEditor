@@ -9,3 +9,6 @@ app/bin
 # Ignore other non halal stuff
 .vscode
 .metals
+
+# IDE settings
+.idea

@@ -34,6 +34,14 @@ public final class GpuMeshCache {
         return entry.mesh;
     }
 
+    /** Free a mesh that will not be drawn again at the next {@link #evictUnused}, without waiting. */
+    public void release(MeshData mesh) {
+        Entry entry = entries.get(mesh);
+        if (entry != null) {
+            entry.lastUsed = Long.MIN_VALUE / 2;
+        }
+    }
+
     /** Call once per frame, after all passes have drawn. */
     public void evictUnused(GL3 gl) {
         Iterator<Entry> it = entries.values().iterator();

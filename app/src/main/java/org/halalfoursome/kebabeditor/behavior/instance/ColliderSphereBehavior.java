@@ -16,6 +16,7 @@ import org.halalfoursome.kebabeditor.math.Vec3;
 import org.halalfoursome.kebabeditor.model.GizmoShape;
 import org.halalfoursome.kebabeditor.model.Material;
 import org.halalfoursome.kebabeditor.model.Meshes;
+import org.halalfoursome.kebabeditor.playtest.physics.PhysicsVolume;
 import org.halalfoursome.kebabeditor.scene.model.SceneNode;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 import org.halalfoursome.kebabeditor.utils.Params;
@@ -35,12 +36,29 @@ public class ColliderSphereBehavior implements ArchetypeBehavior {
             .map(radius -> List.of(
                 new Drawable(
                     Meshes.SPHERE_LINES,
-                    node.worldMatrix().mul(Mat4.scaling(2f * radius)),
+                    matrix(node, radius),
                     MATERIAL,
                     DrawMode.OVERLAY
                 )
             ))
             .unwrapOr(List.of());
+    }
+
+    @Override
+    public List<PhysicsVolume> physicsVolumes(SceneNode node, ArchetypeInstance archetype, BehaviorContext context) {
+        return validRadius(archetype)
+            .map(radius -> List.of(new PhysicsVolume(
+                node.getName(),
+                PhysicsVolume.Shape.SPHERE,
+                matrix(node, radius),
+                PhysicsVolume.Role.SOLID
+            )))
+            .unwrapOr(List.of());
+    }
+
+    // The unit sphere has radius 0.5, so scaling by the diameter gives exactly this radius
+    private static Mat4 matrix(SceneNode node, float radius) {
+        return node.worldMatrix().mul(Mat4.scaling(2f * radius));
     }
 
     @Override

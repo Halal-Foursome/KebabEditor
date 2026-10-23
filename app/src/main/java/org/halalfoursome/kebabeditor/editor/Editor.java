@@ -33,6 +33,8 @@ import org.halalfoursome.kebabeditor.scene.resolve.ModelResolver;
 import org.halalfoursome.kebabeditor.scene.resolve.PrefabResolver;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
+import lombok.Getter;
+
 public class Editor {
 
     private final ProjectManager projectManager;
@@ -49,7 +51,7 @@ public class Editor {
     /** Model edits and gizmo drags publish here; listeners marshal UI work to the EDT. */
     public void sceneChanged() {
         selection.primary().ifSome(node -> {
-            if (scene().isNone() || scene().unwrap().find(node.getId()).unwrapOr(null) != node) selection.clear();
+            if (!containsNode(node)) selection.clear();
         });
         sceneListeners.forEach(Runnable::run);
     }
@@ -57,9 +59,7 @@ public class Editor {
     public void updateTransform(SceneNode node, org.halalfoursome.kebabeditor.math.Transform transform) {
         Vec3 p = transform.getTranslation();
         var q = transform.getRotation();
-        if (!Float.isFinite(p.getX()) || !Float.isFinite(p.getY()) || !Float.isFinite(p.getZ())
-            || !Float.isFinite(transform.getScale()) || !Float.isFinite(q.getX())
-            || !Float.isFinite(q.getY()) || !Float.isFinite(q.getZ()) || !Float.isFinite(q.getW())) {
+        if (!allFinite(p.getX(), p.getY(), p.getZ(), transform.getScale(), q.getX(), q.getY(), q.getZ(), q.getW())) {
             throw new IllegalArgumentException("Transform values must be finite");
         }
         node.setTransform(transform.copy());
@@ -67,14 +67,44 @@ public class Editor {
     }
 
     public void setArchetypeParam(ArchetypeInstance instance, String name, Object value) {
-        if (value instanceof Float f && !Float.isFinite(f)
-            || value instanceof Vec3 v && (!Float.isFinite(v.getX()) || !Float.isFinite(v.getY()) || !Float.isFinite(v.getZ()))) {
+        boolean finite = switch (value) {
+            case null -> true;
+            case Float f -> allFinite(f);
+            case Double d -> allFinite(d.floatValue());
+            case Vec3 v -> allFinite(v.getX(), v.getY(), v.getZ());
+            default -> true;
+        };
+        if (!finite) {
             throw new IllegalArgumentException("Parameter values must be finite");
         }
         setParam(instance, name, value);
         sceneChanged();
     }
 
+    private static boolean allFinite(float... values) {
+        for (float value : values) {
+            if (!Float.isFinite(value)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** While a playtest runs the scene is being played, and edit commands refuse to change it. */
+    @Getter
+    private boolean playtesting;
+
+    public void setPlaytesting(boolean playtesting) {
+        if (this.playtesting == playtesting) {
+            return;
+        }
+        this.playtesting = playtesting;
+        sceneListeners.forEach(Runnable::run);
+    }
+
+    public boolean containsNode(SceneNode node) {
+        return scene().map(scene -> scene.find(node.getId()).unwrapOr(null) == node).unwrapOr(false);
+    }
 
     public Editor(ProjectManager projectManager, ModelImporter modelImporter) {
         this.projectManager = projectManager;

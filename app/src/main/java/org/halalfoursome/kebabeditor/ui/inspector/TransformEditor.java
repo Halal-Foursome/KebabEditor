@@ -76,7 +76,7 @@ public final class TransformEditor extends InspectorSection {
     }
 
     private void commit(int index) {
-        if (editor.selection().primary().unwrapOr(null) != node || !editor.sceneNodes().contains(node)) return;
+        if (editor.isPlaytesting() || editor.selection().primary().unwrapOr(null) != node || !editor.containsNode(node)) return;
         JTextField field = fields[index];
         if (field.getText().equals(displayed[index])) return; // Never round-trip an untouched quaternion.
         try {

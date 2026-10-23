@@ -7,10 +7,12 @@ import java.util.List;
 
 import org.halalfoursome.kebabeditor.behavior.DrawMode;
 import org.halalfoursome.kebabeditor.behavior.Drawable;
+import org.halalfoursome.kebabeditor.logging.LogService;
 import org.halalfoursome.kebabeditor.math.Mat4;
 import org.halalfoursome.kebabeditor.math.Vec3;
 import org.halalfoursome.kebabeditor.model.AlphaMode;
 import org.halalfoursome.kebabeditor.model.Material;
+import org.halalfoursome.kebabeditor.model.MeshData;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
 import com.jogamp.opengl.GL3;
@@ -30,9 +32,15 @@ public final class DrawableRenderer {
     private final GpuMeshCache meshes = new GpuMeshCache();
     private final TextureCache textures = new TextureCache();
     private ShaderProgram shader;
+    private float maxLineWidth = 1f;
 
     public void init(GL3 gl) {
         shader = ShaderProgram.load(gl, "mesh");
+
+        float[] range = new float[2];
+        gl.glGetFloatv(GL3.GL_ALIASED_LINE_WIDTH_RANGE, range, 0);
+        maxLineWidth = Math.max(1f, range[1]);
+        LogService.get().info("OpenGL line width goes up to " + maxLineWidth + " px");
     }
 
     public void draw(GL3 gl, RenderContext context, List<Drawable> drawableObjects, boolean worldGrid) {
@@ -97,6 +105,9 @@ public final class DrawableRenderer {
         shader.setMat4(gl, "uNormalMatrix", normalMatrix(drawable.world()));
         shader.setVec4(gl, "uColor",
             color.getRed() / 255f, color.getGreen() / 255f, color.getBlue() / 255f, color.getAlpha() / 255f);
+        if (gpu.isLines()) {
+            gl.glLineWidth(Math.min(drawable.lineWidth(), maxLineWidth));
+        }
         shader.setBool(gl, "uLit", !gpu.isLines() && drawable.mesh().hasNormals());
 
         Maybe<Integer> texture = drawable.mesh().hasUvs()
@@ -121,6 +132,11 @@ public final class DrawableRenderer {
         } catch (ArithmeticException e) {
             return world;
         }
+    }
+
+    /** Free a mesh that will not be drawn again; see {@link GpuMeshCache#release}. */
+    public void release(MeshData mesh) {
+        meshes.release(mesh);
     }
 
     public void endFrame(GL3 gl) {

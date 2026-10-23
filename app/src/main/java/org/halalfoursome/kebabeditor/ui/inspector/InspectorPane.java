@@ -88,7 +88,7 @@ public final class InspectorPane extends JPanel implements AutoCloseable {
 
     private void refresh() {
         SceneNode selected = editor.selection().primary().unwrapOr(null);
-        if (selected != null && !editor.sceneNodes().contains(selected)) selected = null;
+        if (selected != null && !editor.containsNode(selected)) selected = null;
         List<SectionState> nextStructure = selected == null ? List.of() : structureOf(selected);
         if (selected != node || !structure.equals(nextStructure) || content.getComponentCount() == 0) {
             sections.forEach(ArchetypeSection::dispose);
@@ -113,7 +113,20 @@ public final class InspectorPane extends JPanel implements AutoCloseable {
             }
             transform.refresh();
             sections.forEach(ArchetypeSection::refresh);
-            add.setEnabled(!editor.availableArchetypes(node).isEmpty());
+            setEnabledDeep(content, !editor.isPlaytesting());
+            add.setEnabled(!editor.isPlaytesting() && !editor.availableArchetypes(node).isEmpty());
+        }
+    }
+
+    // The scene being played is read-only; section headings still fold
+    private static void setEnabledDeep(Component component, boolean enabled) {
+        if (!(component instanceof JToggleButton)) {
+            component.setEnabled(enabled);
+        }
+        if (component instanceof Container container) {
+            for (Component child : container.getComponents()) {
+                setEnabledDeep(child, enabled);
+            }
         }
     }
 
@@ -128,7 +141,7 @@ public final class InspectorPane extends JPanel implements AutoCloseable {
         name.setFont(KebabStyle.getCurrent().uiFont());
         JTextField field = name;
         Runnable commit = () -> {
-            if (editor.selection().primary().unwrapOr(null) != target || !editor.sceneNodes().contains(target)) return;
+            if (editor.isPlaytesting() || editor.selection().primary().unwrapOr(null) != target || !editor.containsNode(target)) return;
             if (field.getText().equals(displayedName)) { scheduleRefresh(); return; }
             String value = field.getText().trim();
             if (!value.isEmpty() && !value.equals(target.getName())) editor.renameNode(target, value);
@@ -152,14 +165,14 @@ public final class InspectorPane extends JPanel implements AutoCloseable {
         add.setFont(KebabStyle.getCurrent().uiFont());
         add.setAlignmentX(Component.CENTER_ALIGNMENT);
         add.addActionListener(e -> {
-            if (editor.selection().primary().unwrapOr(null) != target) return;
+            if (editor.isPlaytesting() || editor.selection().primary().unwrapOr(null) != target) return;
             JPopupMenu menu = new JPopupMenu();
             for (ArchetypeDefinition definition : editor.availableArchetypes(target)) {
                 JMenuItem item = new JMenuItem(definition.getDisplayName());
                 item.setToolTipText(definition.getId());
                 item.setFont(KebabStyle.getCurrent().uiFont());
                 item.addActionListener(event -> {
-                    if (editor.selection().primary().unwrapOr(null) != target || !editor.sceneNodes().contains(target)) return;
+                    if (editor.isPlaytesting() || editor.selection().primary().unwrapOr(null) != target || !editor.containsNode(target)) return;
                     try { editor.attachArchetype(target, new ArchetypeInstance(definition)); }
                     catch (IllegalArgumentException ex) {
                         JOptionPane.showMessageDialog(this, ex.getMessage(), "Cannot add archetype", JOptionPane.ERROR_MESSAGE);

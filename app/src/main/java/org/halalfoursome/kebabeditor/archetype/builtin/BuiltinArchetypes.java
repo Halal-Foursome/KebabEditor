@@ -9,6 +9,7 @@ import org.halalfoursome.kebabeditor.archetype.ArchetypeIcon;
 import org.halalfoursome.kebabeditor.archetype.ParamType;
 import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeDefinition;
 import org.halalfoursome.kebabeditor.math.Vec3;
+import org.halalfoursome.kebabeditor.playtest.ActorSettings;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
 public final class BuiltinArchetypes {
@@ -22,6 +23,7 @@ public final class BuiltinArchetypes {
     public static final String DIR_LIGHT = "dir_light";
     public static final String SPOT_LIGHT = "spot_light";
     public static final String SNAP_DISTANCE = "snap_distance";
+    public static final String PLAYER_START = "player_start";
 
     /** Snap step used when a scene has no snap_distance object. */
     public static final float DEFAULT_SNAP_DISTANCE = 0.5f;
@@ -78,6 +80,17 @@ public final class BuiltinArchetypes {
             .withParam("inner_angle", ParamType.FLOAT, 25.0f)
             .withParam("outer_angle", ParamType.FLOAT, 35.0f)
             .withParam("shadows",     ParamType.BOOL,  false),
+
+        // Where a playtest begins, and the metrics of the actor it spawns
+        new ArchetypeDefinition(PLAYER_START)
+            .withDisplayName("Player Start")
+            .withIcon(new ArchetypeIcon.Bundled("archetypes/player.svg"))
+            .withSingle()
+            .withParam(ActorSettings.RUN_SPEED,   ParamType.FLOAT, ActorSettings.DEFAULT.runSpeed())
+            .withParam(ActorSettings.JUMP_HEIGHT, ParamType.FLOAT, ActorSettings.DEFAULT.jumpHeight())
+            .withParam(ActorSettings.GRAVITY,     ParamType.FLOAT, ActorSettings.DEFAULT.gravity())
+            .withParam(ActorSettings.RADIUS,      ParamType.FLOAT, ActorSettings.DEFAULT.radius())
+            .withParam(ActorSettings.HEIGHT,      ParamType.FLOAT, ActorSettings.DEFAULT.height()),
 
         // TODO: replace with "kebab-project.json" project settings
         // Placed in a level, its distance is the grid step for snapping in the viewport

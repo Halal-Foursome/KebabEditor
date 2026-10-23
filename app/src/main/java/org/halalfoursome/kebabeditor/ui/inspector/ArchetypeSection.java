@@ -21,6 +21,7 @@ final class ArchetypeSection extends InspectorSection {
     private final Map<String, ParamValueEditor> controls = new LinkedHashMap<>();
     private final Map<String, Object> shown = new HashMap<>();
     private final ValidationGroup validation = new ValidationGroup();
+    private final boolean referencesNodes;
     private String nodeLabels = "";
 
     ArchetypeSection(Editor editor, SceneNode node, NodeArchetype archetype) {
@@ -29,6 +30,8 @@ final class ArchetypeSection extends InspectorSection {
         this.editor = editor;
         this.node = node;
         this.archetype = archetype;
+        referencesNodes = archetype instanceof ArchetypeInstance i
+            && i.getDefinition().getParams().values().stream().anyMatch(spec -> spec.type() == ParamType.NODE_REF);
         body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
         if (archetype instanceof ArchetypeInstance instance) {
             for (var entry : instance.getDefinition().getParams().entrySet()) {
@@ -42,8 +45,8 @@ final class ArchetypeSection extends InspectorSection {
                 control.setName("param." + name);
                 control.setPathBase(() -> editor.currentProjectFile().map(file -> file.toAbsolutePath().getParent()));
                 control.addCommitListener(() -> {
-                    if (editor.selection().primary().unwrapOr(null) != node
-                        || !editor.sceneNodes().contains(node) || !node.getArchetypes().contains(instance)) return;
+                    if (editor.isPlaytesting() || editor.selection().primary().unwrapOr(null) != node
+                        || !editor.containsNode(node) || !node.getArchetypes().contains(instance)) return;
                     try {
                         Object value = control.value();
                         if (!Objects.equals(value, shown.get(name))) editor.setArchetypeParam(instance, name, value);
@@ -72,7 +75,7 @@ final class ArchetypeSection extends InspectorSection {
         remove.setFont(KebabStyle.getCurrent().uiFont());
         remove.setAlignmentX(Component.CENTER_ALIGNMENT);
         remove.addActionListener(e -> {
-            if (editor.selection().primary().unwrapOr(null) != node) return;
+            if (editor.isPlaytesting() || editor.selection().primary().unwrapOr(null) != node) return;
             if (JOptionPane.showConfirmDialog(this, "Remove this archetype from the object?",
                 "Remove archetype", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
                 editor.detachArchetype(node, archetype);
@@ -84,9 +87,12 @@ final class ArchetypeSection extends InspectorSection {
 
     void refresh() {
         if (!(archetype instanceof ArchetypeInstance instance)) return;
-        String labels = editor.sceneNodes().stream().map(n -> n.getId() + ":" + n.getName()).toList().toString();
-        boolean referencesChanged = !labels.equals(nodeLabels);
-        nodeLabels = labels;
+        boolean referencesChanged = false;
+        if (referencesNodes) {
+            String labels = editor.sceneNodes().stream().map(n -> n.getId() + ":" + n.getName()).toList().toString();
+            referencesChanged = !labels.equals(nodeLabels);
+            nodeLabels = labels;
+        }
         for (var entry : controls.entrySet()) {
             String name = entry.getKey();
             ParamValueEditor control = entry.getValue();
