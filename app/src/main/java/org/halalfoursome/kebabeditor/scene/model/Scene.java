@@ -76,6 +76,26 @@ public class Scene {
         subtree(node).forEach(n -> byId.remove(n.getId()));
     }
 
+    /** Removes every node and unlinks parents from children, so each node can be added again on its own. */
+    public void clear() {
+        traverse().toList().forEach(node -> node.getParent().ifSome(parent -> parent.detachChild(node)));
+        rootNodes.clear();
+        byId.clear();
+    }
+
+    /**
+     * Unlinks a node outside this scene from its parent and children. A removed
+     * subtree stays linked together; this splits it so each node can be added on its own.
+     */
+    public void unlink(SceneNode node) {
+        if (byId.get(node.getId()) == node) {
+            throw new IllegalStateException("Node '" + node.getName() + "' is still in this scene");
+        }
+
+        node.getParent().ifSome(parent -> parent.detachChild(node));
+        List.copyOf(node.getChildren()).forEach(node::detachChild);
+    }
+
     // Checks the whole subtree first, so a failed add leaves the scene untouched
     private void register(SceneNode node) throws SceneException {
         if (node.getParent().isSome()) {
