@@ -130,6 +130,7 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
 
         placement = new PlacementTool(this, editor, picker);
         gizmoInteraction = new GizmoInteraction(gizmo, editor::snapStep);
+        gizmoInteraction.setChangeListener(editor::sceneChanged);
         // Registered before any navigation mode, so these listeners see events first.
         if (interactive) {
             installInput();

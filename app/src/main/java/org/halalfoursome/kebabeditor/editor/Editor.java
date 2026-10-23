@@ -35,7 +35,6 @@ import org.halalfoursome.kebabeditor.scene.resolve.PrefabResolver;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
 import lombok.Getter;
-import lombok.Setter;
 
 public class Editor {
 
@@ -44,10 +43,70 @@ public class Editor {
     private final Selection selection = new Selection();
     private final History history;
     private boolean snapping = true;
+    private final List<Runnable> sceneListeners = new java.util.concurrent.CopyOnWriteArrayList<>();
+    private Scene observedScene;
+    private final Runnable structureListener = this::sceneChanged;
+
+    public void addSceneListener(Runnable listener) { sceneListeners.add(listener); }
+    public void removeSceneListener(Runnable listener) { sceneListeners.remove(listener); }
+
+    /** Model edits and gizmo drags publish here; listeners marshal UI work to the EDT. */
+    public void sceneChanged() {
+        selection.primary().ifSome(node -> {
+            if (!containsNode(node)) selection.clear();
+        });
+        sceneListeners.forEach(Runnable::run);
+    }
+
+    public void updateTransform(SceneNode node, org.halalfoursome.kebabeditor.math.Transform transform) {
+        Vec3 p = transform.getTranslation();
+        var q = transform.getRotation();
+        if (!allFinite(p.getX(), p.getY(), p.getZ(), transform.getScale(), q.getX(), q.getY(), q.getZ(), q.getW())) {
+            throw new IllegalArgumentException("Transform values must be finite");
+        }
+        history.record("transform", () -> node.setTransform(transform.copy()));
+        sceneChanged();
+    }
+
+    public void setArchetypeParam(ArchetypeInstance instance, String name, Object value) {
+        boolean finite = switch (value) {
+            case null -> true;
+            case Float f -> allFinite(f);
+            case Double d -> allFinite(d.floatValue());
+            case Vec3 v -> allFinite(v.getX(), v.getY(), v.getZ());
+            default -> true;
+        };
+        if (!finite) {
+            throw new IllegalArgumentException("Parameter values must be finite");
+        }
+        history.record("edit " + instance.getDefinition().getDisplayName(), () -> setParam(instance, name, value));
+        sceneChanged();
+    }
+
+    private static boolean allFinite(float... values) {
+        for (float value : values) {
+            if (!Float.isFinite(value)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     /** While a playtest runs the scene is being played, and edit commands refuse to change it. */
     @Getter
-    @Setter
     private boolean playtesting;
+
+    public void setPlaytesting(boolean playtesting) {
+        if (this.playtesting == playtesting) {
+            return;
+        }
+        this.playtesting = playtesting;
+        sceneListeners.forEach(Runnable::run);
+    }
+
+    public boolean containsNode(SceneNode node) {
+        return scene().map(scene -> scene.find(node.getId()).unwrapOr(null) == node).unwrapOr(false);
+    }
 
     public Editor(ProjectManager projectManager, ModelImporter modelImporter) {
         this.projectManager = projectManager;
@@ -55,9 +114,22 @@ public class Editor {
         this.history = new History(projectManager::scene, selection);
 
         // Selected nodes belong to the scene that was just replaced or closed.
-        projectManager.addListener(selection::clear);
-        // So does the history, and a changed archetype registry can make old steps unrestorable.
+        projectManager.addListener(() -> {
+            Scene next = scene().unwrapOr(null);
+            if (next != observedScene) {
+                if (observedScene != null) observedScene.removeListener(structureListener);
+                observedScene = next;
+                if (next != null) next.addListener(structureListener);
+                selection.clear();
+            }
+            sceneChanged();
+        });
+        observedScene = scene().unwrapOr(null);
+        if (observedScene != null) observedScene.addListener(structureListener);
+        // The history goes with the scene, and a changed archetype registry can make old steps unrestorable.
         projectManager.addListener(history::clear);
+        // Undo and redo restore nodes in place, so the inspector must hear about them too.
+        history.addListener(this::sceneChanged);
     }
 
     public void createProject(Path dir, String name) throws SceneException, IOException {
@@ -97,10 +169,16 @@ public class Editor {
     }
 
     public void undo() {
+        if (playtesting) {
+            return;
+        }
         history.undo().ifSome(label -> LogService.get().info("Undid " + label));
     }
 
     public void redo() {
+        if (playtesting) {
+            return;
+        }
         history.redo().ifSome(label -> LogService.get().info("Redid " + label));
     }
 
@@ -158,11 +236,13 @@ public class Editor {
             }
         }
 
+        sceneChanged();
         LogService.get().info("Removed archetype " + definition.getId() + " and its instances from " + users.size() + " objects");
     }
 
     public void saveArchetypes() throws IOException {
         projectManager.saveArchetypes();
+        sceneChanged();
     }
 
     public RecentProjects recentProjects() {
@@ -229,6 +309,7 @@ public class Editor {
         }
 
         history.record("add " + definition.getDisplayName(), () -> node.addArchetype(instance));
+        sceneChanged();
         LogService.get().info("Added " + definition.getId() + " to " + node.getName());
     }
 
@@ -246,6 +327,7 @@ public class Editor {
 
         String previous = Objects.toString(node.getName(), "");
         history.record("rename", () -> node.setName(trimmed));
+        sceneChanged();
         LogService.get().info("Renamed '" + previous + "' to '" + trimmed + "'");
     }
 
@@ -346,6 +428,7 @@ public class Editor {
 
     public void detachArchetype(SceneNode node, NodeArchetype archetype) {
         history.record("remove " + archetype.archetypeId(), () -> node.removeArchetype(archetype));
+        sceneChanged();
         LogService.get().info("Removed " + archetype.archetypeId() + " from " + node.getName());
     }
 
@@ -428,7 +511,7 @@ public class Editor {
                 return created;
             });
 
-            setParam(instance, "distance", distance);
+            setArchetypeParam(instance, "distance", distance);
         });
         LogService.get().info("Snap distance set to " + distance);
     }

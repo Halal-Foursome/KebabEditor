@@ -19,6 +19,12 @@ import lombok.Getter;
 
 public class Scene {
 
+    private final List<Runnable> listeners = new ArrayList<>();
+
+    public void addListener(Runnable listener) { listeners.add(listener); }
+    public void removeListener(Runnable listener) { listeners.remove(listener); }
+    private void changed() { List.copyOf(listeners).forEach(Runnable::run); }
+
     private final List<SceneNode> rootNodes = new ArrayList<>();
     private final Map<NodeId, SceneNode> byId = new HashMap<>();
 
@@ -48,12 +54,14 @@ public class Scene {
     public void add(SceneNode node) throws SceneException {
         register(node);
         rootNodes.add(node);
+        changed();
     }
 
     public void add(SceneNode node, SceneNode parent) throws SceneException {
         requireInScene(parent);
         register(node);
         parent.attachChild(node);
+        changed();
     }
 
     public void add(SceneNode node, NodeId parent) throws SceneException {
@@ -74,6 +82,7 @@ public class Scene {
         }
 
         subtree(node).forEach(n -> byId.remove(n.getId()));
+        changed();
     }
 
     /** Removes every node and unlinks parents from children, so each node can be added again on its own. */
