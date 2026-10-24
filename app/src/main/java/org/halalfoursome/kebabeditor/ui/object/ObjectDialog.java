@@ -8,7 +8,6 @@ import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
-import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
@@ -19,7 +18,6 @@ import javax.swing.BorderFactory;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
-import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -28,7 +26,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
-import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.ToolTipManager;
@@ -38,6 +35,7 @@ import org.halalfoursome.kebabeditor.archetype.instance.NodeArchetype;
 import org.halalfoursome.kebabeditor.archetype.instance.UnresolvedArchetype;
 import org.halalfoursome.kebabeditor.editor.Editor;
 import org.halalfoursome.kebabeditor.scene.model.SceneNode;
+import org.halalfoursome.kebabeditor.utils.DialogKeys;
 import org.halalfoursome.kebabeditor.utils.KebabStyle;
 
 public class ObjectDialog extends JDialog {
@@ -80,14 +78,10 @@ public class ObjectDialog extends JDialog {
             }
         });
 
-        getRootPane().registerKeyboardAction(
-            e -> {
-                discardName = true;
-                dispose();
-            },
-            KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
-            JComponent.WHEN_IN_FOCUSED_WINDOW
-        );
+        DialogKeys.closeOnEscape(this, () -> {
+            discardName = true;
+            dispose();
+        });
 
         reload();
         pack();

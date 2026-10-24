@@ -11,6 +11,11 @@ import org.halalfoursome.kebabeditor.utils.KebabStyle;
 
 
 public class KebabApplication {
+
+    public static final String APP_NAME = "KebabEditor";
+    public static final String AUTHORS = "Halal Foursome";
+    public static final int FIRST_YEAR = 2025;
+    public static final String DOCUMENTATION_URL = "https://halal-foursome.github.io/KebabEditor/";
     
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {

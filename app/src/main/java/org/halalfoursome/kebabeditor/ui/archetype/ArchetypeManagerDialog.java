@@ -4,7 +4,6 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -13,6 +12,7 @@ import javax.swing.*;
 
 import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeDefinition;
 import org.halalfoursome.kebabeditor.editor.Editor;
+import org.halalfoursome.kebabeditor.utils.DialogKeys;
 import org.halalfoursome.kebabeditor.utils.ErrorDialogs;
 import org.halalfoursome.kebabeditor.utils.KebabStyle;
 
@@ -43,12 +43,7 @@ public class ArchetypeManagerDialog extends JDialog {
 
         pack();
 
-        // Escape closes the dialog
-        getRootPane().registerKeyboardAction(
-            e -> dispose(),
-            KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
-            JComponent.WHEN_IN_FOCUSED_WINDOW
-        );
+        DialogKeys.closeOnEscape(this);
         setLocationRelativeTo(owner);
     }
 

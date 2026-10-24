@@ -25,8 +25,7 @@ final class ArchetypeSection extends InspectorSection {
     private String nodeLabels = "";
 
     ArchetypeSection(Editor editor, SceneNode node, NodeArchetype archetype) {
-        super(archetype instanceof ArchetypeInstance i ? i.getDefinition().getDisplayName()
-            : archetype.archetypeId() + " (unresolved)", icon(archetype));
+        super(title(archetype), icon(archetype));
         this.editor = editor;
         this.node = node;
         this.archetype = archetype;
@@ -116,6 +115,13 @@ final class ArchetypeSection extends InspectorSection {
     void dispose() {
         controls.values().forEach(ParamValueEditor::dispose);
         validation.hidePopups();
+    }
+
+    private static String title(NodeArchetype archetype) {
+        if (archetype instanceof ArchetypeInstance instance) {
+            return instance.getDefinition().getDisplayName();
+        }
+        return archetype.archetypeId() + " (unresolved)";
     }
 
     private static Icon icon(NodeArchetype archetype) {

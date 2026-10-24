@@ -29,6 +29,7 @@ import javax.swing.JTextField;
 import org.halalfoursome.kebabeditor.editor.Editor;
 import org.halalfoursome.kebabeditor.project.ProjectAssets;
 import org.halalfoursome.kebabeditor.scene.error.SceneException;
+import org.halalfoursome.kebabeditor.utils.DialogKeys;
 import org.halalfoursome.kebabeditor.utils.ErrorDialogs;
 import org.halalfoursome.kebabeditor.utils.FileChooser;
 import org.halalfoursome.kebabeditor.utils.FileChooser.FileChooserMode;
@@ -68,6 +69,7 @@ public class AssetScopeDialog extends JDialog {
         add(footer(), BorderLayout.SOUTH);
 
         setMinimumSize(new Dimension(560, 480));
+        DialogKeys.closeOnEscape(this);
         pack();
         setLocationRelativeTo(owner);
     }
@@ -80,15 +82,19 @@ public class AssetScopeDialog extends JDialog {
         rootField.setText(root.toString());
         JButton change = new JButton("Change...");
         change.setFont(style.uiFont());
-        change.addActionListener(event -> new FileChooser(FileChooserMode.DIRS)
-            .startIn(root)
-            .open(this, this::changeRoot));
+        change.addActionListener(event -> chooseRoot());
 
         JPanel row = new JPanel(new BorderLayout(8, 0));
         row.add(label, BorderLayout.WEST);
         row.add(rootField, BorderLayout.CENTER);
         row.add(change, BorderLayout.EAST);
         return row;
+    }
+
+    private void chooseRoot() {
+        new FileChooser(FileChooserMode.DIRS)
+            .startIn(root)
+            .open(this, this::changeRoot);
     }
 
     private void changeRoot(File file) {
