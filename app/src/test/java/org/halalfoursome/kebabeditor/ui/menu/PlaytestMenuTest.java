@@ -86,4 +86,33 @@ class PlaytestMenuTest {
         menu.getItem(3).doClick();
         assertTrue(viewport.pathRays.isEmpty());
     }
+
+    @Test
+    void reachabilityIsAnOptionOnF6() {
+        JMenu menu = menu(new PlaytestMenu(Maybe.some(controller)));
+        JCheckBoxMenuItem show = (JCheckBoxMenuItem) menu.getItem(6);
+
+        assertEquals(KeyStroke.getKeyStroke("F6"), show.getAccelerator());
+        assertFalse(show.isSelected());
+
+        show.doClick();
+        assertTrue(controller.reachability().isEnabled());
+
+        controller.reachability().setEnabled(false);
+        assertFalse(show.isSelected());
+    }
+
+    @Test
+    void jumpLimitItemsFollowTheCheck() {
+        JMenu limits = (JMenu) menu(new PlaytestMenu(Maybe.some(controller))).getItem(7);
+
+        assertTrue(limits.getItem(0).isSelected(), "no limit at first");
+
+        limits.getItem(3).doClick();
+        assertEquals(Maybe.some(3), controller.reachability().jumpLimit());
+
+        controller.reachability().setJumpLimit(Maybe.some(9));
+        assertTrue(limits.getItem(6).isSelected());
+        assertEquals("Custom (9 jumps)...", limits.getItem(6).getText());
+    }
 }

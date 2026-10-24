@@ -16,7 +16,7 @@ import org.halalfoursome.kebabeditor.utils.Maybe;
 public final class Actor {
 
     /** Surfaces at most about 45° steep are ground. */
-    static final float GROUND_NORMAL_Y = 0.7f;
+    public static final float GROUND_NORMAL_Y = 0.7f;
     static final float GROUND_ACCELERATION = 60f;
     static final float AIR_ACCELERATION = 18f;
     static final float MAX_FALL_SPEED = 50f;
@@ -25,7 +25,7 @@ public final class Actor {
     /** A jump pressed this long before landing still happens on landing. */
     static final float JUMP_BUFFER_TIME = 0.12f;
     /** Walking down slopes and steps keeps the feet on surfaces up to this far below. */
-    static final float GROUND_SNAP = 0.25f;
+    public static final float GROUND_SNAP = 0.25f;
     /** Shorter flights (bumps, snapping misses) are not reported as landings. */
     static final float MIN_REPORTED_AIR_TIME = 0.05f;
 
