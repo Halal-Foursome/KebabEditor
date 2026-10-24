@@ -31,26 +31,36 @@ public record PlaytestLevel(PhysicsWorld world, List<PlayerStart> starts) {
         List<PlayerStart> starts = new ArrayList<>();
 
         for (SceneNode node : scene.traverse().toList()) {
-            if (!isTriggerZone(node)) {
-                Greybox.of(node).ifSome(greybox -> volumes.add(greyboxVolume(node, greybox)));
-            }
+            volumes.addAll(volumesOf(node, context));
 
             for (NodeArchetype archetype : node.getArchetypes()) {
-                if (!(archetype instanceof ArchetypeInstance instance)) {
-                    continue;
-                }
-
-                BuiltinBehaviors.behaviorOf(instance.archetypeId()).ifSome(behavior ->
-                    volumes.addAll(behavior.physicsVolumes(node, instance, context))
-                );
-
-                if (instance.archetypeId().equals(BuiltinArchetypes.PLAYER_START)) {
+                if (archetype instanceof ArchetypeInstance instance
+                    && instance.archetypeId().equals(BuiltinArchetypes.PLAYER_START)) {
                     starts.add(start(node, instance));
                 }
             }
         }
 
         return new PlaytestLevel(PhysicsWorld.of(volumes), starts);
+    }
+
+    /** What one object adds to the level's physics, not counting its children. */
+    public static List<PhysicsVolume> volumesOf(SceneNode node, BehaviorContext context) {
+        List<PhysicsVolume> volumes = new ArrayList<>();
+
+        if (!isTriggerZone(node)) {
+            Greybox.of(node).ifSome(greybox -> volumes.add(greyboxVolume(node, greybox)));
+        }
+
+        for (NodeArchetype archetype : node.getArchetypes()) {
+            if (archetype instanceof ArchetypeInstance instance) {
+                BuiltinBehaviors.behaviorOf(instance.archetypeId()).ifSome(behavior ->
+                    volumes.addAll(behavior.physicsVolumes(node, instance, context))
+                );
+            }
+        }
+
+        return volumes;
     }
 
     /**

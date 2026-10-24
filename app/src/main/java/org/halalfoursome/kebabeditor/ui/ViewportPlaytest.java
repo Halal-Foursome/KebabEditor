@@ -4,6 +4,7 @@ import org.halalfoursome.kebabeditor.behavior.BehaviorContext;
 import org.halalfoursome.kebabeditor.math.Vec3;
 import org.halalfoursome.kebabeditor.playtest.PathRays;
 import org.halalfoursome.kebabeditor.playtest.PlaytestSession;
+import org.halalfoursome.kebabeditor.playtest.reach.ReachabilityMarks;
 import org.halalfoursome.kebabeditor.render.Camera;
 import org.halalfoursome.kebabeditor.ui.navigation.NavigationMode;
 import org.halalfoursome.kebabeditor.ui.playtest.PlaytestViewport;
@@ -22,6 +23,7 @@ public final class ViewportPlaytest implements PlaytestViewport {
 
     private final EditorView view;
     private final PathRays pathRays = new PathRays();
+    private final ReachabilityMarks reachabilityMarks = new ReachabilityMarks();
 
     @Getter
     private Maybe<PlaytestSession> session = Maybe.none();
@@ -45,6 +47,11 @@ public final class ViewportPlaytest implements PlaytestViewport {
     @Override
     public PathRays pathRays() {
         return pathRays;
+    }
+
+    @Override
+    public ReachabilityMarks reachabilityMarks() {
+        return reachabilityMarks;
     }
 
     /**

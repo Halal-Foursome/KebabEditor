@@ -26,6 +26,7 @@ public class PlaytestController {
     private final PlaytestViewport viewport;
     private final UserNotice notice;
     private final LogService log;
+    private final ReachabilityCheck reachability;
     private final List<Runnable> listeners = new ArrayList<>();
 
     private Maybe<PlaytestSession> session = Maybe.none();
@@ -41,6 +42,7 @@ public class PlaytestController {
         this.viewport = viewport;
         this.notice = notice;
         this.log = log;
+        this.reachability = new ReachabilityCheck(editor, viewport, log);
 
         // Opening or closing a project replaces the scene: stop playing it and drop its paths.
         editor.addProjectListener(() -> {
@@ -60,6 +62,10 @@ public class PlaytestController {
 
     public PathRays pathRays() {
         return viewport.pathRays();
+    }
+
+    public ReachabilityCheck reachability() {
+        return reachability;
     }
 
     /** Called when a playtest starts or stops, e.g. to switch the Run button's icon. */

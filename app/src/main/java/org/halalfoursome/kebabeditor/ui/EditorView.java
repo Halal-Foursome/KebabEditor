@@ -38,6 +38,7 @@ import org.halalfoursome.kebabeditor.render.PickHit;
 import org.halalfoursome.kebabeditor.render.Picker;
 import org.halalfoursome.kebabeditor.render.PlacementRenderer;
 import org.halalfoursome.kebabeditor.render.PlaytestRenderer;
+import org.halalfoursome.kebabeditor.render.ReachabilityRenderer;
 import org.halalfoursome.kebabeditor.render.GridRenderer;
 import org.halalfoursome.kebabeditor.render.RenderContext;
 import org.halalfoursome.kebabeditor.render.RenderPass;
@@ -66,6 +67,7 @@ import lombok.Getter;
  *
  * A left click (press and release without dragging) selects what is under the
  * cursor, or places an object while the {@link PlacementTool} is active.
+ * Shift+click adds an object to the selection, or takes it out.
  * Pressing on a gizmo handle drags it instead; 1, 2 and 3 switch the gizmo
  * between move, rotate and scale.
  */
@@ -120,6 +122,7 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
             passes.add(new GreyboxRenderer(drawableObjects));
             passes.add(new ArchetypeRenderer(drawableObjects));
             passes.add(new PathRayRenderer(drawableObjects, playtest.pathRays()));
+            passes.add(new ReachabilityRenderer(drawableObjects, playtest.reachabilityMarks()));
             passes.add(new PlaytestRenderer(drawableObjects, playtest::getSession, playtest.pathRays()));
             passes.add(new GridRenderer());
             // Icons would hide the level while playing it.
@@ -302,7 +305,7 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
                 boolean click = pressedAt.isSomeAnd(p -> p.distance(e.getPoint()) <= CLICK_SLOP_PIXELS);
                 pressedAt = Maybe.none();
                 if (click && SwingUtilities.isLeftMouseButton(e)) {
-                    clicked(e.getX(), e.getY(), e.getClickCount());
+                    clicked(e.getX(), e.getY(), e.getClickCount(), e.isShiftDown());
                 }
             }
 
@@ -391,7 +394,8 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
         });
     }
 
-    private void clicked(int x, int y, int clickCount) {
+    /** @param extend add the object to the selection, or take it out if it is already there */
+    private void clicked(int x, int y, int clickCount, boolean extend) {
         if (placement.isActive()) {
             placement.place();
             return;
@@ -405,12 +409,26 @@ public class EditorView extends GLJPanel implements GLEventListener, GizmoIntera
         Maybe<SceneNode> node = iconAt(scene, x, y)
             .orElse(() -> picker.pick(scene, behaviorContext(), rayAt(x, y), false).andThen(PickHit::node));
 
+        if (extend) {
+            node.ifSome(this::toggleSelected);
+            return;
+        }
+
         node.ifSomeOrElse(hit -> {
             editor.selection().select(hit);
             if (clickCount >= 2) {
                 activate(hit);
             }
         }, editor.selection()::clear);
+    }
+
+    // The newest object added becomes the primary one, which the gizmo and inspector follow.
+    private void toggleSelected(SceneNode node) {
+        List<SceneNode> selected = new ArrayList<>(editor.selection().nodes());
+        if (!selected.remove(node)) {
+            selected.add(node);
+        }
+        editor.selection().set(selected);
     }
 
     private Maybe<SceneNode> iconAt(Scene scene, int x, int y) {

@@ -4,6 +4,7 @@ import org.halalfoursome.kebabeditor.behavior.BehaviorContext;
 import org.halalfoursome.kebabeditor.playtest.PathRays;
 import org.halalfoursome.kebabeditor.playtest.PhysicsTestSupport;
 import org.halalfoursome.kebabeditor.playtest.PlaytestSession;
+import org.halalfoursome.kebabeditor.playtest.reach.ReachabilityMarks;
 import org.halalfoursome.kebabeditor.ui.navigation.NavigationMode;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
@@ -12,6 +13,7 @@ public final class FakePlaytestViewport implements PlaytestViewport {
 
     public Maybe<BehaviorContext> context = Maybe.some(PhysicsTestSupport.NO_ASSETS);
     public final PathRays pathRays = new PathRays();
+    public final ReachabilityMarks reachabilityMarks = new ReachabilityMarks();
 
     public Maybe<PlaytestSession> playing = Maybe.none();
     public Maybe<NavigationMode> navigation = Maybe.none();
@@ -25,6 +27,11 @@ public final class FakePlaytestViewport implements PlaytestViewport {
     @Override
     public PathRays pathRays() {
         return pathRays;
+    }
+
+    @Override
+    public ReachabilityMarks reachabilityMarks() {
+        return reachabilityMarks;
     }
 
     @Override
