@@ -79,12 +79,11 @@ public class GridRenderer implements RenderPass {
         zAxis.dispose(gl);
     }
 
-    // Lines on the axes themselves are skipped; the axis meshes draw over them.
     private static MeshData gridLines(boolean major) {
         List<float[]> segments = new ArrayList<>();
 
         for (int i = -HALF_EXTENT; i <= HALF_EXTENT; i++) {
-            if (i == 0 || (i % MAJOR_STEP == 0) != major) {
+            if ((i % MAJOR_STEP == 0) != major) {
                 continue;
             }
             segments.add(new float[] { i, -HALF_EXTENT, i, HALF_EXTENT });

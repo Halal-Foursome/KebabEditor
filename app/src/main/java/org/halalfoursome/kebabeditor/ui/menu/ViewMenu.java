@@ -1,12 +1,14 @@
 package org.halalfoursome.kebabeditor.ui.menu;
 
 
+
 import javax.swing.ButtonGroup;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
 import org.halalfoursome.kebabeditor.editor.Editor;
 import org.halalfoursome.kebabeditor.scene.model.GreyboxShape;
+import org.halalfoursome.kebabeditor.ui.CollapsiblePanel;
 import org.halalfoursome.kebabeditor.ui.EditorView;
 import org.halalfoursome.kebabeditor.ui.menu.generic.CheckItem;
 import org.halalfoursome.kebabeditor.ui.menu.generic.Menu;
@@ -23,6 +25,16 @@ public class ViewMenu extends Menu {
      * @param view the viewport; none when it is unavailable
      */
     public ViewMenu(JFrame frame, Editor editor, Maybe<EditorView> view) {
+        this(frame, editor, view, Maybe.none(), Maybe.none());
+    }
+
+    public ViewMenu(
+        JFrame frame,
+        Editor editor,
+        Maybe<EditorView> view,
+        Maybe<CollapsiblePanel> sidePanel,
+        Maybe<CollapsiblePanel> bottomPanel
+    ) {
         super("View");
 
         setItems(new MenuItem[] {
@@ -31,7 +43,22 @@ public class ViewMenu extends Menu {
             new SeparatorItem(),
 
             showIconsItem(view),
+
+            new SeparatorItem(),
+
+            panelItem("Show side panel", "N", sidePanel),
+            panelItem("Show bottom panel", "T", bottomPanel),
         });
+    }
+
+    private static CheckItem panelItem(String label, String keyStroke, Maybe<CollapsiblePanel> panel) {
+        CheckItem item = new CheckItem(label, Maybe.some(keyStroke), on -> panel.ifSome(CollapsiblePanel::toggle));
+
+        item.setSelected(true);
+        item.component().setEnabled(panel.isSome());
+        panel.ifSome(p -> p.addListener(() -> item.setSelected(p.isShown())));
+
+        return item;
     }
 
     private static CheckItem showIconsItem(Maybe<EditorView> view) {

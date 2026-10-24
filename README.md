@@ -84,6 +84,8 @@ Create a project with **File → Create new project…**, then add objects from 
 | Add greybox box / sphere | `Ctrl+B` / `Ctrl+Shift+B` |
 | Import a glTF model | `Ctrl+I` |
 | Placement ray | `Ctrl+Shift+P` (wheel changes distance, `Alt` ignores surfaces, `Esc` leaves) |
+| Hide / show the Inspector | `N` |
+| Hide / show the bottom panel | `T` |
 | Snap to grid | `Ctrl+Shift+G` |
 | Manage archetypes | `Ctrl+Shift+A` |
 | New / open / save project | `Ctrl+N` / `Ctrl+O` / `Ctrl+S` |

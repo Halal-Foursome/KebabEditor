@@ -61,6 +61,8 @@ public class MainWindow {
     private final org.halalfoursome.kebabeditor.ui.inspector.InspectorPane inspector;
 
     private final MenuBar menuBar;
+    private CollapsiblePanel inspectorPanel;
+    private CollapsiblePanel bottomPanel;
     private EditorView editorView;
     private Maybe<PlaytestController> playtest = Maybe.none();
 
@@ -197,6 +199,7 @@ public class MainWindow {
             createWorkspace(),
             inspector
         );
+        inspectorPanel = new CollapsiblePanel(layout, inspector);
         layout.setResizeWeight(1.0);
         layout.setContinuousLayout(false);
         SwingUtilities.invokeLater(() -> {
@@ -218,6 +221,7 @@ public class MainWindow {
             createViewport(),
             bottomTabs
         );
+        bottomPanel = new CollapsiblePanel(workspace, bottomTabs);
         workspace.setContinuousLayout(false);
         workspace.setResizeWeight(WORKSPACE_WEIGHT);
         SwingUtilities.invokeLater(() -> workspace.setDividerLocation(WORKSPACE_WEIGHT));
@@ -229,7 +233,13 @@ public class MainWindow {
         menuBar.addMenu(new FileMenu(frame, editor, assetExplorer::refresh));
         menuBar.addMenu(new ProjectMenu(frame, editor));
         menuBar.addMenu(new EditMenu(frame, editor, this::spawnPoint, Maybe.ofNullable(editorView)));
-        menuBar.addMenu(new ViewMenu(frame, editor, Maybe.ofNullable(editorView)));
+        menuBar.addMenu(new ViewMenu(
+            frame,
+            editor,
+            Maybe.ofNullable(editorView),
+            Maybe.some(inspectorPanel),
+            Maybe.some(bottomPanel)
+        ));
         menuBar.addMenu(new PlaytestMenu(playtest));
         menuBar.addMenu(new HelpMenu(frame));
 

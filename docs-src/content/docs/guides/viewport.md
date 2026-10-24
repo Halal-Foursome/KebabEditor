@@ -41,6 +41,10 @@ Click an object or its icon to select it. The gizmo has three modes: `1` move, `
 
 Every archetype on an object is drawn as a billboard icon. Several icons are arranged in a pyramid. Empty objects get an icon too, so they stay selectable. Toggle them in **View > Show icons**.
 
+## Panels
+
+Press `N` to hide or show the Inspector, and `T` to hide or show the bottom panel with the Asset Explorer and Logs. The viewport takes the freed space, and showing a panel again puts its divider back where it was. The same check boxes are in **View > Show side panel** and **Show bottom panel**. You can also drag a divider to bring a hidden panel back.
+
 ## Undo and redo
 
 `Ctrl+Z` and `Ctrl+Y` undo and redo scene edits while the viewport has focus. Undo is disabled during a playtest.

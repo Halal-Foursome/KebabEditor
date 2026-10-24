@@ -24,6 +24,8 @@ top = false
 | Edit selected object | `Ctrl+E` |
 | Delete selected object | `Delete` |
 | Move / rotate / scale tool | `1` / `2` / `3` |
+| Show or hide the Inspector | `N` |
+| Show or hide the bottom panel (Asset Explorer and Logs) | `T` |
 | Snap to grid | `Ctrl+Shift+G` |
 | Placement ray | `Ctrl+Shift+P` |
 | Manage archetypes | `Ctrl+Shift+A` |

@@ -93,6 +93,7 @@ public final class DrawableRenderer {
         gl.glDisable(GL3.GL_BLEND);
         gl.glDisable(GL3.GL_POLYGON_OFFSET_FILL);
         gl.glEnable(GL3.GL_CULL_FACE);
+        gl.glLineWidth(1f);
         gl.glBindTexture(GL3.GL_TEXTURE_2D, 0);
     }
 
