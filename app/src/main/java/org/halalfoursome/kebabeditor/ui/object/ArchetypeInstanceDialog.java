@@ -9,7 +9,6 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.awt.event.KeyEvent;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -17,14 +16,12 @@ import javax.swing.BorderFactory;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.KeyStroke;
 
 import org.halalfoursome.kebabeditor.archetype.ParamSpec;
 import org.halalfoursome.kebabeditor.archetype.definition.ArchetypeDefinition;
@@ -35,6 +32,7 @@ import org.halalfoursome.kebabeditor.editor.InitialValues;
 import org.halalfoursome.kebabeditor.scene.model.SceneNode;
 import org.halalfoursome.kebabeditor.ui.archetype.ParamValueEditor;
 import org.halalfoursome.kebabeditor.ui.validation.ValidationGroup;
+import org.halalfoursome.kebabeditor.utils.DialogKeys;
 import org.halalfoursome.kebabeditor.utils.KebabStyle;
 import org.halalfoursome.kebabeditor.utils.Maybe;
 
@@ -92,11 +90,7 @@ public class ArchetypeInstanceDialog extends JDialog {
         add(content, BorderLayout.CENTER);
         add(buildFooter(), BorderLayout.SOUTH);
 
-        getRootPane().registerKeyboardAction(
-            e -> dispose(),
-            KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
-            JComponent.WHEN_IN_FOCUSED_WINDOW
-        );
+        DialogKeys.closeOnEscape(this);
 
         showParameters();
         pack();

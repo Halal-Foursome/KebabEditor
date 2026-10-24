@@ -103,8 +103,14 @@ public final class DrawableRenderer {
 
         shader.setMat4(gl, "uModel", drawable.world());
         shader.setMat4(gl, "uNormalMatrix", normalMatrix(drawable.world()));
-        shader.setVec4(gl, "uColor",
-            color.getRed() / 255f, color.getGreen() / 255f, color.getBlue() / 255f, color.getAlpha() / 255f);
+        shader.setVec4(
+            gl,
+            "uColor",
+            color.getRed() / 255f,
+            color.getGreen() / 255f,
+            color.getBlue() / 255f,
+            color.getAlpha() / 255f
+        );
         if (gpu.isLines()) {
             gl.glLineWidth(Math.min(drawable.lineWidth(), maxLineWidth));
         }

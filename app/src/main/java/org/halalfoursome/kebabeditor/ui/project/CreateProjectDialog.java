@@ -25,6 +25,7 @@ import javax.swing.event.DocumentListener;
 
 import org.halalfoursome.kebabeditor.editor.Editor;
 import org.halalfoursome.kebabeditor.scene.error.SceneException;
+import org.halalfoursome.kebabeditor.utils.DialogKeys;
 import org.halalfoursome.kebabeditor.utils.ErrorDialogs;
 import org.halalfoursome.kebabeditor.utils.FileChooser;
 import org.halalfoursome.kebabeditor.utils.FileChooser.FileChooserMode;
@@ -58,6 +59,7 @@ public class CreateProjectDialog extends JDialog {
         add(buildMainPanel(style, owner), BorderLayout.CENTER);
         add(buildFooter(style, editor), BorderLayout.SOUTH);
 
+        DialogKeys.closeOnEscape(this);
         pack();
         setLocationRelativeTo(owner);
     }

@@ -48,8 +48,11 @@ public final class InspectorPane extends JPanel implements AutoCloseable {
         title.setBorder(BorderFactory.createEmptyBorder(8, 10, 8, 10));
         add(title, BorderLayout.NORTH);
         content.setBorder(BorderFactory.createEmptyBorder(4, 10, 10, 10));
-        JScrollPane scroll = new JScrollPane(content, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-            JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        JScrollPane scroll = new JScrollPane(
+            content,
+            JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+            JScrollPane.HORIZONTAL_SCROLLBAR_NEVER
+        );
         scroll.getVerticalScrollBar().setUnitIncrement(16);
         add(scroll, BorderLayout.CENTER);
         attach();

@@ -51,6 +51,16 @@ application {
     )
 }
 
+version = "1.0.0"
+
+tasks.processResources {
+    val appVersion = project.version.toString()
+    inputs.property("version", appVersion)
+    filesMatching("application.properties") {
+        expand("version" to appVersion)
+    }
+}
+
 tasks.named<Test>("test") {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()

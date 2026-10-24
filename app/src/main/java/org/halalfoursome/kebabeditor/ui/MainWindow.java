@@ -30,10 +30,10 @@ import org.halalfoursome.kebabeditor.math.Vec3;
 import org.halalfoursome.kebabeditor.ui.menu.EditMenu;
 import org.halalfoursome.kebabeditor.ui.object.ObjectDialog;
 import org.halalfoursome.kebabeditor.ui.menu.FileMenu;
+import org.halalfoursome.kebabeditor.ui.menu.HelpMenu;
 import org.halalfoursome.kebabeditor.ui.menu.PlaytestMenu;
 import org.halalfoursome.kebabeditor.ui.menu.ProjectMenu;
 import org.halalfoursome.kebabeditor.ui.menu.ViewMenu;
-import org.halalfoursome.kebabeditor.ui.menu.generic.Menu;
 import org.halalfoursome.kebabeditor.ui.menu.generic.MenuBar;
 import org.halalfoursome.kebabeditor.ui.menu.generic.MenuButton;
 import org.halalfoursome.kebabeditor.ui.navigation.FreeFlightNavigation;
@@ -49,9 +49,12 @@ public class MainWindow {
 
     private static final String APP_TITLE = "Kebab Editor";
     private static final String RUN_TOOLTIP = "Run level (F5)";
+    private static final double WORKSPACE_WEIGHT = 0.75;
+    private static final int INSPECTOR_WIDTH = 350;
+    private static final int INSPECTOR_MIN_WIDTH = 240;
 
     private final JFrame frame;
-    private final Editor editor;
+    private final Editor editor;    
     private final LogsTab logsTab;
     private final AssetExplorerTab assetExplorer;
     private final AssetWindows assetWindows;
@@ -172,54 +175,79 @@ public class MainWindow {
     }
 
     private void setupLayout() {
+        setupFrame();
+        frame.add(createLayout(), BorderLayout.CENTER);
+        setupMenuBar();
+    }
+
+    private void setupFrame() {
         KebabStyle style = KebabStyle.getCurrent();
-        
-        // Main frame properties
+
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         frame.setSize(style.windowSize().width, style.windowSize().height);
         frame.setLocationRelativeTo(null);
         frame.setIconImage(style.favicon().getImage());
         frame.setLayout(new BorderLayout());
+    }
 
-        // 3D viewport above a resizable bottom tool window.
+    // The workspace on the left, the inspector on the right
+    private JSplitPane createLayout() {
+        JSplitPane layout = new JSplitPane(
+            JSplitPane.HORIZONTAL_SPLIT,
+            createWorkspace(),
+            inspector
+        );
+        layout.setResizeWeight(1.0);
+        layout.setContinuousLayout(false);
+        SwingUtilities.invokeLater(() -> {
+            int dividerLocation = layout.getWidth() - INSPECTOR_WIDTH - layout.getDividerSize();
+            layout.setDividerLocation(Math.max(INSPECTOR_MIN_WIDTH, dividerLocation));
+        });
+
+        return layout;
+    }
+
+    // The 3D viewport above a resizable bottom tool window
+    private JSplitPane createWorkspace() {
         JTabbedPane bottomTabs = new JTabbedPane();
         bottomTabs.addTab("Asset Explorer", assetExplorer);
         bottomTabs.addTab("Logs", logsTab);
-        JSplitPane workspace = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
-            createViewport(), bottomTabs);
-        workspace.setContinuousLayout(false);
-        workspace.setResizeWeight(0.75);
-        SwingUtilities.invokeLater(() -> workspace.setDividerLocation(0.75));
-        JSplitPane layout = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, workspace, inspector);
-        layout.setResizeWeight(1.0);
-        layout.setContinuousLayout(false);
-        SwingUtilities.invokeLater(() -> layout.setDividerLocation(
-            Math.max(240, layout.getWidth() - 350 - layout.getDividerSize())));
-        frame.add(layout, BorderLayout.CENTER);
 
-        // Menu bar
+        JSplitPane workspace = new JSplitPane(
+            JSplitPane.VERTICAL_SPLIT,
+            createViewport(),
+            bottomTabs
+        );
+        workspace.setContinuousLayout(false);
+        workspace.setResizeWeight(WORKSPACE_WEIGHT);
+        SwingUtilities.invokeLater(() -> workspace.setDividerLocation(WORKSPACE_WEIGHT));
+
+        return workspace;
+    }
+
+    private void setupMenuBar() {
         menuBar.addMenu(new FileMenu(frame, editor, assetExplorer::refresh));
         menuBar.addMenu(new ProjectMenu(frame, editor));
         menuBar.addMenu(new EditMenu(frame, editor, this::spawnPoint, Maybe.ofNullable(editorView)));
         menuBar.addMenu(new ViewMenu(frame, editor, Maybe.ofNullable(editorView)));
         menuBar.addMenu(new PlaytestMenu(playtest));
-        menuBar.addMenu(new Menu("Help"));
+        menuBar.addMenu(new HelpMenu(frame));
 
-        // Glue between menu bar and buttons
+        // Glue between the menus and the buttons
         menuBar.add(Box.createGlue());
 
-        // Menu buttons
+        menuBar.add(createRunButton());
+        menuBar.add(createMoreButton());
+    }
+
+    private MenuButton createRunButton() {
         MenuButton runButton = new MenuButton(
             LucideIcon.PLAY,
             RUN_TOOLTIP,
             MenuButton.PLAY_BUTTON_COLOR,
-            () -> playtest.ifSomeOrElse(PlaytestController::toggle, () -> JOptionPane.showMessageDialog(
-                frame,
-                "The 3D viewport is unavailable, so the level cannot be run.",
-                "Run level",
-                JOptionPane.INFORMATION_MESSAGE
-            ))
+            this::runLevel
         );
+
         playtest.ifSome(controller -> controller.addListener(() -> {
             if (controller.isRunning()) {
                 runButton.setAppearance(LucideIcon.SQUARE, MenuButton.STOP_BUTTON_COLOR, "Stop playtest (Esc)");
@@ -227,15 +255,30 @@ public class MainWindow {
                 runButton.setAppearance(LucideIcon.PLAY, MenuButton.PLAY_BUTTON_COLOR, RUN_TOOLTIP);
             }
         }));
-        menuBar.add(runButton);
 
-        menuBar.add(new MenuButton(
-            LucideIcon.ELLIPSIS_VERTICAL, 
-            "More...", 
-            new Insets(8, 2, 8, 2), 
+        return runButton;
+    }
+
+    private void runLevel() {
+        playtest.ifSomeOrElse(
+            PlaytestController::toggle,
+            () -> JOptionPane.showMessageDialog(
+                frame,
+                "The 3D viewport is unavailable, so the level cannot be run.",
+                "Run level",
+                JOptionPane.INFORMATION_MESSAGE
+            )
+        );
+    }
+
+    private MenuButton createMoreButton() {
+        return new MenuButton(
+            LucideIcon.ELLIPSIS_VERTICAL,
+            "More...",
+            new Insets(8, 2, 8, 2),
             () -> {
                 // TODO: More...
             }
-        ));
+        );
     }
 }

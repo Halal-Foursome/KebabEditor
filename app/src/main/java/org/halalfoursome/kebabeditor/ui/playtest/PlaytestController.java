@@ -82,8 +82,10 @@ public class PlaytestController {
 
         Maybe<BehaviorContext> context = viewport.behaviorContext();
         if (editor.scene().isNone() || context.isNone()) {
-            notice.show("No project open",
-                "Open or create a project first (File > Open project / Create new project).");
+            notice.show(
+                "No project open",
+                "Open or create a project first (File > Open project / Create new project)."
+            );
             return;
         }
 
@@ -92,28 +94,38 @@ public class PlaytestController {
 
         if (level.hasNothingToStandOn()) {
             log.warn("Playtest not started: the level has nothing to stand on");
-            notice.show("Nothing to stand on",
-                "The level has no solid objects. Add greybox shapes or colliders before running it.");
+            notice.show(
+                "Nothing to stand on",
+                "The level has no solid objects. Add greybox shapes or colliders before running it."
+            );
             return;
         }
 
         Maybe<PlayerStart> chosen = chooseStart(level);
         if (chosen.isNone()) {
             log.warn("Playtest not started: the level has no player start");
-            notice.show("No player start",
-                "The level has no player start. Add one with Edit > Add player start.");
+            notice.show(
+                "No player start",
+                "The level has no player start. Add one with Edit > Add player start."
+            );
             return;
         }
 
         PlayerStart start = chosen.unwrap();
         if (start.settings().isNone()) {
             log.warn("Playtest not started: player start '" + start.name() + "' is invalid");
-            notice.show("Invalid player start",
+            notice.show(
+                "Invalid player start",
                 "Player start '" + start.name() + "' has invalid parameters:\n- "
-                    + String.join("\n- ", start.problems()));
+                    + String.join("\n- ", start.problems())
+            );
             return;
         }
 
+        launch(scene, level, start);
+    }
+
+    private void launch(Scene scene, PlaytestLevel level, PlayerStart start) {
         PlaytestSession running = new PlaytestSession(level.world(), start, log);
         session = Maybe.some(running);
         playedScene = Maybe.some(scene);
@@ -121,10 +133,14 @@ public class PlaytestController {
         editor.setPlaytesting(true);
         viewport.startPlaytest(running, new PlaytestNavigation(running, this::stop, this::failed));
 
-        log.info(String.format(Locale.ROOT,
+        log.info(String.format(
+            Locale.ROOT,
             "Playtest started at '%s' with %d solid(s) and %d trigger(s). "
                 + "WASD / arrows run, Space jumps, drag to look around, Esc stops.",
-            start.name(), level.world().solids().size(), level.world().triggers().size()));
+            start.name(),
+            level.world().solids().size(),
+            level.world().triggers().size()
+        ));
         notifyListeners();
     }
 

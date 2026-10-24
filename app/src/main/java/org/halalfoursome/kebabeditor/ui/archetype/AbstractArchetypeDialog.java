@@ -9,7 +9,6 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.awt.event.KeyEvent;
 import java.util.Collection;
 import java.util.function.Supplier;
 
@@ -17,6 +16,7 @@ import javax.swing.*;
 
 import org.halalfoursome.kebabeditor.ui.validation.Rules;
 import org.halalfoursome.kebabeditor.ui.validation.ValidationGroup;
+import org.halalfoursome.kebabeditor.utils.DialogKeys;
 import org.halalfoursome.kebabeditor.utils.KebabStyle;
 
 public abstract class AbstractArchetypeDialog extends JDialog {
@@ -68,12 +68,7 @@ public abstract class AbstractArchetypeDialog extends JDialog {
         add(form, BorderLayout.CENTER);
         add(buildFooter(), BorderLayout.SOUTH);
 
-        // Escape closes the dialog
-        getRootPane().registerKeyboardAction(
-            e -> dispose(),
-            KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
-            JComponent.WHEN_IN_FOCUSED_WINDOW
-        );
+        DialogKeys.closeOnEscape(this);
 
         pack();
         setLocationRelativeTo(getOwner());

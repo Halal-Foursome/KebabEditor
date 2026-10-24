@@ -44,66 +44,9 @@ public class EditMenu extends Menu {
     ) {
         super("Edit");
 
-        // Undo and redo only act on the scene while its viewport has focus, so the
-        // shortcuts are left to whatever else is focused, like a text field.
-        BooleanSupplier sceneActive = () -> view.isSomeAnd(EditorView::isFocusOwner);
         SingleItem undo = new SingleItem("Undo", Maybe.some("control Z"), editor::undo);
         SingleItem redo = new SingleItem("Redo", Maybe.some("control Y"), editor::redo);
-        Runnable syncHistory = () -> {
-            undo.setEnabled(sceneActive.getAsBoolean() && editor.history().canUndo());
-            redo.setEnabled(sceneActive.getAsBoolean() && editor.history().canRedo());
-        };
-        syncHistory.run();
-        editor.history().addListener(syncHistory);
-        view.ifSome(v -> v.addFocusListener(new FocusListener() {
-            @Override public void focusGained(FocusEvent e) { syncHistory.run(); }
-            @Override public void focusLost(FocusEvent e) { syncHistory.run(); }
-        }));
-
-        SingleItem spawnBox = new SingleItem("Add greybox box", Maybe.some("control B"),
-            ProjectRequired.guard(frame, editor, () -> editor.spawnGreybox(GreyboxShape.BOX, spawnPoint.get())));
-
-        SingleItem spawnSphere = new SingleItem("Add greybox sphere", Maybe.some("control shift B"),
-            ProjectRequired.guard(frame, editor, () -> editor.spawnGreybox(GreyboxShape.SPHERE, spawnPoint.get())));
-
-        SingleItem spawnEmpty = new SingleItem("Add empty", Maybe.none(),
-            ProjectRequired.guard(frame, editor, () -> editor.spawnEmpty(spawnPoint.get())));
-
-        SingleItem spawnPlayerStart = new SingleItem("Add player start", Maybe.none(),
-            ProjectRequired.guard(frame, editor, () -> editor.spawnArchetype(BuiltinArchetypes.PLAYER_START, spawnPoint.get())));
-
-        SingleItem spawnPointLight = lightItem(frame, editor, spawnPoint, "Add point light", BuiltinArchetypes.POINT_LIGHT);
-        SingleItem spawnDirLight = lightItem(frame, editor, spawnPoint, "Add directional light", BuiltinArchetypes.DIR_LIGHT);
-        SingleItem spawnSpotLight = lightItem(frame, editor, spawnPoint, "Add spot light", BuiltinArchetypes.SPOT_LIGHT);
-
-        SingleItem importModel = new SingleItem("Import glTF model...", Maybe.some("control I"),
-            ProjectRequired.guard(frame, editor, () ->
-                new FileChooser(FileChooserMode.FILES)
-                    .addFilter("glTF model", "gltf", "glb")
-                    .open(frame, file -> {
-                        try {
-                            editor.importModel(file.toPath(), spawnPoint.get());
-                        } catch (IOException e) {
-                            ErrorDialogs.show(frame, "Cannot import model", e);
-                        }
-                    })
-            ));
-
-        SingleItem editObject = new SingleItem("Edit selected object...", Maybe.some("control E"),
-            ProjectRequired.guard(frame, editor, () ->
-                editor.selection().primary().ifSomeOrElse(
-                    node -> new ObjectDialog(frame, editor, node).setVisible(true),
-                    () -> JOptionPane.showMessageDialog(
-                        frame,
-                        "Select an object first.",
-                        "Edit object",
-                        JOptionPane.INFORMATION_MESSAGE
-                    )
-                )
-            ));
-
-        SingleItem deleteObject = new SingleItem("Delete selected object", Maybe.some("DELETE"),
-            ProjectRequired.guard(frame, editor, () -> deleteSelected(frame, editor)));
+        syncHistoryItems(editor, view, undo, redo);
 
         ButtonGroup tools = new ButtonGroup();
 
@@ -111,24 +54,116 @@ public class EditMenu extends Menu {
             undo,
             redo,
             new SeparatorItem(),
-            spawnBox,
-            spawnSphere,
-            spawnEmpty,
-            spawnPlayerStart,
+            spawnItem(
+                frame,
+                editor,
+                "Add greybox box",
+                Maybe.some("control B"),
+                () -> editor.spawnGreybox(GreyboxShape.BOX, spawnPoint.get())
+            ),
+            spawnItem(
+                frame,
+                editor,
+                "Add greybox sphere",
+                Maybe.some("control shift B"),
+                () -> editor.spawnGreybox(GreyboxShape.SPHERE, spawnPoint.get())
+            ),
+            spawnItem(
+                frame,
+                editor,
+                "Add empty",
+                Maybe.none(),
+                () -> editor.spawnEmpty(spawnPoint.get())
+            ),
+            spawnItem(
+                frame,
+                editor,
+                "Add player start",
+                Maybe.none(),
+                () -> editor.spawnArchetype(BuiltinArchetypes.PLAYER_START, spawnPoint.get())
+            ),
             new SeparatorItem(),
-            spawnPointLight,
-            spawnDirLight,
-            spawnSpotLight,
+            lightItem(frame, editor, spawnPoint, "Add point light", BuiltinArchetypes.POINT_LIGHT),
+            lightItem(frame, editor, spawnPoint, "Add directional light", BuiltinArchetypes.DIR_LIGHT),
+            lightItem(frame, editor, spawnPoint, "Add spot light", BuiltinArchetypes.SPOT_LIGHT),
             new SeparatorItem(),
-            importModel,
+            importModelItem(frame, editor, spawnPoint),
             new SeparatorItem(),
-            editObject,
-            deleteObject,
+            editObjectItem(frame, editor),
+            spawnItem(
+                frame,
+                editor,
+                "Delete selected object",
+                Maybe.some("DELETE"),
+                () -> deleteSelected(frame, editor)
+            ),
             new SeparatorItem(),
             toolItem(view, "Move tool  (1)", "1", GizmoMode.TRANSLATE, tools),
             toolItem(view, "Rotate tool  (2)", "2", GizmoMode.ROTATE, tools),
             toolItem(view, "Scale tool  (3)", "3", GizmoMode.SCALE, tools),
         });
+    }
+
+    // Undo and redo only act on the scene while its viewport has focus, so the
+    // shortcuts are left to whatever else is focused, like a text field.
+    private static void syncHistoryItems(Editor editor, Maybe<EditorView> view, SingleItem undo, SingleItem redo) {
+        BooleanSupplier sceneActive = () -> view.isSomeAnd(EditorView::isFocusOwner);
+        Runnable sync = () -> {
+            undo.setEnabled(sceneActive.getAsBoolean() && editor.history().canUndo());
+            redo.setEnabled(sceneActive.getAsBoolean() && editor.history().canRedo());
+        };
+
+        sync.run();
+        editor.history().addListener(sync);
+        view.ifSome(v -> v.addFocusListener(new FocusListener() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                sync.run();
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                sync.run();
+            }
+        }));
+    }
+
+    private static SingleItem spawnItem(
+        JFrame frame,
+        Editor editor,
+        String label,
+        Maybe<String> keyStroke,
+        Runnable action
+    ) {
+        return new SingleItem(label, keyStroke, ProjectRequired.guard(frame, editor, action));
+    }
+
+    private static SingleItem importModelItem(JFrame frame, Editor editor, Supplier<Vec3> spawnPoint) {
+        Runnable importModel = () -> new FileChooser(FileChooserMode.FILES)
+            .addFilter("glTF model", "gltf", "glb")
+            .open(frame, file -> {
+                try {
+                    editor.importModel(file.toPath(), spawnPoint.get());
+                } catch (IOException e) {
+                    ErrorDialogs.show(frame, "Cannot import model", e);
+                }
+            });
+
+        return spawnItem(frame, editor, "Import glTF model...", Maybe.some("control I"), importModel);
+    }
+
+    private static SingleItem editObjectItem(JFrame frame, Editor editor) {
+        Runnable editObject = () -> editor.selection().primary().ifSomeOrElse(
+            node -> new ObjectDialog(frame, editor, node).setVisible(true),
+            () -> JOptionPane.showMessageDialog(
+                frame,
+                "Select an object first.",
+                "Edit object",
+                JOptionPane.INFORMATION_MESSAGE
+            )
+        );
+
+        return spawnItem(frame, editor, "Edit selected object...", Maybe.some("control E"), editObject);
     }
 
     private static void deleteSelected(JFrame frame, Editor editor) {
@@ -169,17 +204,38 @@ public class EditMenu extends Menu {
         return choice == 0;
     }
 
-    private static SingleItem lightItem(JFrame frame, Editor editor, Supplier<Vec3> spawnPoint, String label, String archetypeId) {
-        return new SingleItem(label, Maybe.none(),
-            ProjectRequired.guard(frame, editor, () ->
-                editor.spawnArchetype(archetypeId, spawnPoint.get().add(new Vec3(0, LIGHT_HEIGHT, 0)))
-            ));
+    private static SingleItem lightItem(
+        JFrame frame,
+        Editor editor,
+        Supplier<Vec3> spawnPoint,
+        String label,
+        String archetypeId
+    ) {
+        Vec3 lifted = new Vec3(0, LIGHT_HEIGHT, 0);
+
+        return spawnItem(
+            frame,
+            editor,
+            label,
+            Maybe.none(),
+            () -> editor.spawnArchetype(archetypeId, spawnPoint.get().add(lifted))
+        );
     }
 
     // The mode also changes from the viewport's 1/2/3 keys, so each item mirrors it.
-    private static RadioItem toolItem(Maybe<EditorView> view, String label, String keyStroke, GizmoMode mode, ButtonGroup group) {
-        RadioItem item = new RadioItem(label, Maybe.some(keyStroke), group,
-            () -> view.ifSome(v -> v.setGizmoMode(mode)));
+    private static RadioItem toolItem(
+        Maybe<EditorView> view,
+        String label,
+        String keyStroke,
+        GizmoMode mode,
+        ButtonGroup group
+    ) {
+        RadioItem item = new RadioItem(
+            label,
+            Maybe.some(keyStroke),
+            group,
+            () -> view.ifSome(v -> v.setGizmoMode(mode))
+        );
 
         view.ifSomeOrElse(v -> {
             Runnable sync = () -> item.setSelected(v.getGizmoMode() == mode);
